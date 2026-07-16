@@ -70,6 +70,16 @@ export default function MissionPage() {
         {mission.passRatio && (
           <p style={{ marginTop: 10, fontWeight: 700 }}>{t('guardians.exam.passMark')}</p>
         )}
+        {mission.theory && (
+          <section className="theory-box" aria-label={t('guardians.theoryTitle')}>
+            <h2>💡 {t('guardians.theoryTitle')}</h2>
+            <ul>
+              {mission.theory.map((point, i) => (
+                <li key={i}>{tx(point)}</li>
+              ))}
+            </ul>
+          </section>
+        )}
         {helpStrip}
         <div className="actions">
           <button type="button" className="btn-solid" onClick={() => setPhase(0)}>

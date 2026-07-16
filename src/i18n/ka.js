@@ -73,6 +73,7 @@ export default {
     lockedShort: 'დაკეტილია',
     done: 'შესრულებულია',
     briefingTitle: 'დავალება',
+    theoryTitle: 'სანამ დაიწყებ - თეორია 60 წამში',
     beginMission: 'მისიის დაწყება',
     round: 'რაუნდი',
     of: '/',

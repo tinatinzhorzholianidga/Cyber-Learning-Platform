@@ -76,6 +76,8 @@ const { MISSIONS, missionMax, roundMax } = await import(join(root, 'src/content/
 const ROUND_TYPES = new Set(['choice', 'flags', 'builder', 'branch'])
 for (const m of MISSIONS) {
   if (!m.brief) err(`${m.id}: missing brief`)
+  if (!Array.isArray(m.theory) || m.theory.length < 3 || m.theory.length > 7)
+    err(`${m.id}: needs 3-7 theory bullets (has ${m.theory?.length ?? 0})`)
   if (!Array.isArray(m.takeaways) || m.takeaways.length < 3) err(`${m.id}: needs ≥3 takeaways`)
   if (!Array.isArray(m.rounds) || m.rounds.length === 0) {
     err(`${m.id}: no rounds`)
@@ -148,7 +150,10 @@ for (const m of MISSIONS) {
       if (best > r.max) warn(`${tag}: best path earns ${best} > declared max ${r.max} (capped)`)
     }
   })
-  checkLeaves({ brief: m.brief, rounds: m.rounds, takeaways: m.takeaways, helpStrip: m.helpStrip }, m.id)
+  checkLeaves(
+    { brief: m.brief, theory: m.theory, rounds: m.rounds, takeaways: m.takeaways, helpStrip: m.helpStrip },
+    m.id,
+  )
   console.log(`  ${m.id}: ${m.rounds.length} rounds, max ${missionMax(m)} (${m.rounds.map(roundMax).join('+')})${m.timer ? `, timer ${m.timer}s` : ''}${m.passRatio ? `, pass ${m.passRatio * 100}%` : ''}`)
 }
 const g10 = MISSIONS.find((m) => m.id === 'g10')

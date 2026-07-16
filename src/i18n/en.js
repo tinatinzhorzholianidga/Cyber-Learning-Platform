@@ -73,6 +73,7 @@ export default {
     lockedShort: 'Locked',
     done: 'Done',
     briefingTitle: 'Briefing',
+    theoryTitle: 'Before you start - the theory in 60 seconds',
     beginMission: 'Begin mission',
     round: 'Round',
     of: 'of',

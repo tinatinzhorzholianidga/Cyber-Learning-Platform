@@ -1622,6 +1622,63 @@ main {
   font-weight: 800;
 }
 
+/* short theory primer on the mission brief screen */
+.theory-box {
+  margin-top: 18px;
+  background: #f7f5ff;
+  border: 2px solid #e5dffa;
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+}
+
+.theory-box h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--accent-deep);
+  margin-bottom: 12px;
+}
+
+.theory-box ul {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.theory-box li {
+  position: relative;
+  padding: 10px 14px 10px 40px;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  counter-increment: theory;
+}
+
+.theory-box li::before {
+  content: counter(theory);
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--c, var(--accent)) 16%, white);
+  border: 1.5px solid color-mix(in srgb, var(--c, var(--accent)) 35%, white);
+  color: color-mix(in srgb, var(--c, var(--accent)) 60%, var(--ink));
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: grid;
+  place-items: center;
+  transform: rotate(-5deg);
+}
+
+.theory-box ul {
+  counter-reset: theory;
+}
+
 /* message / doc cards inside games */
 .msg-card {
   background: #f7f5ff;
