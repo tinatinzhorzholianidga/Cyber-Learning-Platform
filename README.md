@@ -52,13 +52,20 @@ No backend, no login. Progress is stored in `localStorage`.
 
 ## Deployment (GitHub Pages)
 
-`.github/workflows/deploy.yml` builds and deploys on every push to `main`
-(and to the current feature branch while this stage is under review) using
-the official `actions/deploy-pages` flow. Vite's `base` is set to
-`/Cyber-Learning-Platform/` in `vite.config.js`.
+`.github/workflows/deploy.yml` builds the site on every push (to `main` or
+the current stage branch) and publishes `dist/` to the **`gh-pages`** branch.
+Vite's `base` is set to `/Cyber-Learning-Platform/` in `vite.config.js`.
 
-If the first deploy fails with a Pages permission error, enable Pages once in
-**Settings → Pages → Source: GitHub Actions**, then re-run the workflow.
+**One-time setup (repo admin, ~10 seconds):** GitHub does not allow the
+workflow token to change Pages settings, so after the first deploy run go to
+**Settings → Pages → Build and deployment → Source: "Deploy from a branch"
+→ Branch: `gh-pages` / `/ (root)`** and save. From then on every push
+publishes automatically to
+https://tinatinzhorzholianidga.github.io/Cyber-Learning-Platform/.
+
+(Background: the repo's auto-created `github-pages` environment rejects
+deployments from the stage branch, which blocks the `actions/deploy-pages`
+flow — the `gh-pages` branch flow avoids that entirely.)
 
 ## Content rules (from the spec)
 
