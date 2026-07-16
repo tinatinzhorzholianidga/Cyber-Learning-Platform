@@ -94,6 +94,11 @@ export default function MascotDemoPage() {
 
       <div className="mascot-layout">
         <section className="mascot-stage" aria-label={t('mascot.widget.label')}>
+          {tipText != null && (
+            <div className="mascot-bubble stage-bubble" role="status" aria-live="polite">
+              <p>{shownTip}</p>
+            </div>
+          )}
           <RobotCanvas
             size={SIZES[size]}
             character={character}
@@ -105,11 +110,6 @@ export default function MascotDemoPage() {
             idle={idle}
             onTap={askTip}
           />
-          {tipText != null && (
-            <div className="mascot-bubble stage-bubble" role="status" aria-live="polite">
-              <p>{shownTip}</p>
-            </div>
-          )}
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>

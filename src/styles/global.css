@@ -2310,12 +2310,36 @@ main {
   border-color: #c9befa;
 }
 
+/* stage tip bubble sits ABOVE the character (never over it) with a
+   little tail pointing down toward him */
 .stage-bubble {
+  position: relative;
+  margin: 4px auto 14px;
+  max-width: min(360px, 94%);
+  text-align: left;
+}
+
+.stage-bubble::after,
+.mascot-widget .mascot-bubble::after {
+  content: '';
   position: absolute;
-  top: 18px;
-  left: 18px;
-  max-width: 250px;
-  z-index: 2;
+  bottom: -9px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-right: 2px solid #dcd7f8;
+  border-bottom: 2px solid #dcd7f8;
+  border-bottom-right-radius: 3px;
+  transform: rotate(45deg);
+}
+
+.stage-bubble::after {
+  left: 50%;
+  margin-left: -8px;
+}
+
+.mascot-widget .mascot-bubble::after {
+  right: 42px;
 }
 
 /* control panel ---------------------------------------------------------- */
@@ -2434,7 +2458,7 @@ main {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 14px;
 }
 
 .mascot-widget .mascot-bubble {
