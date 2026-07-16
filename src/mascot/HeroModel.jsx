@@ -125,35 +125,6 @@ function makeAuraTexture() {
   return new THREE.CanvasTexture(canvas)
 }
 
-/* teardrop face: a bulged dark plate + a tube lip along its outline */
-function useTeardropFace() {
-  return useMemo(() => {
-    const shape = new THREE.Shape()
-    shape.moveTo(0, 0.56)
-    shape.bezierCurveTo(0.13, 0.47, 0.3, 0.28, 0.34, 0.04)
-    shape.bezierCurveTo(0.37, -0.22, 0.22, -0.42, 0, -0.44)
-    shape.bezierCurveTo(-0.22, -0.42, -0.37, -0.22, -0.34, 0.04)
-    shape.bezierCurveTo(-0.3, 0.28, -0.13, 0.47, 0, 0.56)
-
-    const bulge = (x, y) => {
-      const r2 = (x / 0.4) ** 2 + ((y - 0.04) / 0.55) ** 2
-      return 0.2 * Math.pow(Math.max(0, 1 - r2), 0.7)
-    }
-
-    const plate = new THREE.ShapeGeometry(shape, 24)
-    const pos = plate.attributes.position
-    for (let i = 0; i < pos.count; i++) pos.setZ(i, bulge(pos.getX(i), pos.getY(i)))
-    plate.computeVertexNormals()
-
-    const outline = shape
-      .getPoints(72)
-      .map((p) => new THREE.Vector3(p.x, p.y, bulge(p.x, p.y)))
-    const curve = new THREE.CatmullRomCurve3(outline, true)
-    const lip = new THREE.TubeGeometry(curve, 110, 0.055, 12, true)
-    return { plate, lip }
-  }, [])
-}
-
 /* smooth tapering hood antenna with a curl */
 function useAntenna() {
   return useMemo(() => {
@@ -247,17 +218,14 @@ export default function HeroModel({
   const emblemMat = useRef()
   const auraMat = useRef()
 
-  const { plate, lip } = useTeardropFace()
   const { geo: antennaGeo, tipPoint } = useAntenna()
   const { geo: capeGeo, base: capeBase, vs: capeVs } = useCape()
   useEffect(
     () => () => {
-      plate.dispose()
-      lip.dispose()
       antennaGeo.dispose()
       capeGeo.dispose()
     },
-    [plate, lip, antennaGeo, capeGeo],
+    [antennaGeo, capeGeo],
   )
 
   const emblemTexture = useMemo(makeEmblemTexture, [])
@@ -669,47 +637,43 @@ export default function HeroModel({
             <meshPhysicalMaterial {...cloakMat} />
           </mesh>
 
-          {/* dark backing inside the hood */}
-          <mesh position={[0, 0.44, 0.18]}>
-            <sphereGeometry args={[0.42, 40, 28]} />
+          {/* dark oval face inside the hood, poking out of the shell */}
+          <mesh position={[0, 0.44, 0.24]}>
+            <sphereGeometry args={[0.48, 48, 32]} />
             <meshPhysicalMaterial color={C.ink} roughness={0.55} clearcoat={0.25} />
           </mesh>
 
-          {/* teardrop face plate + lip around the opening */}
-          <group position={[0, 0.4, 0.44]} scale={0.85}>
-            <mesh geometry={plate}>
-              <meshPhysicalMaterial color={C.ink} roughness={0.55} clearcoat={0.25} />
-            </mesh>
-            <mesh geometry={lip}>
-              <meshPhysicalMaterial color={C.cloakLip} roughness={0.4} clearcoat={0.5} />
-            </mesh>
-          </group>
+          {/* hood lip around the face opening */}
+          <mesh position={[0, 0.45, 0.46]} rotation={[-0.32, 0, 0]} scale={[1, 1.1, 0.5]}>
+            <torusGeometry args={[0.44, 0.055, 18, 40]} />
+            <meshPhysicalMaterial color={C.cloakLip} roughness={0.4} clearcoat={0.5} />
+          </mesh>
 
           {/* glowing eyes */}
           <group ref={eyesGroup}>
-            <group ref={eyeL} position={[-0.13, 0.48, 0.61]}>
+            <group ref={eyeL} position={[-0.14, 0.5, 0.7]}>
               <mesh>
-                <capsuleGeometry args={[0.072, 0.078, 6, 14]} />
+                <capsuleGeometry args={[0.075, 0.08, 6, 14]} />
                 <meshBasicMaterial color={C.eye} toneMapped={false} />
               </mesh>
             </group>
-            <group ref={eyeR} position={[0.13, 0.48, 0.61]}>
+            <group ref={eyeR} position={[0.14, 0.5, 0.7]}>
               <mesh>
-                <capsuleGeometry args={[0.072, 0.078, 6, 14]} />
+                <capsuleGeometry args={[0.075, 0.08, 6, 14]} />
                 <meshBasicMaterial color={C.eye} toneMapped={false} />
               </mesh>
             </group>
-            <mesh ref={arcL} position={[-0.13, 0.48, 0.61]} visible={false}>
-              <torusGeometry args={[0.072, 0.027, 10, 20, Math.PI]} />
+            <mesh ref={arcL} position={[-0.14, 0.5, 0.7]} visible={false}>
+              <torusGeometry args={[0.075, 0.028, 10, 20, Math.PI]} />
               <meshBasicMaterial color={C.eye} toneMapped={false} />
             </mesh>
-            <mesh ref={arcR} position={[0.13, 0.48, 0.61]} visible={false}>
-              <torusGeometry args={[0.072, 0.027, 10, 20, Math.PI]} />
+            <mesh ref={arcR} position={[0.14, 0.5, 0.7]} visible={false}>
+              <torusGeometry args={[0.075, 0.028, 10, 20, Math.PI]} />
               <meshBasicMaterial color={C.eye} toneMapped={false} />
             </mesh>
             {/* open laughing mouth */}
-            <mesh ref={mouth} position={[0, 0.31, 0.6]} visible={false} scale={0}>
-              <sphereGeometry args={[0.08, 20, 14]} />
+            <mesh ref={mouth} position={[0, 0.33, 0.69]} visible={false} scale={0}>
+              <sphereGeometry args={[0.085, 20, 14]} />
               <meshBasicMaterial color={C.eye} toneMapped={false} />
             </mesh>
           </group>
