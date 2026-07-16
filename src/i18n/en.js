@@ -111,9 +111,11 @@ export default {
   },
   mascot: {
     name: 'Byte',
+    ghostName: 'Cipher',
     demo: {
       badge: 'Demo - not public',
       title1: 'Meet',
+      character: 'Character',
       sub: 'This is the test room for our helper robot. Poke him, switch his moods, read his tips - and tell us what feels off before he moves to the real site.',
       stageHint: 'Move your cursor around him - he watches. Click him - he reacts.',
       emotions: 'Mood',
@@ -150,10 +152,12 @@ export default {
     },
     widget: {
       greeting: "Hi! I'm Byte - your cyber helper. Click me for a tip.",
-      open: 'Open Byte the helper',
-      close: 'Hide Byte',
+      greetingGhost: "Boo! I'm Cipher - I guard this place. Click me for a tip.",
+      open: 'Open the helper',
+      close: 'Hide the helper',
       nextTip: 'Another tip',
       label: 'Byte, the CyberHero helper robot',
+      labelGhost: 'Cipher, the CyberHero guardian ghost',
     },
   },
 }

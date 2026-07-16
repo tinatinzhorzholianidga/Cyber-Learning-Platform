@@ -54,6 +54,29 @@ await stage.screenshot({ path: `${outDir}/stage-tip.png` })
 await page.getByRole('button', { name: /Show him as he will appear/i }).click()
 await page.waitForTimeout(1500)
 await page.screenshot({ path: `${outDir}/widget-preview.png` })
+await page.getByRole('button', { name: /Show him as he will appear/i }).click() // widget off again
+
+// ---- Cipher, the guardian ghost ----
+await page.getByRole('button', { name: /Cipher/ }).click()
+await page.waitForTimeout(2600)
+await page.screenshot({ path: `${outDir}/ghost-demo.png` })
+await stage.screenshot({ path: `${outDir}/ghost-happy.png` })
+
+for (const [btn, name] of [
+  ['Thinking', 'thinking'],
+  ['Sleepy', 'resting'],
+  ['Celebrating', 'celebrate'],
+]) {
+  await page.getByRole('button', { name: btn, exact: true }).click()
+  await page.waitForTimeout(2400)
+  await stage.screenshot({ path: `${outDir}/ghost-${name}.png` })
+}
+await page.getByRole('button', { name: 'Happy', exact: true }).click()
+await page.getByRole('button', { name: 'Wave', exact: true }).click()
+await page.waitForTimeout(700)
+await stage.screenshot({ path: `${outDir}/ghost-wave.png` })
+await page.waitForTimeout(2000)
+await page.getByRole('button', { name: /Byte|ბაიტი/ }).click() // back to the robot
 
 await page.evaluate(() => localStorage.setItem('cyberhero.lang', 'ka'))
 await page.reload({ waitUntil: 'networkidle' })

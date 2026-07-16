@@ -4,9 +4,9 @@ import { MASCOT_TIPS } from '../content/mascot.js'
 import RobotCanvas, { useReducedMotion } from './RobotCanvas.jsx'
 
 /* The floating helper, as he would appear on the real site:
-   Byte in the corner + a clay speech bubble with rotating tips.
-   Tapping the robot (or the button) shows the next tip. */
-export default function MascotWidget() {
+   the mascot in the corner + a clay speech bubble with rotating tips.
+   Tapping the character (or the button) shows the next tip. */
+export default function MascotWidget({ character = 'robot' }) {
   const { t, tx } = useI18n()
   const reduced = useReducedMotion()
   const [open, setOpen] = useState(true)
@@ -14,7 +14,9 @@ export default function MascotWidget() {
   const [gesture, setGesture] = useState(null)
   const gestureId = useRef(0)
 
-  const fullText = tipIdx < 0 ? t('mascot.widget.greeting') : tx(MASCOT_TIPS[tipIdx])
+  const isGhost = character === 'ghost'
+  const greeting = isGhost ? t('mascot.widget.greetingGhost') : t('mascot.widget.greeting')
+  const fullText = tipIdx < 0 ? greeting : tx(MASCOT_TIPS[tipIdx])
   const [shown, setShown] = useState(fullText)
 
   // typewriter effect (instant when reduced motion is on)
@@ -42,7 +44,7 @@ export default function MascotWidget() {
   if (!open) {
     return (
       <button type="button" className="mascot-widget-chip" onClick={() => setOpen(true)} aria-label={t('mascot.widget.open')}>
-        🤖
+        {isGhost ? '👻' : '🤖'}
       </button>
     )
   }
@@ -63,7 +65,8 @@ export default function MascotWidget() {
         </button>
         <RobotCanvas
           size={150}
-          label={t('mascot.widget.label')}
+          character={character}
+          label={isGhost ? t('mascot.widget.labelGhost') : t('mascot.widget.label')}
           emotion="happy"
           gesture={gesture}
           talking={!reduced && shown.length < fullText.length}

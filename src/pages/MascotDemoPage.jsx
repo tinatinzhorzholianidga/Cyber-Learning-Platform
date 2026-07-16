@@ -35,6 +35,7 @@ export default function MascotDemoPage() {
   const reduced = useReducedMotion()
   const fps = useFps()
 
+  const [character, setCharacter] = useState('robot')
   const [emotion, setEmotion] = useState('happy')
   const [gesture, setGesture] = useState(null)
   const gestureId = useRef(0)
@@ -85,7 +86,8 @@ export default function MascotDemoPage() {
       <header className="hero mascot-hero">
         <span className="badge">🧪 {t('mascot.demo.badge')}</span>
         <h1>
-          {t('mascot.demo.title1')} <span className="grad">{t('mascot.name')}</span>
+          {t('mascot.demo.title1')}{' '}
+          <span className="grad">{character === 'ghost' ? t('mascot.ghostName') : t('mascot.name')}</span>
         </h1>
         <p>{t('mascot.demo.sub')}</p>
       </header>
@@ -94,7 +96,8 @@ export default function MascotDemoPage() {
         <section className="mascot-stage" aria-label={t('mascot.widget.label')}>
           <RobotCanvas
             size={SIZES[size]}
-            label={t('mascot.widget.label')}
+            character={character}
+            label={character === 'ghost' ? t('mascot.widget.labelGhost') : t('mascot.widget.label')}
             emotion={emotion}
             gesture={gesture}
             talking={tipText != null && shownTip.length < tipText.length}
@@ -115,6 +118,28 @@ export default function MascotDemoPage() {
         </section>
 
         <aside className="mascot-controls">
+          <div className="ctrl-group">
+            <h2>{t('mascot.demo.character')}</h2>
+            <div className="chip-row">
+              <button
+                type="button"
+                className={`chip-btn ${character === 'robot' ? 'active' : ''}`}
+                aria-pressed={character === 'robot'}
+                onClick={() => setCharacter('robot')}
+              >
+                🤖 {t('mascot.name')}
+              </button>
+              <button
+                type="button"
+                className={`chip-btn ${character === 'ghost' ? 'active' : ''}`}
+                aria-pressed={character === 'ghost'}
+                onClick={() => setCharacter('ghost')}
+              >
+                👻 {t('mascot.ghostName')}
+              </button>
+            </div>
+          </div>
+
           <div className="ctrl-group">
             <h2>{t('mascot.demo.emotions')}</h2>
             <div className="chip-row">
@@ -222,7 +247,7 @@ export default function MascotDemoPage() {
         <p className="mascot-note">🔒 {t('mascot.demo.note')}</p>
       </section>
 
-      {widgetOn && <MascotWidget />}
+      {widgetOn && <MascotWidget character={character} />}
     </div>
   )
 }
