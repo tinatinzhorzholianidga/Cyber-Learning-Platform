@@ -1,6 +1,6 @@
 import { Component, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import GhostModel from './GhostModel.jsx'
+import HeroModel from './HeroModel.jsx'
 import RobotModel from './RobotModel.jsx'
 
 export function useReducedMotion() {
@@ -48,7 +48,7 @@ class GLBoundary extends Component {
 export default function RobotCanvas({ size = 300, className = '', label, character = 'robot', ...robotProps }) {
   const reduced = useReducedMotion()
   const [hasWebgl] = useState(webglAvailable)
-  const Model = character === 'ghost' ? GhostModel : RobotModel
+  const Model = character === 'hero' ? HeroModel : RobotModel
 
   return (
     <div

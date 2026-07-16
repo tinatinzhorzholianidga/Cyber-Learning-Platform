@@ -56,25 +56,26 @@ await page.waitForTimeout(1500)
 await page.screenshot({ path: `${outDir}/widget-preview.png` })
 await page.getByRole('button', { name: /Show him as he will appear/i }).click() // widget off again
 
-// ---- Cipher, the guardian ghost ----
-await page.getByRole('button', { name: /Cipher/ }).click()
+// ---- Hero, the hooded guardian ----
+await page.getByRole('button', { name: /Hero|გმირა/ }).click()
 await page.waitForTimeout(2600)
-await page.screenshot({ path: `${outDir}/ghost-demo.png` })
-await stage.screenshot({ path: `${outDir}/ghost-happy.png` })
+await page.screenshot({ path: `${outDir}/hero-demo.png` })
+await stage.screenshot({ path: `${outDir}/hero-happy.png` })
 
 for (const [btn, name] of [
   ['Thinking', 'thinking'],
   ['Sleepy', 'resting'],
+  ['Funny', 'funny'],
   ['Celebrating', 'celebrate'],
 ]) {
   await page.getByRole('button', { name: btn, exact: true }).click()
-  await page.waitForTimeout(2400)
-  await stage.screenshot({ path: `${outDir}/ghost-${name}.png` })
+  await page.waitForTimeout(2600)
+  await stage.screenshot({ path: `${outDir}/hero-${name}.png` })
 }
 await page.getByRole('button', { name: 'Happy', exact: true }).click()
 await page.getByRole('button', { name: 'Wave', exact: true }).click()
 await page.waitForTimeout(700)
-await stage.screenshot({ path: `${outDir}/ghost-wave.png` })
+await stage.screenshot({ path: `${outDir}/hero-wave.png` })
 await page.waitForTimeout(2000)
 await page.getByRole('button', { name: /Byte|ბაიტი/ }).click() // back to the robot
 

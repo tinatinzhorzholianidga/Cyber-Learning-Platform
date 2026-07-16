@@ -229,6 +229,18 @@ export function drawFace(ctx, state) {
       happyArcEye(ctx, eyeR, eyeY - 12)
       smile(ctx, 256, mouthY - 6, 138, Math.max(0.6, mouthOpen))
       break
+    case 'funny':
+      // laughing: one eye winked, big open smile with tongue
+      happyArcEye(ctx, eyeL, eyeY - 12)
+      eye(ctx, eyeR, eyeY, open, pupilX, pupilY)
+      smile(ctx, 256, mouthY - 4, 148, Math.max(0.75, mouthOpen))
+      ctx.fillStyle = VIOLET
+      ctx.font = '800 34px "Noto Sans Georgian Variable", sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('HA', 416, 236)
+      ctx.font = '800 26px "Noto Sans Georgian Variable", sans-serif'
+      ctx.fillText('HA', 436, 268)
+      break
     case 'thinking': {
       // eyes drift up and to the side, one raised brow, small flat mouth
       ctx.strokeStyle = INK

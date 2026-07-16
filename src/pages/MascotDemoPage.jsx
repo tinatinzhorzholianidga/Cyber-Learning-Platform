@@ -5,7 +5,7 @@ import { MASCOT_CHECKLIST, MASCOT_TIPS } from '../content/mascot.js'
 import MascotWidget from '../mascot/MascotWidget.jsx'
 import RobotCanvas, { useReducedMotion } from '../mascot/RobotCanvas.jsx'
 
-const EMOTIONS = ['happy', 'excited', 'wink', 'thinking', 'celebrate', 'surprised', 'sleepy', 'sad']
+const EMOTIONS = ['happy', 'excited', 'funny', 'wink', 'thinking', 'celebrate', 'surprised', 'sleepy', 'sad']
 const GESTURES = ['wave', 'bounce', 'spin']
 const SIZES = { s: 220, m: 320, l: 430 }
 
@@ -87,7 +87,7 @@ export default function MascotDemoPage() {
         <span className="badge">🧪 {t('mascot.demo.badge')}</span>
         <h1>
           {t('mascot.demo.title1')}{' '}
-          <span className="grad">{character === 'ghost' ? t('mascot.ghostName') : t('mascot.name')}</span>
+          <span className="grad">{character === 'hero' ? t('mascot.heroName') : t('mascot.name')}</span>
         </h1>
         <p>{t('mascot.demo.sub')}</p>
       </header>
@@ -97,7 +97,7 @@ export default function MascotDemoPage() {
           <RobotCanvas
             size={SIZES[size]}
             character={character}
-            label={character === 'ghost' ? t('mascot.widget.labelGhost') : t('mascot.widget.label')}
+            label={character === 'hero' ? t('mascot.widget.labelHero') : t('mascot.widget.label')}
             emotion={emotion}
             gesture={gesture}
             talking={tipText != null && shownTip.length < tipText.length}
@@ -131,11 +131,11 @@ export default function MascotDemoPage() {
               </button>
               <button
                 type="button"
-                className={`chip-btn ${character === 'ghost' ? 'active' : ''}`}
-                aria-pressed={character === 'ghost'}
-                onClick={() => setCharacter('ghost')}
+                className={`chip-btn ${character === 'hero' ? 'active' : ''}`}
+                aria-pressed={character === 'hero'}
+                onClick={() => setCharacter('hero')}
               >
-                👻 {t('mascot.ghostName')}
+                🦸 {t('mascot.heroName')}
               </button>
             </div>
           </div>

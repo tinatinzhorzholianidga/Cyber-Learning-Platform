@@ -111,7 +111,7 @@ export default {
   },
   mascot: {
     name: 'Byte',
-    ghostName: 'Cipher',
+    heroName: 'Hero',
     demo: {
       badge: 'Demo - not public',
       title1: 'Meet',
@@ -138,6 +138,7 @@ export default {
     emotions: {
       happy: 'Happy',
       excited: 'Excited',
+      funny: 'Funny',
       wink: 'Wink',
       thinking: 'Thinking',
       celebrate: 'Celebrating',
@@ -152,12 +153,12 @@ export default {
     },
     widget: {
       greeting: "Hi! I'm Byte - your cyber helper. Click me for a tip.",
-      greetingGhost: "Boo! I'm Cipher - I guard this place. Click me for a tip.",
+      greetingHero: "Hi! I'm Hero - I protect this place. Click me for a tip.",
       open: 'Open the helper',
       close: 'Hide the helper',
       nextTip: 'Another tip',
       label: 'Byte, the CyberHero helper robot',
-      labelGhost: 'Cipher, the CyberHero guardian ghost',
+      labelHero: 'Hero, the CyberHero hooded guardian',
     },
   },
 }

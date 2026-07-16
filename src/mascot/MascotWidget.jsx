@@ -14,8 +14,8 @@ export default function MascotWidget({ character = 'robot' }) {
   const [gesture, setGesture] = useState(null)
   const gestureId = useRef(0)
 
-  const isGhost = character === 'ghost'
-  const greeting = isGhost ? t('mascot.widget.greetingGhost') : t('mascot.widget.greeting')
+  const isHero = character === 'hero'
+  const greeting = isHero ? t('mascot.widget.greetingHero') : t('mascot.widget.greeting')
   const fullText = tipIdx < 0 ? greeting : tx(MASCOT_TIPS[tipIdx])
   const [shown, setShown] = useState(fullText)
 
@@ -44,7 +44,7 @@ export default function MascotWidget({ character = 'robot' }) {
   if (!open) {
     return (
       <button type="button" className="mascot-widget-chip" onClick={() => setOpen(true)} aria-label={t('mascot.widget.open')}>
-        {isGhost ? '👻' : '🤖'}
+        {isHero ? '🦸' : '🤖'}
       </button>
     )
   }
@@ -66,7 +66,7 @@ export default function MascotWidget({ character = 'robot' }) {
         <RobotCanvas
           size={150}
           character={character}
-          label={isGhost ? t('mascot.widget.labelGhost') : t('mascot.widget.label')}
+          label={isHero ? t('mascot.widget.labelHero') : t('mascot.widget.label')}
           emotion="happy"
           gesture={gesture}
           talking={!reduced && shown.length < fullText.length}
