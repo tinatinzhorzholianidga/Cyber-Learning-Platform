@@ -7,6 +7,28 @@ export default {
     en: 'Top athletes obsess over sleep because it is free, legal performance enhancement. Meanwhile the feed in your hand was engineered by some of the best-paid engineers alive to keep you watching - including at 01:00. This mission is not "screens are bad". It is an audit: who is actually running your evening - you, or the algorithm?',
     ka: 'საუკეთესო სპორტსმენები ძილზე იმიტომ გიჟდებიან, რომ ეს უფასო და ლეგალური დოპინგია. ამასობაში ლენტა შენს ხელში მსოფლიოს ერთ-ერთი ყველაზე მაღალანაზღაურებადი ინჟინრების აწყობილია იმისთვის, რომ უყურო - 01:00-ზეც. ეს მისია არ არის „ეკრანები ცუდია“. ეს აუდიტია: სინამდვილეში ვინ მართავს შენს საღამოს - შენ თუ ალგორითმი?',
   },
+  theory: [
+    {
+      en: 'The real measure is displacement, not hours: screen time is a problem when it eats your sleep, your friends or the rest of your life - not when a counter hits some number.',
+      ka: 'ნამდვილი საზომი ჩანაცვლებაა და არა საათები: საეკრანო დრო მაშინ არის პრობლემა, როცა ძილს, მეგობრებს ან დანარჩენ ცხოვრებას გიჭამს - და არა მაშინ, როცა მთვლელი რომელიღაც ციფრს მიაღწევს.',
+    },
+    {
+      en: 'Sleep comes first - it is free performance enhancement, and top athletes guard it like treasure. A bright screen at midnight pushes sleepiness later, never closer.',
+      ka: 'ძილი პირველია - ის უფასო დოპინგია და საუკეთესო სპორტსმენები მას განძივით იცავენ. კაშკაშა ეკრანი შუაღამისას ძილიანობას აშორებს და არასდროს - აახლოებს.',
+    },
+    {
+      en: 'Friction beats willpower. A phone charging outside the bedroom wins the fight your discipline loses at 00:30 - you cannot scroll what you cannot reach.',
+      ka: 'ხახუნი ნებისყოფას ამარცხებს. საძინებლის გარეთ დამტენზე დადებული ტელეფონი იგებს ბრძოლას, რომელსაც შენი დისციპლინა 00:30-ზე აგებს - რასაც ვერ წვდები, ვერც დაასქროლავ.',
+    },
+    {
+      en: 'Feeds are bottomless on purpose: there is no last video, and teams of engineers are paid to turn "one more" into forty. Losing to that design is not weakness.',
+      ka: 'ლენტა განზრახ უფსკერულია: ბოლო ვიდეო არ არსებობს, ინჟინრების გუნდებს კი იმაში უხდიან, რომ „კიდევ ერთი“ ორმოცად აქციონ. ამ დიზაინთან წაგება სისუსტე არ არის.',
+    },
+    {
+      en: 'Curate the feed: mute or unfollow whatever reliably makes you feel worse. The algorithm reads that signal and rebuilds around it - you run it, not the other way around.',
+      ka: 'გააკეთე ლენტის კურირება: გააჩუმე ან გააუქმე ყველაფერი, რაც სტაბილურად თავს ცუდად გაგრძნობინებს. ალგორითმი ამ სიგნალს კითხულობს და ლენტას მის მიხედვით გიწყობს - მას შენ მართავ და არა პირიქით.',
+    },
+  ],
   rounds: [
     {
       type: 'choice',

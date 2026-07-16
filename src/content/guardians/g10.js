@@ -8,6 +8,24 @@ export default {
     en: 'Ten questions. Twenty-five seconds each. Score 80% and you are a Guardian - certificate included. Every scenario is new; every skill is one you already trained. Fail and you lose nothing: no points burned, retake whenever you want. The clock starts when you do.',
     ka: 'ათი კითხვა. თითოზე 25 წამი. აიღე 80% - და დამცველი ხარ, სერტიფიკატითურთ. ყველა სცენარი ახალია; ყველა უნარი - უკვე ნავარჯიშები. ჩაჭრით არაფერს კარგავ: ქულები არ იწვება, გადაბარება ნებისმიერ დროს შეგიძლია. ათვლა მაშინ იწყება, როცა შენ დაიწყებ.',
   },
+  theory: [
+    {
+      en: 'Attackers rush you; Guardians slow down. Urgency, deadlines and "act now" mean: pause, check the real sender, go direct.',
+      ka: 'თავდამსხმელი გაჩქარებს, დამცველი კი ანელებს. სისწრაფე, ვადები და „ახლავე“ ნიშნავს: შეჩერდი, შეამოწმე ნამდვილი გამომგზავნი, იმოქმედე პირდაპირ.',
+    },
+    {
+      en: 'Lock the doors in advance: long unique passphrases, 2FA on your email first, and a private profile that never announces where you are right now.',
+      ka: 'ჩაკეტე კარები წინასწარ: გრძელი უნიკალური ფრაზა-პაროლები, 2FA ჯერ ელფოსტაზე და პრივატული პროფილი, რომელიც არასდროს აცხადებს, სად ხარ ახლა.',
+    },
+    {
+      en: 'Blackmail, bullying and grooming all collapse the same way: save the evidence, block without deleting, tell a trusted adult, report - 112 and Take It Down. The target is never at fault.',
+      ka: 'შანტაჟი, ბულინგი და გრუმინგი ერთნაირად ინგრევა: შეინახე მტკიცებულება, დაბლოკე წაშლის გარეშე, უთხარი სანდო უფროსს, დაარეპორტე - 112 და Take It Down. სამიზნე არასდროს არის დამნაშავე.',
+    },
+    {
+      en: 'Verify before you trust or share: the source before the content, money requests through a channel YOU start - and your attention runs on your terms, not the feed’s.',
+      ka: 'ჯერ გადაამოწმე, მერე ენდე ან გააზიარე: ჯერ წყარო და მერე შინაარსი, ფულის თხოვნა - არხით, რომელსაც შენ იწყებ. შენი ყურადღება კი შენი პირობებით მუშაობს და არა ლენტის პირობებით.',
+    },
+  ],
   rounds: [
     {
       type: 'choice',
