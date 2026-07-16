@@ -7,6 +7,28 @@ export default {
     en: 'Your feed just refreshed. News, photos, a voice message, an announcement - some real, some engineered to fool anyone, and one built to fool specifically you. Call each one, then see the reveal. Your goal is not paranoia: it is a radar that also lets true things through.',
     ka: 'შენი ლენტა ახლახან განახლდა. ამბები, ფოტოები, ხმოვანი შეტყობინება, განცხადება - ზოგი ნამდვილია, ზოგი ნებისმიერის მოსატყუებლად არის აწყობილი, ერთი კი კონკრეტულად შენს მოსატყუებლად. გამოიტანე ვერდიქტი თითოეულზე და ნახე პასუხი. შენი მიზანი პარანოია არ არის: მიზანია რადარი, რომელიც ნამდვილ ამბებსაც ატარებს.',
   },
+  theory: [
+    {
+      en: 'Feeds are ranked by engagement, not truth. Posts that make you angry or scared travel further - by design, not by accident.',
+      ka: 'ლენტა ჩართულობით ლაგდება და არა სიმართლით. პოსტები, რომლებიც გაბრაზებს ან გაშინებს, უფრო შორს მიდის - განზრახ და არა შემთხვევით.',
+    },
+    {
+      en: 'The strongest tool is the 30-second lateral check: leave the post, search the claim in a new tab, and see whether one real outlet confirms it.',
+      ka: 'ყველაზე ძლიერი ინსტრუმენტი 30-წამიანი გვერდითი შემოწმებაა: დატოვე პოსტი, მოძებნე მტკიცება ახალ ფანჯარაში და ნახე, ადასტურებს თუ არა ერთი ნამდვილი გამოცემა მაინც.',
+    },
+    {
+      en: 'AI images and cloned voices are cheap now. Tells like melted hands vanish with every update - checking the source outlives checking the pixels.',
+      ka: 'ხელოვნური ინტელექტის ფოტოები და კლონირებული ხმები დღეს იაფია. ნიშნები, როგორიცაა „გამდნარი“ ხელები, ყოველ განახლებასთან ერთად ქრება - წყაროს შემოწმება პიქსელების შემოწმებაზე მეტხანს ცოცხლობს.',
+    },
+    {
+      en: 'The most common fake of all is real footage with a false caption. Ask "when and where was this filmed" - not just "is it real".',
+      ka: 'ყველაზე გავრცელებული სიყალბე ნამდვილი კადრებია ყალბი წარწერით. იკითხე „როდის და სად არის გადაღებული“ - და არა მხოლოდ „ნამდვილია თუ არა“.',
+    },
+    {
+      en: 'Popularity is not evidence: a viral lie shows the same share counter as a viral truth. And the more you WANT a post to be true, the more it needs checking first.',
+      ka: 'პოპულარობა მტკიცებულება არ არის: ვირუსულ ტყუილს ისეთივე გაზიარების მთვლელი აქვს, როგორიც ვირუსულ სიმართლეს. და რაც უფრო გინდა, პოსტი სიმართლე იყოს, მით მეტად სჭირდება ჯერ შემოწმება.',
+    },
+  ],
   rounds: [
     {
       type: 'choice',

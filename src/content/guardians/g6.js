@@ -7,6 +7,28 @@ export default {
     en: 'The class chat "10b 🔥" has 31 people in it, and right now all of them are looking at the same video: your classmate Dato falling in PE. The jokes are stacking fast, and Dato is online - he sees every message. You are not watching this story. You are in it, and it will go where you push it.',
     ka: 'საკლასო ჩატში „10ბ 🔥“ 31 ადამიანია და ახლა ყველა ერთსა და იმავე ვიდეოს უყურებს: შენი თანაკლასელი დათო ფიზკულტურაზე ეცემა. ხუმრობები სწრაფად გროვდება, დათო კი ონლაინაა - ის ყველა შეტყობინებას ხედავს. შენ ამ ამბავს არ უყურებ. შენ მის შიგნით ხარ - და ის იქით წავა, საითაც შენ წასწევ.',
   },
+  theory: [
+    {
+      en: 'The line between banter and bullying is three questions: does it repeat after "stop", is it a group against one, are both sides laughing? Banter is symmetric - bullying has a target.',
+      ka: 'ხუმრობასა და ბულინგს შორის ზღვარი სამი კითხვაა: მეორდება „შეწყვიტეს“ შემდეგ? ჯგუფია ერთის წინააღმდეგ? ორივე მხარე იცინის? ხუმრობა სიმეტრიულია - ბულინგს კი სამიზნე ჰყავს.',
+    },
+    {
+      en: 'Pile-ons run on audience. Every laughing emoji is fuel, and one message that changes the subject can take the air out of the whole thing.',
+      ka: 'ჯგუფური დაცინვა აუდიტორიაზე მუშაობს. ყოველი მოცინარი ემოჯი საწვავია, ერთ თემის შემცვლელ შეტყობინებას კი მთელი ამბისთვის ჰაერის გამოცლა შეუძლია.',
+    },
+    {
+      en: 'Silence is not neutral: the bully reads it as approval, and the target reads it as the whole class.',
+      ka: 'დუმილი ნეიტრალური არ არის: მჩაგვრელი მას მოწონებად კითხულობს, სამიზნე კი - მთელ კლასად.',
+    },
+    {
+      en: 'A private "I am with you, this is not ok" is what targets remember years later. Support does not have to be public to work.',
+      ka: 'პირადი „მე შენთან ვარ, ეს ნორმალური არ არის“ ის არის, რაც სამიზნეებს წლების შემდეგაც ახსოვთ. მხარდაჭერა საჯარო არ უნდა იყოს იმისთვის, რომ იმუშაოს.',
+    },
+    {
+      en: 'When it escalates, the ladder is: screenshot, block, report, support - plus a trusted adult. Evidence first, because screenshots survive deleted accounts.',
+      ka: 'როცა საქმე მწვავდება, კიბე ასეთია: სქრინი, დაბლოკვა, დარეპორტება, მხარდაჭერა - და სანდო უფროსი. ჯერ მტკიცებულება, რადგან სქრინები წაშლილ ანგარიშებსაც გადაურჩება.',
+    },
+  ],
   helpStrip: {
     en: 'If a chat is targeting you right now: screenshot it, block them, and tell an adult you trust - a teacher, a parent, the school psychologist. You don’t have to handle this alone.',
     ka: 'თუ ახლა რომელიმე ჩატში სამიზნე შენ ხარ: გადაუღე სქრინი, დაბლოკე და უთხარი უფროსს, რომელსაც ენდობი - მასწავლებელს, მშობელს, სკოლის ფსიქოლოგს. ამის მარტო გამკლავება არ გიწევს.',

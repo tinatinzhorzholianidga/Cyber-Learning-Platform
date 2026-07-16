@@ -6,6 +6,28 @@ export default {
     en: 'Right now, somewhere, a machine is guessing passwords - billions per second, no breaks, no lunch. Today it gets your accounts to chew on. First you watch how long each door holds. Then you build a fortress the machine gives up on.',
     ka: 'ახლა, სადღაც, მანქანა პაროლებს არჩევს - მილიარდობით ვარიანტს წამში, შესვენებისა და სადილის გარეშე. დღეს მას შენი ანგარიშები შეხვდება. ჯერ ნახავ, რამდენ ხანს უძლებს თითოეული კარი. მერე ააგებ ციხესიმაგრეს, რომელზეც მანქანა ხელს ჩაიქნევს.',
   },
+  theory: [
+    {
+      en: 'Cracking machines guess billions of passwords per second. Length is what stops them: four random words hold for centuries; a short "clever" one falls in hours.',
+      ka: 'გამტეხი მანქანები წამში მილიარდობით პაროლს არჩევენ. მათ სიგრძე აჩერებს: ოთხი შემთხვევითი სიტყვა საუკუნეებს უძლებს, მოკლე „ეშმაკური“ პაროლი კი საათებში ეცემა.',
+    },
+    {
+      en: 'One password reused everywhere means one leaked site opens all your accounts - bots try leaked pairs on every big service within hours.',
+      ka: 'ყველგან ერთი და იგივე პაროლი ნიშნავს, რომ ერთი გატეხილი საიტი შენს ყველა ანგარიშს აღებს - ბოტები გაჟონილ წყვილებს ყველა დიდ სერვისზე რამდენიმე საათში ცდიან.',
+    },
+    {
+      en: 'Your email is the master key: every other password resets through it. Protect it first - and hardest.',
+      ka: 'შენი ელფოსტა მთავარი გასაღებია: ყველა სხვა პაროლი მისით აღდგება. ის დაიცავი პირველად - და ყველაზე მაგრად.',
+    },
+    {
+      en: '2FA is a second lock: a stolen password alone stops working. Nobody legitimate ever asks for that code - the only person who will is the attacker.',
+      ka: '2FA მეორე საკეტია: მოპარული პაროლი ცალკე აღარ მუშაობს. ამ კოდს ნამდვილი სერვისი არასდროს გთხოვს - ერთადერთი, ვინც მოგთხოვს, თავდამსხმელია.',
+    },
+    {
+      en: 'A password manager generates and remembers a unique passphrase for every account - you only remember one strong master phrase.',
+      ka: 'პაროლების მენეჯერი ყველა ანგარიშისთვის უნიკალურ ფრაზა-პაროლს ქმნის და იმახსოვრებს - შენ მხოლოდ ერთი ძლიერი მთავარი ფრაზა უნდა გახსოვდეს.',
+    },
+  ],
   rounds: [
     {
       type: 'choice',

@@ -5,6 +5,28 @@ export default {
     en: 'Six messages just landed on your phone. Some are real. Some are traps built to steal your passwords or money. Read each one like a hunter: who sent it, what do they want, and why right now? Decide - then see what you caught.',
     ka: 'შენს ტელეფონზე ექვსი შეტყობინება მოვიდა. ზოგი ნამდვილია. ზოგი - ხაფანგი, რომელიც შენი პაროლების ან ფულის მოსაპარად შეიქმნა. წაიკითხე თითოეული მონადირესავით: ვინ გამოგზავნა, რა უნდა და რატომ ახლავე? გადაწყვიტე - და ნახე, რა დაიჭირე.',
   },
+  theory: [
+    {
+      en: 'Phishing - fake messages that fish for your passwords or money. They dress up as your bank, a game, a delivery service: anything you already trust.',
+      ka: 'ფიშინგი - ყალბი შეტყობინებები, რომლებიც შენს პაროლებსა და ფულზე „თევზაობენ“. ისინი შენს ბანკად, თამაშად ან საკურიერო სერვისად ინიღბებიან: ყველაფრად, რასაც ისედაც ენდობი.',
+    },
+    {
+      en: 'Urgency is the weapon. "Your card is blocked - verify within 2 hours!" exists to make you click before you think; real services never hand you a countdown.',
+      ka: 'აჩქარება იარაღია. „თქვენი ბარათი დაიბლოკა - გაიარეთ ვერიფიკაცია 2 საათში!“ იმისთვის არსებობს, რომ დაფიქრებამდე დააწკაპუნო; ნამდვილი სერვისი ათვლის ტაიმერს არ გირთავს.',
+    },
+    {
+      en: 'Check the exact sender domain, not the display name: streamf1ix is not streamflix, and bank-secure-ge.com is not your bank. One letter is all a fake needs.',
+      ka: 'შეამოწმე გამომგზავნის ზუსტი დომენი და არა გამოსახული სახელი: streamf1ix არ არის streamflix, bank-secure-ge.com კი შენი ბანკი არ არის. ყალბს ერთი ასოც ჰყოფნის.',
+    },
+    {
+      en: 'No real service - bank, game or app - ever asks for your password or SMS code through a link. That request is the attack itself.',
+      ka: 'არცერთი ნამდვილი სერვისი - ბანკი, თამაში თუ აპი - ბმულით პაროლს ან SMS კოდს არასდროს გთხოვს. ეს თხოვნა თავად თავდასხმაა.',
+    },
+    {
+      en: 'When in doubt, go direct: open the app yourself, type the address yourself, or call the number on the back of your card.',
+      ka: 'ეჭვის დროს იმოქმედე პირდაპირ: თავად გახსენი აპი, თავად აკრიფე მისამართი ან დარეკე ბარათის უკანა მხარეს მითითებულ ნომერზე.',
+    },
+  ],
   rounds: [
     {
       type: 'choice',

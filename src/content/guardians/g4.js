@@ -8,6 +8,32 @@ export default {
     en: 'This mission is built from real, documented cases. It starts like a normal chat - that is the point: it always does. You will play it from two seats: first as the target, then as the friend someone trusts with it. There is no path here where you are to blame, and no path without a way out.',
     ka: 'ეს მისია რეალური, დოკუმენტირებული შემთხვევებისგან არის აწყობილი. ის ჩვეულებრივი მიმოწერით იწყება - და ეს არის მთავარი: ყოველთვის ასე იწყება. ითამაშებ ორი პოზიციიდან: ჯერ როგორც სამიზნე, შემდეგ როგორც მეგობარი, რომელსაც ამ ამბავს ანდობენ. აქ არ არსებობს გზა, სადაც შენ ხარ დამნაშავე - და არ არსებობს გზა გამოსავლის გარეშე.',
   },
+  theory: [
+    {
+      en: 'The trap is a rehearsed script: a friendly "peer" appears, flirts, asks for a photo - and flips to threats in minutes. The same script runs on thousands of teens at once.',
+      ka: 'ეს ხაფანგი დაზეპირებული სცენარია: ჩნდება მეგობრული „თანატოლი“, ფლირტავს, ფოტოს ითხოვს - და წუთებში მუქარაზე გადადის. ერთი და იგივე სცენარი ერთდროულად ათასობით მოზარდზე ეშვება.',
+    },
+    {
+      en: 'The blame belongs to the blackmailer. Always. Whatever was sent, the crime is theirs - not the sender’s.',
+      ka: 'ბრალი შანტაჟისტისაა. ყოველთვის. რაც არ უნდა გაიგზავნა, დანაშაული მისია - და არა გამგზავნის.',
+    },
+    {
+      en: 'Never pay and never send more. Paying does not end it - it marks you as someone who pays, and the demand comes back bigger.',
+      ka: 'არასოდეს გადაიხადო და მეტი არასოდეს გაგზავნო. გადახდა ამას არ ასრულებს - ის შანტაჟისტს ანიშნებს, რომ „გადამხდელი“ ხარ, და მოთხოვნა გაზრდილი ბრუნდება.',
+    },
+    {
+      en: 'Block - but do not delete. The chat is the evidence that shuts these accounts down.',
+      ka: 'დაბლოკე - მაგრამ ნუ წაშლი. მიმოწერა ის მტკიცებულებაა, რომელიც ასეთ ანგარიშებს ხურავს.',
+    },
+    {
+      en: 'Telling a trusted adult is the move that ends it. In Georgia, 112 and the MIA cyber-crime division handle exactly these cases.',
+      ka: 'სანდო უფროსისთვის თქმა ის სვლაა, რომელიც ამას ასრულებს. საქართველოში ზუსტად ამ საქმეებს 112 და შსს-ს კიბერდანაშაულის სამმართველო განიხილავს.',
+    },
+    {
+      en: 'Take It Down (takeitdown.ncmec.org) is a free, anonymous service that blocks intimate images of under-18s on major platforms - even ones already sent.',
+      ka: 'Take It Down (takeitdown.ncmec.org) უფასო, ანონიმური სერვისია, რომელიც 18 წლამდე პირთა ინტიმურ ფოტოებს დიდ პლატფორმებზე ბლოკავს - უკვე გაგზავნილსაც.',
+    },
+  ],
   helpStrip: {
     en: 'If something like this is happening to you or a friend right now: it is not your fault. Don’t pay, don’t delete the chat - tell an adult you trust, call 112, and takeitdown.ncmec.org can help remove images of under-18s.',
     ka: 'თუ მსგავსი რამ ახლა ხდება შენთან ან შენს მეგობართან: ეს შენი ბრალი არ არის. ნუ გადაიხდი, ნუ წაშლი მიმოწერას - უთხარი სანდო უფროსს, დარეკე 112-ზე. takeitdown.ncmec.org კი დაგეხმარება 18 წლამდე პირის ფოტოების წაშლაში.',

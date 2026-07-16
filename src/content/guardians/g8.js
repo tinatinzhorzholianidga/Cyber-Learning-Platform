@@ -7,6 +7,32 @@ export default {
     en: 'Nika is 14 and good at his favorite game. A month ago someone called Alex_Coach messaged him: friendly, generous, always online. Tonight you read the whole conversation from the outside. Your job is to spot the pattern Nika cannot see from the inside - and then decide what happens next.',
     ka: 'ნიკა 14 წლისაა და კარგად თამაშობს თავის საყვარელ თამაშს. ერთი თვის წინ ვიღაც Alex_Coach-მა მისწერა: მეგობრული, ხელგაშლილი, ყოველთვის ონლაინ. ამაღამ მთელ მიმოწერას გარედან წაიკითხავ. შენი საქმეა შენიშნო შაბლონი, რომელსაც ნიკა შიგნიდან ვერ ხედავს - და შემდეგ გადაწყვიტო, რა მოხდება მერე.',
   },
+  theory: [
+    {
+      en: 'Grooming is an adult slowly building trust with a teen in order to use them later. It is a pattern of small moves, not one creepy message - and it works on smart kids too.',
+      ka: 'გრუმინგი ის არის, როცა უფროსი მოზარდთან ნდობას ნელ-ნელა აშენებს, რომ მოგვიანებით გამოიყენოს. ეს წვრილი სვლების შაბლონია და არა ერთი საეჭვო შეტყობინება - და ის ჭკვიან ბავშვებზეც მუშაობს.',
+    },
+    {
+      en: '"You are so mature for your age" is a documented grooming line: flattery that dresses up an adult-teen chat as one between equals. It is a lever, not a compliment.',
+      ka: '„შენს ასაკზე ბევრად მოწიფული ხარ“ გრუმინგის ცნობილი ფრაზაა: ფერება, რომელიც უფროსსა და მოზარდს შორის მიმოწერას „თანასწორთა“ საუბრად ასაღებს. ეს ბერკეტია და არა კომპლიმენტი.',
+    },
+    {
+      en: 'Gifts from an online stranger are leverage: they build a debt to be cashed in later. You never owe anyone photos - no matter what they gave you.',
+      ka: 'ონლაინ უცნობის საჩუქრები ბერკეტია: ისინი ვალის განცდას აშენებენ, რომელსაც მოგვიანებით მოითხოვენ. ფოტოს ვალი არავისთან გაქვს - რაც უნდა ეჩუქებინა შენთვის.',
+    },
+    {
+      en: '"Let us move to a more private app" means fewer moderators, disappearing messages and less evidence. Ask one question: who benefits from the dark?',
+      ka: '„უფრო პრივატულ აპზე გადავიდეთ“ ნიშნავს ნაკლებ მოდერატორს, გაქრობად შეტყობინებებს და ნაკლებ მტკიცებულებას. დასვი ერთი კითხვა: ვის აწყობს სიბნელე?',
+    },
+    {
+      en: '"Our secret" and "do not tell your parents" end the discussion: real friendship survives being known about. Cutting you off from your parents is the core move.',
+      ka: '„ჩვენი საიდუმლოა“ და „მშობლებს ნუ ეტყვი“ კამათს ასრულებს: ნამდვილი მეგობრობა უძლებს იმას, რომ მის შესახებ იციან. მშობლებისგან შენი მოწყვეტა მთავარი სვლაა.',
+    },
+    {
+      en: 'The target is never at fault - the adult is running the play. If it is happening: stop replying, screenshot, block, tell a trusted adult, and in Georgia call 112.',
+      ka: 'სამიზნე არასდროს არის დამნაშავე - თამაშს უფროსი მართავს. თუ ეს უკვე ხდება: აღარ უპასუხო, გადაუღე სქრინი, დაბლოკე, უთხარი სანდო უფროსს, საქართველოში კი დარეკე 112-ზე.',
+    },
+  ],
   helpStrip: {
     en: 'If an online "friend" asks you for photos, for secrets, or to hide the friendship - that is not friendship. Tell an adult you trust. You will not be in trouble: you are the one being targeted, and none of it is your fault.',
     ka: 'თუ ონლაინ „მეგობარი“ ფოტოებს გთხოვს, საიდუმლოს ან მეგობრობის დამალვას - ეს მეგობრობა არ არის. უთხარი უფროსს, რომელსაც ენდობი. არავინ დაგსჯის: სამიზნე შენ ხარ და ეს შენი ბრალი არ არის.',

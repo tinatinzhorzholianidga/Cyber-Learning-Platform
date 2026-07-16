@@ -7,6 +7,28 @@ export default {
     en: 'Six offers are about to hit your feed: a shop, a gift card, crypto, a game trade, a discount, a job. Most are traps built to take your money - or your identity. At least one is real. A good radar catches the scams AND lets the real thing through. Read each offer like your money is already on the table. Because it is.',
     ka: 'ექვსი შეთავაზება მოდის შენს ლენტაზე: მაღაზია, სასაჩუქრე ბარათი, კრიპტო, თამაშის გაცვლა, ფასდაკლება, სამსახური. უმეტესობა ხაფანგია, რომელიც შენი ფულის - ან შენი ვინაობის - წასაღებად შეიქმნა. მინიმუმ ერთი კი ნამდვილია. კარგი რადარი თაღლითობებს იჭერს და ნამდვილს ატარებს. წაიკითხე თითოეული ისე, თითქოს შენი ფული უკვე მაგიდაზეა. რადგან ასეა.',
   },
+  theory: [
+    {
+      en: 'Too good to be true is the whole trick: 80% off, money that doubles, dream pay for no experience. The fantasy price is the bait.',
+      ka: '„ზედმეტად კარგი, რომ სიმართლე იყოს“ - მთელი ხრიკი ეს არის: 80%-იანი ფასდაკლება, ფული, რომელიც ორმაგდება, საოცნებო ანაზღაურება გამოცდილების გარეშე. ფანტასტიკური ფასი სატყუარაა.',
+    },
+    {
+      en: 'Prepayment to a personal account is money gone: no buyer protection, no way back. That is the classic marketplace trick on olx.ge and mymarket.ge - card payment through a real checkout can be reversed.',
+      ka: 'წინასწარი გადარიცხვა პირად ანგარიშზე წასული ფულია: არც მყიდველის დაცვა, არც უკან დაბრუნების გზა. ეს olx.ge-სა და mymarket.ge-ზე გავრცელებული კლასიკური ხრიკია - ბარათით გადახდა ნამდვილ საიტზე კი საჩივრდება და ბრუნდება.',
+    },
+    {
+      en: 'A weird money message from a friend often means a hacked account: the name proves the account, not the person. Verify out-of-band - call or ask in person.',
+      ka: 'მეგობრისგან მოსული უცნაური ფულადი შეტყობინება ხშირად გატეხილ ანგარიშს ნიშნავს: სახელი ანგარიშს ამტკიცებს და არა ადამიანს. გადაამოწმე სხვა არხით - დარეკე ან პირისპირ ჰკითხე.',
+    },
+    {
+      en: 'Real employers never charge you: a job that starts with an "activation fee" is not a job. And your ID photo is worth far more to a scammer than that fee.',
+      ka: 'ნამდვილი დამსაქმებელი ფულს არასდროს გართმევს: სამსახური, რომელიც „აქტივაციის საფასურით“ იწყება, სამსახური არ არის. შენი პირადობის ფოტო კი თაღლითისთვის იმ გადასახადზე ბევრად ძვირი ღირს.',
+    },
+    {
+      en: 'Real offers have a signature too: an established verified seller, a believable price, protected payment, a returns policy. Scammers make paying faster; real sellers make it safer.',
+      ka: 'ნამდვილ შეთავაზებებსაც აქვთ ხელწერა: წლების ვერიფიცირებული გამყიდველი, დასაჯერებელი ფასი, დაცული გადახდა, დაბრუნების პოლიტიკა. თაღლითი გადახდას უფრო სწრაფს ხდის, ნამდვილი გამყიდველი - უფრო უსაფრთხოს.',
+    },
+  ],
   rounds: [
     {
       type: 'choice',

@@ -6,6 +6,28 @@ export default {
     en: 'Today you work both sides of the glass. First you investigate a stranger’s public profile the way a stalker - or a recruiter - would: no hacking, just careful reading. Then you turn the same lens on your own. Everything you are about to find is technically public. That is exactly the point.',
     ka: 'დღეს შუშის ორივე მხარეს იმუშავებ. ჯერ უცნობის საჯარო პროფილს გამოიკვლევ ისე, როგორც სტოკერი - ან რეკრუტერი - გამოიკვლევდა: არანაირი გატეხვა, მხოლოდ ყურადღებით კითხვა. მერე იმავე მზერას საკუთარ პროფილს მიაპყრობ. ყველაფერი, რასაც ახლა იპოვი, ტექნიკურად საჯაროა. საქმეც სწორედ ეს არის.',
   },
+  theory: [
+    {
+      en: 'Your digital footprint is everything findable about you - posts, tags, comments, old accounts. Deleting rarely helps: screenshots and archives remember.',
+      ka: 'შენი ციფრული კვალი ყველაფერია, რაც შენზე მოიძებნება - პოსტები, თეგები, კომენტარები, ძველი ანგარიშები. წაშლა იშვიათად შველის: სქრინშოტებსა და არქივებს ახსოვთ.',
+    },
+    {
+      en: 'Posts are harmless one at a time. Read together, they assemble into your school, your schedule and your address - a stranger only has to read.',
+      ka: 'პოსტები სათითაოდ უწყინარია. ერთად წაკითხული კი ისინი შენს სკოლად, განრიგად და მისამართად იწყობა - უცნობს მხოლოდ წაკითხვა სჭირდება.',
+    },
+    {
+      en: 'Live location and "home alone all weekend" tell strangers where you are - and where nobody is. Post the trip after you are back.',
+      ka: 'ლოკაცია რეალურ დროში და „მთელი შაბათ-კვირა მარტო ვარ სახლში“ უცნობებს ეუბნება, სად ხარ - და სად არავინ არის. მოგზაურობა დაბრუნების შემდეგ დაპოსტე.',
+    },
+    {
+      en: 'Future employers and universities will search your name - most recruiters check public profiles, and a two-year-old "joke" reads as who you are today.',
+      ka: 'მომავალი დამსაქმებლები და უნივერსიტეტები შენს სახელს მოძებნიან - რეკრუტერების უმეტესობა საჯარო პროფილებს ამოწმებს, ორი წლის წინანდელი „ხუმრობა“ კი დღევანდელ შენად იკითხება.',
+    },
+    {
+      en: 'A private account is one switch with the biggest effect: you decide who sees what, instead of everyone seeing everything.',
+      ka: 'პრივატული ანგარიში ერთი ჩამრთველია ყველაზე დიდი ეფექტით: ვინ რას ხედავს, შენ წყვეტ - ნაცვლად იმისა, რომ ყველამ ყველაფერი ნახოს.',
+    },
+  ],
   rounds: [
     {
       type: 'flags',
