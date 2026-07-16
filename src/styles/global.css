@@ -2188,6 +2188,318 @@ main {
   outline-offset: 1px;
 }
 
+/* Mascot: Byte the helper robot ------------------------------------------ */
+.mascot-demo .mascot-hero {
+  margin-bottom: clamp(18px, 3vh, 30px);
+}
+
+.mascot-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.2fr) minmax(280px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .mascot-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mascot-stage {
+  position: relative;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--clay-shadow);
+  padding: 24px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 380px;
+  overflow: hidden;
+}
+
+.mascot-stage::before {
+  content: '';
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  right: -70px;
+  top: -70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.mascot-canvas {
+  max-width: 100%;
+  touch-action: manipulation;
+}
+
+.mascot-canvas canvas {
+  outline: none;
+}
+
+.mascot-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 4rem;
+  background: #f7f5ff;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+.mascot-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.mascot-fps {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mascot-fps strong {
+  color: var(--accent-deep);
+}
+
+/* speech bubble ---------------------------------------------------------- */
+.mascot-bubble {
+  position: relative;
+  background: #fff;
+  border: 2px solid #dcd7f8;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  box-shadow: var(--clay-shadow);
+  max-width: 300px;
+  animation: rise 0.35s var(--ease) backwards;
+}
+
+.mascot-bubble p {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+.mascot-bubble-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mascot-tip-btn {
+  border: 2px solid var(--line);
+  background: #f7f5ff;
+  color: var(--accent-deep);
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.12s var(--ease), border-color var(--speed);
+}
+
+.mascot-tip-btn:hover {
+  transform: translateY(-2px);
+  border-color: #c9befa;
+}
+
+.stage-bubble {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  max-width: 250px;
+  z-index: 2;
+}
+
+/* control panel ---------------------------------------------------------- */
+.mascot-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ctrl-group {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 0 rgba(43, 35, 80, 0.05);
+  padding: 14px 16px;
+}
+
+.ctrl-group h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-btn {
+  border: 2px solid var(--line);
+  background: #fff;
+  color: var(--ink-soft);
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  min-height: 38px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(43, 35, 80, 0.05);
+  transition: transform 0.12s var(--ease), border-color var(--speed), background var(--speed), color var(--speed);
+}
+
+.chip-btn:hover {
+  transform: translateY(-2px);
+  border-color: #c9befa;
+}
+
+.chip-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px -2px var(--accent);
+}
+
+/* pre-launch checklist ---------------------------------------------------- */
+.mascot-checklist {
+  margin-top: 26px;
+  background: var(--card);
+  border: 2px dashed #d5cdf0;
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+
+.mascot-checklist h2 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.mascot-checklist ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 8px;
+}
+
+.mascot-checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  transition: background var(--speed);
+}
+
+.mascot-checklist label:hover {
+  background: #f7f5ff;
+}
+
+.mascot-checklist input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.mascot-note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* floating site widget ----------------------------------------------------- */
+.mascot-widget {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.mascot-widget .mascot-bubble {
+  max-width: min(280px, calc(100vw - 40px));
+}
+
+.mascot-widget-bot {
+  position: relative;
+}
+
+.mascot-widget-bot .mascot-canvas {
+  cursor: pointer;
+}
+
+.mascot-close {
+  position: absolute;
+  top: 6px;
+  right: 2px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(43, 35, 80, 0.06);
+  transition: transform 0.12s var(--ease), color var(--speed);
+}
+
+.mascot-close:hover {
+  transform: scale(1.1);
+  color: var(--bad-ink);
+}
+
+.mascot-widget-chip {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  z-index: 60;
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  border: 2px solid var(--line);
+  background: #fff;
+  font-size: 1.7rem;
+  cursor: pointer;
+  box-shadow: var(--clay-shadow);
+  transform: rotate(-6deg);
+  transition: transform var(--speed) var(--ease);
+}
+
+.mascot-widget-chip:hover {
+  transform: rotate(6deg) scale(1.1);
+}
+
+@media (max-width: 600px) {
+  .mascot-widget .mascot-canvas {
+    width: 116px !important;
+    height: 116px !important;
+  }
+}
+
 /* Print ------------------------------------------------------------------ */
 @media print {
   body {
