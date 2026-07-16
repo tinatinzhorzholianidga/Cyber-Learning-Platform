@@ -77,6 +77,16 @@ await page.getByRole('button', { name: 'Wave', exact: true }).click()
 await page.waitForTimeout(700)
 await stage.screenshot({ path: `${outDir}/hero-wave.png` })
 await page.waitForTimeout(2000)
+
+await page.getByRole('button', { name: 'Fly', exact: true }).click()
+await page.waitForTimeout(1300) // mid-flight
+await stage.screenshot({ path: `${outDir}/hero-fly.png` })
+await page.waitForTimeout(2200)
+
+await page.getByRole('button', { name: /Simulate a completed mission/i }).click()
+await page.waitForTimeout(1400)
+await stage.screenshot({ path: `${outDir}/hero-reaction.png` })
+await page.waitForTimeout(4200)
 await page.getByRole('button', { name: /Byte|ბაიტი/ }).click() // back to the robot
 
 await page.evaluate(() => localStorage.setItem('cyberhero.lang', 'ka'))

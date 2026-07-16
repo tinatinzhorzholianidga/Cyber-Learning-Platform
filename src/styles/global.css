@@ -2450,6 +2450,22 @@ main {
 }
 
 /* floating site widget ----------------------------------------------------- */
+/* he flies in from the corner when he first appears */
+@keyframes mascot-arrive {
+  0% {
+    transform: translate(130%, 30%) rotate(-14deg) scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-4%, -3%) rotate(3deg) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
 .mascot-widget {
   position: fixed;
   right: 18px;
@@ -2459,6 +2475,14 @@ main {
   flex-direction: column;
   align-items: flex-end;
   gap: 14px;
+  animation: mascot-arrive 0.9s var(--ease-soft) backwards;
+}
+
+.mascot-ctrl-note {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .mascot-widget .mascot-bubble {
