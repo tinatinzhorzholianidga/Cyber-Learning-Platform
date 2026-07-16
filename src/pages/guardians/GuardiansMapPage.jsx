@@ -49,6 +49,10 @@ export default function GuardiansMapPage() {
             .join(' ')
           const inner = (
             <>
+              <span className="corner tl" aria-hidden="true" />
+              <span className="corner tr" aria-hidden="true" />
+              <span className="corner bl" aria-hidden="true" />
+              <span className="corner br" aria-hidden="true" />
               <div className="m-top">
                 <span className="m-ic" aria-hidden="true">
                   {locked ? '🔒' : mission.emoji}

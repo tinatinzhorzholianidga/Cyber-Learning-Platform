@@ -24,6 +24,9 @@ export default {
     open: 'Open',
     comingSoon: 'Coming soon',
     activeBadge: 'Available now',
+    chipMissions: '10 scenario missions',
+    chipCert: 'Printable certificate',
+    chipTone: 'No lectures — you decide',
   },
   track: {
     learn: "What you'll learn",

@@ -24,6 +24,9 @@ export default {
     open: 'გახსნა',
     comingSoon: 'მალე დაემატება',
     activeBadge: 'უკვე ხელმისაწვდომია',
+    chipMissions: '10 სცენარული მისია',
+    chipCert: 'დასაბეჭდი სერტიფიკატი',
+    chipTone: 'ლექციების გარეშე — შენ წყვეტ',
   },
   track: {
     learn: 'რას ისწავლი',
