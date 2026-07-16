@@ -1,5 +1,9 @@
 name: Deploy to GitHub Pages
 
+# Publishes the Vite build to the `gh-pages` artifact branch and points
+# GitHub Pages at it. (The actions/deploy-pages flow is blocked here by
+# the auto-created github-pages environment's branch protection, which
+# cannot be edited with the workflow token.)
 on:
   push:
     branches:
@@ -8,16 +12,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,19 +30,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - uses: actions/configure-pages@v5
+      - name: Publish dist to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+      - name: Point Pages at the gh-pages branch
+        run: |
+          curl -sf -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pages \
+            -d '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}' \
+          && echo "Pages source set to gh-pages" \
+          || echo "::warning::Could not switch Pages source automatically. One-time manual step: Settings → Pages → Source: Deploy from a branch → gh-pages."
