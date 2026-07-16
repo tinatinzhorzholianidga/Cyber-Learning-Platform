@@ -105,7 +105,7 @@ export default function MissionPage() {
           {mission.article && (
             <p style={{ marginTop: 14 }}>
               {t('guardians.forParents')}{' '}
-              <Link to={`/parents/${mission.article}`} style={{ color: '#9db9ff', fontWeight: 700 }}>
+              <Link to={`/parents/${mission.article}`} className="text-link">
                 {t('guardians.openParentGuide')} →
               </Link>
             </p>

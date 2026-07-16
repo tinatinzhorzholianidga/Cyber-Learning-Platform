@@ -64,6 +64,18 @@ export default function WelcomePage() {
   return (
     <div className="fade-in">
       <section className="hero">
+        <span className="sticker s1" aria-hidden="true">
+          🛡️
+        </span>
+        <span className="sticker s2" aria-hidden="true">
+          🔒
+        </span>
+        <span className="sticker s3" aria-hidden="true">
+          ⭐
+        </span>
+        <span className="sticker s4" aria-hidden="true">
+          📱
+        </span>
         <span className="badge">✦ {t('welcome.badge')}</span>
         <h1>
           {t('welcome.title1')}
