@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
@@ -11,6 +12,10 @@ import AgreementPage from './pages/parents/AgreementPage.jsx'
 import GuardiansMapPage from './pages/guardians/GuardiansMapPage.jsx'
 import MissionPage from './pages/guardians/MissionPage.jsx'
 import CertificatePage from './pages/guardians/CertificatePage.jsx'
+
+// Byte, the helper-robot demo. Lazy so three.js never loads on normal pages;
+// the page is reachable only by URL while he is being tested on this branch.
+const MascotDemoPage = lazy(() => import('./pages/MascotDemoPage.jsx'))
 
 export default function App() {
   const { t } = useI18n()
@@ -31,6 +36,14 @@ export default function App() {
           <Route path="/guardians" element={<GuardiansMapPage />} />
           <Route path="/guardians/mission/:missionId" element={<MissionPage />} />
           <Route path="/guardians/certificate" element={<CertificatePage />} />
+          <Route
+            path="/mascot-demo"
+            element={
+              <Suspense fallback={null}>
+                <MascotDemoPage />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<WelcomePage />} />
         </Routes>
       </main>
