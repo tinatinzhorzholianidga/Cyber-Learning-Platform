@@ -2,21 +2,22 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-/* Hero (გმირა) - the hooded guardian, rebuilt from the character sheet:
-   violet hood + flowing cape, dark ink body with stubby arms and legs,
-   glowing eyes inside the hood, curled hood tip, and a glowing
-   shield-with-padlock emblem on the chest.
-   Poses from the sheet: Thinking (fist to chin + "?"), Resting (sits
-   down, z z z), Bouncy, Greeting (wave), Excited (fists up, sparkles),
-   Funny (points and laughs, "HA HA"). Everything procedural + lerped. */
+/* Hero (გმირა) - the hooded guardian, matched to the character sheet:
+   teardrop face opening with glowing eyes, smooth tapering hood antenna,
+   dark ink body with stubby arms and legs, a breathing shield-padlock
+   emblem, a big double-mesh cape (violet outside, lighter lining) with
+   per-frame cloth simulation, and a soft glow aura behind him.
+   Gestures: wave, bounce, spin and the signature FLY pose. Rare idle
+   antics (peek at the emblem, hop, yawn, wiggle) keep him alive. */
 
 const C = {
   cloak: '#7c63f0',
   cloakLip: '#9d84ff',
+  capeOut: '#8b74f5',
+  capeIn: '#b7a6ff',
   ink: '#2b2350',
   inkSoft: '#38305e',
   eye: '#ffffff',
-  glow: '#c7b6ff',
 }
 
 const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
@@ -29,13 +30,16 @@ const POSES = {
   happy: { L: [-0.15, 0.45], R: [-0.15, 0.45], sit: 0, mouth: 0, lean: 0 },
   excited: { L: [-2.25, 0.4], R: [-2.25, 0.4], sit: 0, mouth: 1, lean: -0.04 },
   funny: { L: [-1.55, 0.55], R: [-0.5, 0.1], sit: 0, mouth: 1, lean: 0.08 },
-  wink: { L: [-0.15, 0.3], R: [-2.5, 0.35], sit: 0, mouth: 0.6, lean: 0 },
+  wink: { L: [-0.15, 0.45], R: [-2.5, 0.35], sit: 0, mouth: 0.6, lean: 0 },
   thinking: { L: [-0.2, 0.25], R: [-2.35, -0.12], sit: 0, mouth: 0, lean: 0.05 },
   celebrate: { L: [-2.85, 0.5], R: [-2.85, 0.5], sit: 0, mouth: 1, lean: -0.05 },
   surprised: { L: [-1.7, 0.7], R: [-1.7, 0.7], sit: 0, mouth: 0.8, lean: -0.03 },
   sleepy: { L: [-0.5, 0.2], R: [-0.5, 0.2], sit: 1, mouth: 0, lean: 0.1 },
   sad: { L: [0.15, 0.1], R: [0.15, 0.1], sit: 0, mouth: 0, lean: 0.12 },
 }
+
+const ANTICS = ['peek', 'hop', 'yawn', 'wiggle']
+const ANTIC_DUR = 1.9
 
 function makeTextTexture(text, { size = 96, color = '#2b2350', rotate = 0 } = {}) {
   const canvas = document.createElement('canvas')
@@ -86,7 +90,7 @@ function makeEmblemTexture() {
   g.beginPath()
   g.arc(128, 108, 26, Math.PI, 0)
   g.stroke()
-  g.fillStyle = '#eee7ff'
+  g.fillStyle = '#ffffff'
   const r = 12
   g.beginPath()
   g.moveTo(88 + r, 104)
@@ -107,21 +111,104 @@ function makeEmblemTexture() {
   return tex
 }
 
-/* cape: a plane, narrow at the shoulders, wide at the hem */
+/* soft radial aura, like the glow ring behind him on the sheet */
+function makeAuraTexture() {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = 256
+  const g = canvas.getContext('2d')
+  const grad = g.createRadialGradient(128, 128, 20, 128, 128, 126)
+  grad.addColorStop(0, 'rgba(139, 92, 255, 0.5)')
+  grad.addColorStop(0.55, 'rgba(139, 92, 255, 0.24)')
+  grad.addColorStop(1, 'rgba(139, 92, 255, 0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, 256, 256)
+  return new THREE.CanvasTexture(canvas)
+}
+
+/* teardrop face: a bulged dark plate + a tube lip along its outline */
+function useTeardropFace() {
+  return useMemo(() => {
+    const shape = new THREE.Shape()
+    shape.moveTo(0, 0.56)
+    shape.bezierCurveTo(0.13, 0.47, 0.3, 0.28, 0.34, 0.04)
+    shape.bezierCurveTo(0.37, -0.22, 0.22, -0.42, 0, -0.44)
+    shape.bezierCurveTo(-0.22, -0.42, -0.37, -0.22, -0.34, 0.04)
+    shape.bezierCurveTo(-0.3, 0.28, -0.13, 0.47, 0, 0.56)
+
+    const bulge = (x, y) => {
+      const r2 = (x / 0.4) ** 2 + ((y - 0.04) / 0.55) ** 2
+      return 0.2 * Math.pow(Math.max(0, 1 - r2), 0.7)
+    }
+
+    const plate = new THREE.ShapeGeometry(shape, 24)
+    const pos = plate.attributes.position
+    for (let i = 0; i < pos.count; i++) pos.setZ(i, bulge(pos.getX(i), pos.getY(i)))
+    plate.computeVertexNormals()
+
+    const outline = shape
+      .getPoints(72)
+      .map((p) => new THREE.Vector3(p.x, p.y, bulge(p.x, p.y)))
+    const curve = new THREE.CatmullRomCurve3(outline, true)
+    const lip = new THREE.TubeGeometry(curve, 110, 0.055, 12, true)
+    return { plate, lip }
+  }, [])
+}
+
+/* smooth tapering hood antenna with a curl */
+function useAntenna() {
+  return useMemo(() => {
+    const v = (x, y, z) => new THREE.Vector3(x, y, z)
+    const curve = new THREE.CatmullRomCurve3([
+      v(0, -0.04, 0),
+      v(0.02, 0.14, -0.01),
+      v(0.1, 0.28, -0.03),
+      v(0.26, 0.34, -0.06),
+      v(0.41, 0.28, -0.09),
+      v(0.49, 0.15, -0.1),
+    ])
+    const RADIAL = 10
+    const TUBULAR = 48
+    const geo = new THREE.TubeGeometry(curve, TUBULAR, 0.08, RADIAL, false)
+    const pos = geo.attributes.position
+    const center = new THREE.Vector3()
+    for (let i = 0; i <= TUBULAR; i++) {
+      const t = i / TUBULAR
+      curve.getPointAt(t, center)
+      const f = 1 - 0.82 * t
+      for (let j = 0; j <= RADIAL; j++) {
+        const idx = i * (RADIAL + 1) + j
+        pos.setXYZ(
+          idx,
+          center.x + (pos.getX(idx) - center.x) * f,
+          center.y + (pos.getY(idx) - center.y) * f,
+          center.z + (pos.getZ(idx) - center.z) * f,
+        )
+      }
+    }
+    geo.computeVertexNormals()
+    const tipPoint = curve.getPointAt(1)
+    return { geo, tipPoint }
+  }, [])
+}
+
+/* cape: swallow-tailed plane, narrow at the shoulders, wide at the hem */
 function useCape() {
   return useMemo(() => {
-    const geo = new THREE.PlaneGeometry(1, 1.5, 20, 16)
+    const geo = new THREE.PlaneGeometry(1, 1.7, 24, 20)
     const pos = geo.attributes.position
     const base = new Float32Array(pos.count * 3)
     const vs = new Float32Array(pos.count)
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i)
       const y = pos.getY(i)
-      const v = clamp01((0.75 - y) / 1.5) // 0 at shoulders, 1 at hem
-      const nx = x * (0.58 + 1.25 * v)
+      const v = clamp01((0.85 - y) / 1.7) // 0 shoulders → 1 hem
+      const xn = x * 2 // -1..1
+      const nx = x * (0.5 + 1.6 * v)
+      const ny = y - 0.3 * Math.pow(Math.abs(xn), 1.6) * v // swallow tail
       pos.setX(i, nx)
+      pos.setY(i, ny)
       base[i * 3] = nx
-      base[i * 3 + 1] = y
+      base[i * 3 + 1] = ny
       base[i * 3 + 2] = 0
       vs[i] = v
     }
@@ -131,7 +218,7 @@ function useCape() {
 
 export default function HeroModel({
   emotion = 'happy',
-  gesture = null, // { id, type: 'wave' | 'bounce' | 'spin' }
+  gesture = null, // { id, type: 'wave' | 'bounce' | 'spin' | 'fly' }
   talking = false,
   follow = true,
   idle = true,
@@ -153,14 +240,28 @@ export default function HeroModel({
   const armR = useRef()
   const legL = useRef()
   const legR = useRef()
-  const marks = useRef() // ? / zzz / HA HA sprite planes
+  const marks = useRef()
   const stars = useRef()
   const shadow = useRef()
+  const emblem = useRef()
+  const emblemMat = useRef()
+  const auraMat = useRef()
 
+  const { plate, lip } = useTeardropFace()
+  const { geo: antennaGeo, tipPoint } = useAntenna()
   const { geo: capeGeo, base: capeBase, vs: capeVs } = useCape()
-  useEffect(() => () => capeGeo.dispose(), [capeGeo])
+  useEffect(
+    () => () => {
+      plate.dispose()
+      lip.dispose()
+      antennaGeo.dispose()
+      capeGeo.dispose()
+    },
+    [plate, lip, antennaGeo, capeGeo],
+  )
 
   const emblemTexture = useMemo(makeEmblemTexture, [])
+  const auraTexture = useMemo(makeAuraTexture, [])
   const markTextures = useMemo(
     () => ({
       thinking: makeTextTexture('?', { size: 150, color: '#6c5ce7', rotate: 0.12 }),
@@ -172,9 +273,10 @@ export default function HeroModel({
   useEffect(
     () => () => {
       emblemTexture.dispose()
+      auraTexture.dispose()
       Object.values(markTextures).forEach((t) => t.dispose())
     },
-    [emblemTexture, markTextures],
+    [emblemTexture, auraTexture, markTextures],
   )
 
   const shadowTexture = useMemo(() => {
@@ -200,6 +302,9 @@ export default function HeroModel({
     spring: { s: 1, v: 0 },
     overlay: null,
     sit: 0,
+    antic: null, // { type, start, hopped }
+    nextAnticAt: 13,
+    anticSeed: 0,
   })
 
   useEffect(() => {
@@ -217,16 +322,23 @@ export default function HeroModel({
         a.spring.v = -3.6
         a.overlay = { emotion: 'excited', until: t + 1.8 }
         a.gesture = { type: 'wave', start: t }
+        a.antic = null
       }
     }
     if (gesture && gesture.id !== a.lastGestureId) {
       a.lastGestureId = gesture.id
       if (!reducedMotion) {
         a.gesture = { type: gesture.type, start: t }
+        a.antic = null
         if (gesture.type === 'bounce') a.spring.v = -3.2
         a.overlay = {
-          emotion: gesture.type === 'spin' ? 'surprised' : gesture.type === 'bounce' ? 'celebrate' : 'excited',
-          until: t + 1.9,
+          emotion:
+            gesture.type === 'spin'
+              ? 'surprised'
+              : gesture.type === 'bounce'
+                ? 'celebrate'
+                : 'excited',
+          until: t + (gesture.type === 'fly' ? 2.9 : 1.9),
         }
       }
     }
@@ -235,6 +347,31 @@ export default function HeroModel({
     const pose = POSES[emo] ?? POSES.happy
     const sleepy = emo === 'sleepy'
     const arcs = emo === 'celebrate' || emo === 'funny'
+
+    /* ---- rare idle antics: peek / hop / yawn / wiggle ---- */
+    if (
+      !reducedMotion &&
+      idle &&
+      !a.gesture &&
+      !a.overlay &&
+      !a.antic &&
+      emotion === 'happy' &&
+      t >= a.nextAnticAt
+    ) {
+      a.antic = { type: ANTICS[a.anticSeed % ANTICS.length], start: t, hopped: false }
+      a.anticSeed += 1
+      a.nextAnticAt = t + 13 + Math.random() * 9
+    }
+    let antic = null
+    let anticB = 0
+    if (a.antic) {
+      const e = t - a.antic.start
+      if (e >= ANTIC_DUR || a.gesture) a.antic = null
+      else {
+        antic = a.antic
+        anticB = clamp01(e / 0.3) * clamp01((ANTIC_DUR - e) / 0.4)
+      }
+    }
 
     /* ---- sit down / stand up ---- */
     a.sit = damp(a.sit, reducedMotion ? 0 : pose.sit, 3.5, dt)
@@ -246,14 +383,19 @@ export default function HeroModel({
       a.blink = phase >= 1 ? 0 : Math.sin(Math.min(phase, 1) * Math.PI)
       if (phase >= 1) a.blinkAt = t + 2.6 + Math.random() * 3.4
     }
-    const blinkScale = 1 - a.blink * 0.9
+    let blinkScale = 1 - a.blink * 0.9
+    if (antic?.type === 'yawn') blinkScale = Math.min(blinkScale, 1 - anticB * 0.7)
 
     /* ---- gaze ---- */
     const p = state.pointer ?? state.mouse
     const wanderX = Math.sin(t * 0.35) * 0.3 + Math.sin(t * 0.14 + 1.8) * 0.18
     const wanderY = Math.sin(t * 0.26 + 0.9) * 0.2
-    const gx = reducedMotion ? 0 : follow ? p.x : idle ? wanderX : 0
-    const gy = reducedMotion ? 0 : follow ? -p.y : idle ? wanderY : 0
+    let gx = reducedMotion ? 0 : follow ? p.x : idle ? wanderX : 0
+    let gy = reducedMotion ? 0 : follow ? -p.y : idle ? wanderY : 0
+    if (antic?.type === 'peek') {
+      gx = 0
+      gy = -0.95 // look down at the emblem
+    }
     a.pupil.x = damp(a.pupil.x, gx, 7, dt)
     a.pupil.y = damp(a.pupil.y, gy, 7, dt)
 
@@ -288,7 +430,8 @@ export default function HeroModel({
     /* ---- mouth ---- */
     if (mouth.current) {
       const talkOpen = talking ? 0.55 + 0.45 * Math.sin(t * 10) : 0
-      const open = Math.max(pose.mouth, talkOpen)
+      const yawnOpen = antic?.type === 'yawn' ? anticB * 1.1 : 0
+      const open = Math.max(pose.mouth, talkOpen, yawnOpen)
       const s = damp(mouth.current.scale.x, open, 10, dt)
       mouth.current.scale.set(s, s * (talking ? 0.7 + 0.3 * Math.sin(t * 10 + 1) : 1), s)
       mouth.current.visible = s > 0.05
@@ -316,7 +459,8 @@ export default function HeroModel({
 
     /* ---- sparkle stars ---- */
     if (stars.current) {
-      stars.current.visible = emo === 'celebrate' || emo === 'excited'
+      const flying = a.gesture?.type === 'fly'
+      stars.current.visible = emo === 'celebrate' || emo === 'excited' || flying
       if (stars.current.visible) {
         stars.current.children.forEach((star, i) => {
           const ang = t * 1.8 + (i * Math.PI * 2) / 3
@@ -327,10 +471,13 @@ export default function HeroModel({
       }
     }
 
-    /* ---- arms (lerped toward the pose, wave overrides the right) ---- */
+    /* ---- gestures: arms/legs/motion overrides ---- */
+    let armLTarget = pose.L
     let armRTarget = pose.R
     let waveWiggle = 0
     let hop = 0
+    let flyB = 0
+    let flyDriftX = 0
     if (!reducedMotion && a.gesture) {
       const e = t - a.gesture.start
       if (a.gesture.type === 'wave') {
@@ -352,29 +499,65 @@ export default function HeroModel({
       } else if (a.gesture.type === 'spin') {
         const dur = 0.95
         if (e >= dur) a.gesture = null
+      } else if (a.gesture.type === 'fly') {
+        // the signature pose: fist forward-up, legs trailing, cape streaming
+        const dur = 2.8
+        if (e >= dur) a.gesture = null
+        else {
+          flyB = clamp01(e / 0.35) * clamp01((dur - e) / 0.45)
+          flyDriftX = Math.sin(e * 2.1) * 0.24 * flyB
+          armRTarget = [-2.9, 0.12]
+          armLTarget = [0.9, 0.3]
+        }
       }
     }
+
+    /* ---- antic arm overrides ---- */
+    if (antic?.type === 'peek') {
+      armRTarget = [-1.75, -0.18] // hand toward the emblem
+    } else if (antic?.type === 'yawn') {
+      armLTarget = [-2.5, 0.7]
+      armRTarget = [-2.5, 0.7]
+    } else if (antic?.type === 'hop' && !antic.hopped) {
+      antic.hopped = true
+      a.spring.v = -2.6
+    }
+
     const swing = idle && !reducedMotion ? Math.sin(t * 1.3) * 0.05 : 0
     if (armL.current) {
-      armL.current.rotation.x = damp(armL.current.rotation.x, pose.L[0], 8, dt)
-      armL.current.rotation.z = damp(armL.current.rotation.z, pose.L[1] + swing, 8, dt)
+      armL.current.rotation.x = damp(armL.current.rotation.x, armLTarget[0], 8, dt)
+      armL.current.rotation.z = damp(armL.current.rotation.z, armLTarget[1] + swing, 8, dt)
     }
     if (armR.current) {
       armR.current.rotation.x = damp(armR.current.rotation.x, armRTarget[0], 8, dt)
       armR.current.rotation.z = damp(armR.current.rotation.z, -(armRTarget[1] + swing) + waveWiggle, 10, dt)
     }
 
-    /* ---- legs: dangle when floating, fold forward when sitting ---- */
+    /* ---- legs: dangle floating, fold when sitting, trail when flying ---- */
     const dangle = idle && !reducedMotion ? Math.sin(t * 1.6) * 0.12 * (1 - sit) : 0
-    if (legL.current) legL.current.rotation.x = damp(legL.current.rotation.x, -1.35 * sit + dangle, 6, dt)
-    if (legR.current) legR.current.rotation.x = damp(legR.current.rotation.x, -1.35 * sit - dangle, 6, dt)
+    const legBase = -1.35 * sit + 0.85 * flyB
+    if (legL.current) legL.current.rotation.x = damp(legL.current.rotation.x, legBase + dangle, 6, dt)
+    if (legR.current) legR.current.rotation.x = damp(legR.current.rotation.x, legBase - dangle, 6, dt)
+
+    /* ---- breathing emblem + aura pulse (also in reduced motion: static) ---- */
+    if (emblemMat.current) emblemMat.current.opacity = reducedMotion ? 1 : 0.75 + 0.25 * Math.sin(t * 1.7)
+    if (emblem.current) {
+      const es = reducedMotion ? 1 : 1 + 0.025 * Math.sin(t * 1.7)
+      emblem.current.scale.set(es, es, 1)
+    }
+    if (auraMat.current) auraMat.current.opacity = reducedMotion ? 0.5 : 0.44 + 0.1 * Math.sin(t * 0.9)
 
     if (reducedMotion) return
 
-    /* ---- hover float / sitting on the ground ---- */
+    /* ---- hover float / sit / fly ---- */
     const pace = sleepy ? 0.55 : emo === 'excited' || emo === 'celebrate' ? 2 : 1.1
     const floatY = idle ? Math.sin(t * pace) * 0.07 : 0
-    const y = (floatY + hop) * (1 - sit) - 0.38 * sit
+    let anticHopY = 0
+    if (antic?.type === 'hop') {
+      const e = t - antic.start
+      if (e < 0.55) anticHopY = Math.sin((e / 0.55) * Math.PI) * 0.22
+    }
+    const y = (floatY + hop + anticHopY) * (1 - sit) - 0.38 * sit + 0.5 * flyB
 
     const sp = a.spring
     sp.v += ((1 - sp.s) * 120 - sp.v * 10) * dt
@@ -382,12 +565,15 @@ export default function HeroModel({
 
     if (root.current) {
       root.current.position.y = y
+      root.current.position.x = flyDriftX
       const talkPulse = talking ? 1 + Math.sin(t * 9) * 0.01 : 1
       root.current.scale.set((1 + (1 - sp.s) * 0.4) * talkPulse, sp.s * talkPulse, (1 + (1 - sp.s) * 0.4) * talkPulse)
     }
     if (tilt.current) {
       const ry = follow ? p.x * 0.38 : idle ? wanderX * 0.22 : 0
-      const rx = (follow ? -p.y * 0.14 : idle ? wanderY * 0.08 : 0) + pose.lean + 0.15 * sit
+      let rx = (follow ? -p.y * 0.14 : idle ? wanderY * 0.08 : 0) + pose.lean + 0.15 * sit
+      rx += -0.1 * flyB // slight lean while flying (fist/legs/cape sell the pose)
+      if (antic?.type === 'peek') rx += 0.28 * anticB
       tilt.current.rotation.y = damp(tilt.current.rotation.y, ry, 5, dt)
       tilt.current.rotation.x = damp(tilt.current.rotation.x, rx, 5, dt)
       let sway = idle ? Math.sin(t * pace * 0.8) * 0.04 : 0
@@ -396,16 +582,20 @@ export default function HeroModel({
         tilt.current.rotation.y += easeInOut(Math.min(e / 0.95, 1)) * Math.PI * 2
       }
       if (a.gesture?.type === 'wave') sway += Math.sin(t * 10) * 0.02
+      if (antic?.type === 'wiggle') sway += Math.sin(t * 10) * 0.08 * anticB
       tilt.current.rotation.z = damp(tilt.current.rotation.z, sway, 6, dt)
     }
     if (tip.current) {
-      tip.current.rotation.z = Math.sin(t * (sleepy ? 0.8 : 2)) * 0.14
+      let flick = Math.sin(t * (sleepy ? 0.8 : 2)) * 0.14
+      if (antic?.type === 'wiggle') flick += Math.sin(t * 11) * 0.3 * anticB
+      flick += 0.3 * flyB
+      tip.current.rotation.z = flick
     }
 
-    /* ---- cape flow ---- */
+    /* ---- cape flow (streams harder while flying) ---- */
     if (capeMesh.current) {
-      const speed = sleepy ? 1 : 2.2
-      const amp = (sleepy ? 0.5 : 1) * (1 - 0.55 * sit)
+      const speed = (sleepy ? 1 : 2.2) * (1 + 0.8 * flyB)
+      const amp = (sleepy ? 0.5 : 1) * (1 - 0.55 * sit) * (1 + 1.4 * flyB)
       const pos = capeMesh.current.geometry.attributes.position
       const arr = pos.array
       for (let i = 0; i < pos.count; i++) {
@@ -413,11 +603,12 @@ export default function HeroModel({
         if (v === 0) continue
         const bx = capeBase[i * 3]
         const by = capeBase[i * 3 + 1]
-        arr[i * 3] = bx + Math.sin(t * 1.8 + v * 3) * 0.035 * v * amp
+        arr[i * 3] = bx + Math.sin(t * 1.8 + v * 3) * 0.05 * v * amp
         arr[i * 3 + 1] = by
         arr[i * 3 + 2] =
-          (Math.sin(bx * 2.6 + t * speed) * 0.1 + Math.sin(v * 4.2 - t * speed * 1.3) * 0.07) * v * amp -
-          0.12 * v * v
+          (Math.sin(bx * 2.4 + t * speed) * 0.15 + Math.sin(v * 3.8 - t * speed * 1.3) * 0.09) * v * amp -
+          0.16 * v * v +
+          0.5 * v * flyB
       }
       pos.needsUpdate = true
       capeMesh.current.geometry.computeVertexNormals()
@@ -425,7 +616,7 @@ export default function HeroModel({
 
     /* ---- ground shadow ---- */
     if (shadow.current) {
-      const lift = clamp01((y + 0.65) / 0.75)
+      const lift = clamp01((y + 0.65) / 0.9)
       shadow.current.material.opacity = 0.45 + (1 - lift) * 0.35
       const s = 0.85 + (1 - lift) * 0.25
       shadow.current.scale.set(s, s, s)
@@ -444,6 +635,15 @@ export default function HeroModel({
 
   return (
     <group position={[0, 0.1, 0]} scale={1.22}>
+      {/* rim light from behind so his dark body pops */}
+      <pointLight position={[0, 1.6, -2.4]} intensity={10} color="#b9a6ff" />
+
+      {/* soft glow aura behind him */}
+      <mesh position={[0, 0.1, -1.1]}>
+        <planeGeometry args={[4.2, 4.2]} />
+        <meshBasicMaterial ref={auraMat} map={auraTexture} transparent opacity={0.6} depthWrite={false} />
+      </mesh>
+
       <group ref={root}>
         <group
           ref={tilt}
@@ -457,10 +657,10 @@ export default function HeroModel({
             <meshPhysicalMaterial {...inkMat} />
           </mesh>
 
-          {/* chest emblem: glowing shield + padlock */}
-          <mesh position={[0, -0.27, 0.39]} rotation={[-0.06, 0, 0]}>
+          {/* chest emblem: glowing shield + padlock, breathing */}
+          <mesh ref={emblem} position={[0, -0.27, 0.39]} rotation={[-0.06, 0, 0]}>
             <planeGeometry args={[0.4, 0.4]} />
-            <meshBasicMaterial map={emblemTexture} transparent toneMapped={false} depthWrite={false} />
+            <meshBasicMaterial ref={emblemMat} map={emblemTexture} transparent toneMapped={false} depthWrite={false} />
           </mesh>
 
           {/* hood shell */}
@@ -469,60 +669,60 @@ export default function HeroModel({
             <meshPhysicalMaterial {...cloakMat} />
           </mesh>
 
-          {/* dark face inside the hood, poking out of the shell */}
-          <mesh position={[0, 0.44, 0.24]}>
-            <sphereGeometry args={[0.48, 48, 32]} />
+          {/* dark backing inside the hood */}
+          <mesh position={[0, 0.44, 0.18]}>
+            <sphereGeometry args={[0.42, 40, 28]} />
             <meshPhysicalMaterial color={C.ink} roughness={0.55} clearcoat={0.25} />
           </mesh>
 
-          {/* hood lip around the face opening */}
-          <mesh position={[0, 0.45, 0.46]} rotation={[-0.32, 0, 0]} scale={[1, 1.1, 0.5]}>
-            <torusGeometry args={[0.44, 0.055, 18, 40]} />
-            <meshPhysicalMaterial color={C.cloakLip} roughness={0.4} clearcoat={0.5} />
-          </mesh>
+          {/* teardrop face plate + lip around the opening */}
+          <group position={[0, 0.4, 0.44]} scale={0.85}>
+            <mesh geometry={plate}>
+              <meshPhysicalMaterial color={C.ink} roughness={0.55} clearcoat={0.25} />
+            </mesh>
+            <mesh geometry={lip}>
+              <meshPhysicalMaterial color={C.cloakLip} roughness={0.4} clearcoat={0.5} />
+            </mesh>
+          </group>
 
           {/* glowing eyes */}
           <group ref={eyesGroup}>
-            <group ref={eyeL} position={[-0.14, 0.5, 0.7]}>
+            <group ref={eyeL} position={[-0.13, 0.48, 0.61]}>
               <mesh>
-                <capsuleGeometry args={[0.075, 0.08, 6, 14]} />
+                <capsuleGeometry args={[0.072, 0.078, 6, 14]} />
                 <meshBasicMaterial color={C.eye} toneMapped={false} />
               </mesh>
             </group>
-            <group ref={eyeR} position={[0.14, 0.5, 0.7]}>
+            <group ref={eyeR} position={[0.13, 0.48, 0.61]}>
               <mesh>
-                <capsuleGeometry args={[0.075, 0.08, 6, 14]} />
+                <capsuleGeometry args={[0.072, 0.078, 6, 14]} />
                 <meshBasicMaterial color={C.eye} toneMapped={false} />
               </mesh>
             </group>
-            <mesh ref={arcL} position={[-0.14, 0.5, 0.7]} visible={false}>
-              <torusGeometry args={[0.075, 0.028, 10, 20, Math.PI]} />
+            <mesh ref={arcL} position={[-0.13, 0.48, 0.61]} visible={false}>
+              <torusGeometry args={[0.072, 0.027, 10, 20, Math.PI]} />
               <meshBasicMaterial color={C.eye} toneMapped={false} />
             </mesh>
-            <mesh ref={arcR} position={[0.14, 0.5, 0.7]} visible={false}>
-              <torusGeometry args={[0.075, 0.028, 10, 20, Math.PI]} />
+            <mesh ref={arcR} position={[0.13, 0.48, 0.61]} visible={false}>
+              <torusGeometry args={[0.072, 0.027, 10, 20, Math.PI]} />
               <meshBasicMaterial color={C.eye} toneMapped={false} />
             </mesh>
             {/* open laughing mouth */}
-            <mesh ref={mouth} position={[0, 0.33, 0.69]} visible={false} scale={0}>
-              <sphereGeometry args={[0.085, 20, 14]} />
+            <mesh ref={mouth} position={[0, 0.31, 0.6]} visible={false} scale={0}>
+              <sphereGeometry args={[0.08, 20, 14]} />
               <meshBasicMaterial color={C.eye} toneMapped={false} />
             </mesh>
           </group>
 
-          {/* curled hood tip */}
-          <group ref={tip} position={[0, 1.0, -0.03]}>
-            {[
-              [0.05, 0.09, 0, 0.115],
-              [0.17, 0.16, -0.02, 0.085],
-              [0.28, 0.13, -0.05, 0.06],
-              [0.36, 0.05, -0.07, 0.04],
-            ].map(([x, y, z, r], i) => (
-              <mesh key={i} position={[x, y, z]}>
-                <sphereGeometry args={[r, 18, 14]} />
-                <meshPhysicalMaterial {...cloakMat} />
-              </mesh>
-            ))}
+          {/* smooth tapering antenna with a tip bead */}
+          <group ref={tip} position={[0, 1.02, -0.03]}>
+            <mesh geometry={antennaGeo}>
+              <meshPhysicalMaterial {...cloakMat} />
+            </mesh>
+            <mesh position={tipPoint}>
+              <sphereGeometry args={[0.035, 12, 10]} />
+              <meshPhysicalMaterial {...cloakMat} />
+            </mesh>
           </group>
 
           {/* arms: shoulder pivots, stubby limbs, fist hands */}
@@ -569,10 +769,15 @@ export default function HeroModel({
             </mesh>
           </group>
 
-          {/* flowing cape, pinned at the shoulders */}
-          <mesh ref={capeMesh} geometry={capeGeo} position={[0, -0.2, -0.28]} rotation={[0.22, 0, 0]}>
-            <meshPhysicalMaterial {...cloakMat} color="#8b74f5" side={THREE.DoubleSide} />
-          </mesh>
+          {/* cape: violet outside + lighter lining, pinned at the shoulders */}
+          <group position={[0, -0.05, -0.3]} rotation={[0.2, 0, 0]}>
+            <mesh ref={capeMesh} geometry={capeGeo}>
+              <meshPhysicalMaterial color={C.capeOut} roughness={0.42} clearcoat={0.55} clearcoatRoughness={0.35} />
+            </mesh>
+            <mesh geometry={capeGeo}>
+              <meshPhysicalMaterial color={C.capeIn} roughness={0.5} side={THREE.BackSide} />
+            </mesh>
+          </group>
         </group>
 
         {/* floating marks: ? (thinking), z z (resting), HA HA (funny) */}

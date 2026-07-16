@@ -131,7 +131,10 @@ export default function RobotModel({
       if (!reducedMotion) {
         a.gesture = { type: gesture.type, start: t }
         if (gesture.type === 'bounce') a.spring.v = -3.4
-        a.overlay = { emotion: gesture.type === 'spin' ? 'surprised' : 'excited', until: t + 1.9 }
+        a.overlay = {
+          emotion: gesture.type === 'spin' ? 'surprised' : 'excited',
+          until: t + (gesture.type === 'fly' ? 2.7 : 1.9),
+        }
       }
     }
     if (a.overlay && t > a.overlay.until) a.overlay = null
@@ -205,6 +208,18 @@ export default function RobotModel({
         const dur = 0.95
         if (e >= dur) a.gesture = null
         else if (tilt.current) tilt.current.rotation.y += easeInOut(e / dur) * Math.PI * 2
+      } else if (a.gesture.type === 'fly') {
+        // little superhero take-off: lean back, fist up, rise
+        const dur = 2.6
+        if (e >= dur) a.gesture = null
+        else {
+          const b = clamp01(e / 0.3) * clamp01((dur - e) / 0.4)
+          y += 0.45 * b
+          mittRY = -0.18 + 0.75 * b
+          mittRX = 1.02
+          mittRRotZ = -0.22 - 1.3 * b
+          if (tilt.current) tilt.current.rotation.x -= 0.3 * b
+        }
       }
     }
 
