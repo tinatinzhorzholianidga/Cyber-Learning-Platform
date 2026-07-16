@@ -177,19 +177,20 @@ export default function RobotModel({
     sp.s += sp.v * dt
 
     /* ---- gestures ---- */
-    let mittRY = 0.02
-    let mittRX = 1.17
-    let mittRRotZ = -0.15
+    let mittRY = -0.18
+    let mittRX = 1.08
+    let mittRRotZ = -0.22
     if (a.gesture) {
       const e = t - a.gesture.start
       if (a.gesture.type === 'wave') {
         const dur = 1.7
         if (e >= dur) a.gesture = null
         else {
+          // raise the fist beside the head and rock it
           const b = clamp01(e / 0.22) * clamp01((dur - e) / 0.28)
-          mittRY = 0.02 + 0.78 * b
-          mittRX = 1.17 + Math.sin(e * 11) * 0.09 * b
-          mittRRotZ = -0.15 - (0.55 + Math.sin(e * 11) * 0.45) * b
+          mittRY = -0.18 + 0.85 * b
+          mittRX = 1.08 + 0.08 * b
+          mittRRotZ = -0.22 - (1.1 + Math.sin(e * 11) * 0.45) * b
           if (tilt.current) tilt.current.rotation.z = 0.09 * b
         }
       } else if (a.gesture.type === 'bounce') {
@@ -216,7 +217,7 @@ export default function RobotModel({
       mittR.current.rotation.z = mittRRotZ
     }
     if (mittL.current) {
-      mittL.current.position.y = -0.06 + (idle ? Math.sin(t * 1.35 + 1.4) * 0.02 : 0)
+      mittL.current.position.y = -0.18 + (idle ? Math.sin(t * 1.35 + 1.4) * 0.02 : 0)
     }
 
     /* ---- chest LEDs pulse ---- */
@@ -316,19 +317,19 @@ export default function RobotModel({
             </mesh>
           </group>
 
-          {/* ear pods */}
+          {/* shoulder pods the arms plug into */}
           {[-1, 1].map((side) => (
-            <mesh key={side} position={[side * 0.97, 0.02, 0]} scale={[0.34, 0.42, 0.42]}>
+            <mesh key={side} position={[side * 0.94, -0.14, 0.06]} scale={[0.34, 0.42, 0.42]}>
               <sphereGeometry args={[0.5, 24, 18]} />
               <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
             </mesh>
           ))}
 
-          {/* mittens (floating, Rayman-style, like the original) */}
-          <group ref={mittR} position={[1.17, 0.02, 0.18]} rotation={[0, 0, -0.15]}>
+          {/* mittens, cuffs plugged into the shoulder pods */}
+          <group ref={mittR} position={[1.08, -0.18, 0.14]} rotation={[0, 0, -0.22]}>
             <Mitten />
           </group>
-          <group ref={mittL} position={[-1.17, -0.06, 0.18]} rotation={[0, 0, 0.35]}>
+          <group ref={mittL} position={[-1.08, -0.18, 0.14]} rotation={[0, 0, 0.22]}>
             <Mitten mirrored />
           </group>
 
@@ -378,23 +379,30 @@ export default function RobotModel({
   )
 }
 
+/* A proper mitten: rounded fist, thumbs-up thumb, and a white cuff that
+   plugs into the shoulder pod (local -x points at the body). */
 function Mitten({ mirrored = false }) {
   const dir = mirrored ? -1 : 1
   return (
     <group>
-      <mesh scale={[1, 0.86, 0.92]}>
-        <sphereGeometry args={[0.27, 28, 20]} />
-        <meshPhysicalMaterial color={C.orange} roughness={0.42} clearcoat={0.5} />
+      {/* cuff: short white sleeve aimed at the shoulder pod */}
+      <mesh position={[dir * -0.19, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.135, 0.155, 0.18, 24]} />
+        <meshPhysicalMaterial color={C.white} roughness={0.45} clearcoat={0.35} />
       </mesh>
-      {/* thumb */}
-      <mesh position={[dir * -0.1, 0.16, 0.1]} scale={[0.5, 0.62, 0.5]}>
-        <sphereGeometry args={[0.22, 18, 14]} />
-        <meshPhysicalMaterial color={C.orange} roughness={0.42} clearcoat={0.5} />
+      <mesh position={[dir * -0.11, 0, 0]} rotation={[0, dir * (Math.PI / 2), 0]}>
+        <torusGeometry args={[0.15, 0.035, 14, 28]} />
+        <meshPhysicalMaterial color={C.white} roughness={0.45} clearcoat={0.35} />
       </mesh>
-      {/* white cuff */}
-      <mesh position={[dir * -0.2, -0.12, 0]} rotation={[0, 0, dir * 0.8]} scale={[1, 0.55, 1]}>
-        <torusGeometry args={[0.16, 0.075, 14, 28]} />
-        <meshPhysicalMaterial color={C.white} roughness={0.5} />
+      {/* fist */}
+      <mesh position={[dir * 0.09, 0, 0.01]} scale={[1.08, 0.94, 0.86]}>
+        <sphereGeometry args={[0.235, 28, 20]} />
+        <meshPhysicalMaterial color={C.orange} roughness={0.4} clearcoat={0.55} clearcoatRoughness={0.3} />
+      </mesh>
+      {/* thumb: a small capsule, thumbs-up */}
+      <mesh position={[dir * -0.01, 0.2, 0.05]} rotation={[0, 0, dir * -0.32]}>
+        <capsuleGeometry args={[0.068, 0.11, 6, 14]} />
+        <meshPhysicalMaterial color={C.orange} roughness={0.4} clearcoat={0.55} clearcoatRoughness={0.3} />
       </mesh>
     </group>
   )

@@ -42,6 +42,11 @@ for (const [btn, name] of [
 }
 await page.getByRole('button', { name: 'Happy', exact: true }).click()
 
+await page.getByRole('button', { name: 'Wave', exact: true }).click()
+await page.waitForTimeout(700) // mid-wave
+await stage.screenshot({ path: `${outDir}/stage-wave.png` })
+await page.waitForTimeout(2000)
+
 await page.getByRole('button', { name: /Give me a tip/i }).click()
 await page.waitForTimeout(1700)
 await stage.screenshot({ path: `${outDir}/stage-tip.png` })
