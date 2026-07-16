@@ -52,20 +52,21 @@ No backend, no login. Progress is stored in `localStorage`.
 
 ## Deployment (GitHub Pages)
 
-`.github/workflows/deploy.yml` builds the site on every push (to `main` or
-the current stage branch) and publishes `dist/` to the **`gh-pages`** branch.
+Fully automatic — no manual steps. `.github/workflows/deploy.yml`:
+
+1. Every push to the stage branch builds the site, fast-forwards `main`
+   to the same commit, and dispatches the workflow on `main`.
+2. The run on `main` deploys the build through the `github-pages`
+   environment (`actions/deploy-pages`) to
+   https://tinatinzhorzholianidga.github.io/Cyber-Learning-Platform/.
+
 Vite's `base` is set to `/Cyber-Learning-Platform/` in `vite.config.js`.
 
-**One-time setup (repo admin, ~10 seconds):** GitHub does not allow the
-workflow token to change Pages settings, so after the first deploy run go to
-**Settings → Pages → Build and deployment → Source: "Deploy from a branch"
-→ Branch: `gh-pages` / `/ (root)`** and save. From then on every push
-publishes automatically to
-https://tinatinzhorzholianidga.github.io/Cyber-Learning-Platform/.
-
-(Background: the repo's auto-created `github-pages` environment rejects
-deployments from the stage branch, which blocks the `actions/deploy-pages`
-flow — the `gh-pages` branch flow avoids that entirely.)
+Why the indirection: the repo's auto-created `github-pages` environment
+only accepts deployments from `main` (it rejects other branches, and its
+protection rules cannot be edited with the workflow token). A leftover
+`gh-pages` branch from an earlier deployment approach is unused and can
+be deleted in the GitHub UI.
 
 ## Content rules (from the spec)
 
