@@ -13,11 +13,14 @@ export default function CertificatePage() {
 
   const totalPoints = MISSIONS.reduce((sum, m) => sum + (missions[m.id]?.best ?? 0), 0)
   const totalMax = MISSIONS.reduce((sum, m) => sum + missionMax(m), 0)
-  const date = new Date().toLocaleDateString(lang === 'ka' ? 'ka-GE' : 'en-GB', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  // Format Georgian dates by hand — not every browser ships the ka locale,
+  // and the silent fallback would print an English date on the certificate.
+  const MONTHS_KA = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი']
+  const now = new Date()
+  const date =
+    lang === 'ka'
+      ? `${now.getDate()} ${MONTHS_KA[now.getMonth()]}, ${now.getFullYear()}`
+      : now.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
     <div className="fade-in" style={{ maxWidth: 720, margin: '0 auto' }}>
