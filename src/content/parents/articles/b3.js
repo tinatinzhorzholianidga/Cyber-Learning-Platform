@@ -141,6 +141,29 @@ export default {
         ka: 'პარამეტრებში გატარებული ნახევარი საათი შვილს თქვენ ნაცვლად ვერ აღზრდის - ამას ვერც ერთი პარამეტრი შეძლებს. მაგრამ ის შლის იაფ, გავრცელებულ საფრთხეებს: უცნობს, რომელიც პირველი გწერთ, მოპარულ პაროლს, ღამის ორ საათზე ეკრანის ფურცვლას, მოულოდნელ გადახდას საოჯახო ბარათიდან. ამის მოგვარების შემდეგ კი თავისუფალი ხართ იმისთვის, რაც მხოლოდ მშობელს შეუძლია: განაგრძეთ საუბარი.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'Add the local scam specimens to your setup evening: show everyone the fake bank SMS („თქვენი ბარათი დაიბლოკა, გაიარეთ ვერიფიკაცია…“) and the fake delivery-fee message, so the whole family recognises them on sight.',
+          ka: 'დაამატეთ ამ საღამოს ადგილობრივი თაღლითობის ნიმუშები: ყველას აჩვენეთ ყალბი საბანკო SMS („თქვენი ბარათი დაიბლოკა, გაიარეთ ვერიფიკაცია…“) და ყალბი საკურიერო შეტყობინება „მიტანის საფასურის“ მოთხოვნით, რომ მთელმა ოჯახმა ისინი ერთი შეხედვით იცნოს.',
+        },
+        {
+          en: 'Georgian family and school groups usually run on Viber and WhatsApp - while you are at it, check there who can see profile photos and who can add family members to groups.',
+          ka: 'ქართული საოჯახო და სასკოლო ჯგუფები ჩვეულებრივ Viber-სა და WhatsApp-შია - ამავე საღამოს იქაც შეამოწმეთ, ვის უჩანს პროფილის ფოტო და ვის შეუძლია ოჯახის წევრების ჯგუფებში დამატება.',
+        },
+        {
+          en: 'Your child will keep Messenger no matter what - the class chat lives there. Making the profile private and reviewing message requests protects more than trying to ban the app.',
+          ka: 'შვილი Messenger-ს ნებისმიერ შემთხვევაში შეინარჩუნებს - იქ კლასის ჩატია. პროფილის დახურვა და შეტყობინების მოთხოვნების გადახედვა მეტად იცავს, ვიდრე აპლიკაციის აკრძალვის მცდელობა.',
+        },
+        {
+          en: 'Save the emergency contacts while everyone is together: 112 for online crimes, and CERT.GOV.GE for reporting technical cyber incidents such as hacked accounts or devices.',
+          ka: 'სანამ ყველა ერთად ხართ, შეინახეთ საგანგებო კონტაქტები: 112 - ონლაინ დანაშაულებისთვის, CERT.GOV.GE კი - ტექნიკური კიბერინციდენტების შესატყობინებლად, როგორიცაა გატეხილი ანგარიშები ან მოწყობილობები.',
+        },
+      ],
+    },
   ],
   sources: [
     'Pew Research (Apr 2025) - Teens, Social Media & Mental Health: pewresearch.org/internet/2025/04/22/teens-social-media-and-mental-health',

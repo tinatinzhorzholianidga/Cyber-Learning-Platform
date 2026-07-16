@@ -119,6 +119,29 @@ export default {
         ka: 'განდობის მოსმენა მძიმეა, და მასწავლებლები ხშირად ვერ აფასებენ, რამდენ ძალას ართმევს ეს მათ. საქმის განხილვა სკოლის ფსიქოლოგთან არა მხოლოდ დასაშვებია - კარგი პრაქტიკაა, თქვენთვისაც და არა მხოლოდ მოსწავლისთვის. თქვენ ამ ჯაჭვის პირველი რგოლი იყავით, და პირველობა საკმარისია. მთელი ჯაჭვი თქვენ არ უნდა იყოთ.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'The escalation chain in a Georgian school: the class teacher (if that is not you), then the school administration, then the school psychologist - inform them the same day, following the school’s child-protection procedure.',
+          ka: 'ესკალაციის ჯაჭვი ქართულ სკოლაში: კლასის დამრიგებელი (თუ ეს თქვენ არ ხართ), შემდეგ სკოლის ადმინისტრაცია და სკოლის ფსიქოლოგი - შეატყობინეთ მათ იმავე დღეს, სკოლის ბავშვთა დაცვის პროცედურის შესაბამისად.',
+        },
+        {
+          en: 'When the disclosure describes a crime - sextortion, grooming, threats of violence - it goes to the police: call 112 or contact the MIA cyber-crime division via police.ge. The school supports the student; it does not investigate crimes itself.',
+          ka: 'როცა განდობა დანაშაულს აღწერს - სექსტორციას, გრუმინგს, ძალადობის მუქარას - საქმე პოლიციას გადაეცემა: დარეკეთ 112-ზე ან მიმართეთ შსს კიბერდანაშაულის სამმართველოს police.ge-ის მეშვეობით. სკოლა მოსწავლეს მხარს უჭერს - დანაშაულს თავად არ იძიებს.',
+        },
+        {
+          en: 'If a student’s photos or personal data were published without consent - for example on a fake account - the Personal Data Protection Service (personaldata.ge) can be involved as well.',
+          ka: 'თუ მოსწავლის ფოტოები ან პირადი მონაცემები თანხმობის გარეშე გამოქვეყნდა - მაგალითად, ყალბი ანგარიშით - შესაძლებელია პერსონალურ მონაცემთა დაცვის სამსახურის (personaldata.ge) ჩართვაც.',
+        },
+        {
+          en: 'Take It Down (takeitdown.ncmec.org) works from Georgia: it blocks intimate images of under-18s on major platforms, and the student can use it themselves.',
+          ka: 'Take It Down (takeitdown.ncmec.org) საქართველოდანაც მუშაობს: ის 18 წლამდე პირთა ინტიმურ ფოტოებს დიდ პლატფორმებზე ბლოკავს, და მოსწავლეს მისი გამოყენება თავადაც შეუძლია.',
+        },
+      ],
+    },
   ],
   sources: [
     'NCMEC - Sextortion: missingkids.org/theissues/sextortion',

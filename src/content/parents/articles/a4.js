@@ -133,6 +133,33 @@ export default {
         ka: 'და კიდევ ერთი: კლასში ყველაზე ძლიერი დამცავი ფაქტორი მოქმედი შემსწრეა. თქვენი მოზარდი ბულინგს ბევრად უფრო ხშირად შეესწრება, ვიდრე მისი სამიზნე გახდება - CyberHero-ს მისია „დამცველი“ მას საშუალებას აძლევს, სიმულირებულ ჯგუფურ ჩატში ივარჯიშოს იმ პატარა ნაბიჯებში, რომლებიც ერთობლივ დაცინვას აჩერებს. ეს საუბარი ღირს მანამ, სანამ საერთოდ რამე მოხდება.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'In Georgian schools the pile-on usually plays out in the class chat on Messenger or WhatsApp - screenshots from those chats are evidence, exactly like public posts.',
+          ka: 'ქართულ სკოლებში ერთობლივი დაცინვა ჩვეულებრივ კლასის ჩატში ვითარდება - Messenger-ში ან WhatsApp-ში. ამ ჩატების სქრინშოტები ისეთივე მტკიცებულებაა, როგორც საჯარო პოსტები.',
+        },
+        {
+          en: 'The school escalation path: start with the class teacher, go to the school administration if it continues, and bring in the school psychologist to support your child at any stage.',
+          ka: 'სასკოლო ესკალაციის გზა: დაიწყეთ კლასის დამრიგებლით, გაგრძელების შემთხვევაში მიმართეთ სკოლის ადმინისტრაციას, ხოლო შვილის მხარდასაჭერად ნებისმიერ ეტაპზე ჩართეთ სკოლის ფსიქოლოგი.',
+        },
+        {
+          en: 'Involve the police - 112, or the MIA cyber-crime division via police.ge - when there are threats of violence, extortion, or intimate images being shared. That is a crime, not "school drama".',
+          ka: 'ჩართეთ პოლიცია - 112 ან შსს კიბერდანაშაულის სამმართველო police.ge-ის მეშვეობით - როცა საქმეშია ძალადობის მუქარა, გამოძალვა ან ინტიმური ფოტოების გავრცელება. ეს დანაშაულია და არა „სასკოლო დრამა“.',
+        },
+        {
+          en: 'If someone published your child’s photos or personal data without consent - for example on a fake account - you can also contact the Personal Data Protection Service (personaldata.ge).',
+          ka: 'თუ ვინმემ თქვენი შვილის ფოტოები ან პირადი მონაცემები თანხმობის გარეშე გაავრცელა - მაგალითად, ყალბი ანგარიშით - შეგიძლიათ მიმართოთ პერსონალურ მონაცემთა დაცვის სამსახურსაც (personaldata.ge).',
+        },
+        {
+          en: 'If an intimate image of a person under 18 is involved, NCMEC’s Take It Down service (takeitdown.ncmec.org) works from Georgia and blocks the image on major platforms.',
+          ka: 'თუ საქმე 18 წლამდე პირის ინტიმურ ფოტოს ეხება, NCMEC-ის სერვისი Take It Down (takeitdown.ncmec.org) საქართველოდანაც მუშაობს და ფოტოს დიდ პლატფორმებზე ბლოკავს.',
+        },
+      ],
+    },
   ],
   sources: [
     'Childnet - common online safety questions from parents: childnet.com/blog/common-online-safety-questions-from-parents',

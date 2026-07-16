@@ -149,6 +149,29 @@ export default {
         ka: 'საუკეთესო დაცვა თვალთვალი კი არა, ბავშვია, რომელმაც ეს სცენარი იცის და იცის, რომ ყველაფერს გაგანდობთ. ერთხელ, მშვიდად აუხსენით სქემა: ონლაინ ზოგი ადამიანი მეგობრობას თამაშობს, რომ ბავშვები გამოიყენოს; ისინი ყოველთვის საიდუმლოს ითხოვენ; ხოლო თხოვნა, რაღაც მშობლებს დაუმალო, ყველაზე დიდი განგაშის ნიშანია. მოზარდი, რომელსაც ეს თქვენგან, თქვენი ხმით აქვს მოსმენილი, ძალიან რთული სამიზნეა.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'Georgian teens spend their time on Instagram, TikTok, and Facebook/Messenger, plus game chats - the contact pattern described here starts on exactly the same platforms in Georgia too.',
+          ka: 'ქართველი მოზარდები დროს Instagram-ზე, TikTok-სა და Facebook/Messenger-ში ატარებენ, ამას ემატება თამაშების ჩატები - აქ აღწერილი კონტაქტის სქემა საქართველოშიც ზუსტად ამ პლატფორმებზე იწყება.',
+        },
+        {
+          en: 'Report suspected grooming to the police: call 112 or contact the MIA cyber-crime division via police.ge.',
+          ka: 'გრუმინგზე ეჭვის შემთხვევაში მიმართეთ პოლიციას: დარეკეთ 112-ზე ან დაუკავშირდით შსს კიბერდანაშაულის სამმართველოს police.ge-ის მეშვეობით.',
+        },
+        {
+          en: 'If images were already sent and your child is under 18, Take It Down (takeitdown.ncmec.org) works from Georgia and blocks them on major platforms.',
+          ka: 'თუ ფოტოები უკვე გაგზავნილია და თქვენი შვილი 18 წლამდეა, Take It Down (takeitdown.ncmec.org) საქართველოდანაც მუშაობს და მათ დიდ პლატფორმებზე ბლოკავს.',
+        },
+        {
+          en: 'The school psychologist can support your child in the weeks after - and if the contact involves schoolmates, inform the school administration as well.',
+          ka: 'მომდევნო კვირებში შვილს სკოლის ფსიქოლოგი დაეხმარება - ხოლო თუ საქმეში თანასკოლელები არიან ჩართული, სკოლის ადმინისტრაციასაც შეატყობინეთ.',
+        },
+      ],
+    },
   ],
   sources: [
     'NCMEC - Online enticement & grooming: missingkids.org',

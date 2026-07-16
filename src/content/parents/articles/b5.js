@@ -103,6 +103,8 @@ export default {
         { en: 'MIA cyber-crime division - the Ministry of Internal Affairs unit for online fraud, hacking, and blackmail (reachable via 112 or police.ge).', ka: 'შსს კიბერდანაშაულის სამმართველო - შინაგან საქმეთა სამინისტროს დანაყოფი ონლაინ თაღლითობაზე, გატეხვასა და შანტაჟზე (მიმართეთ 112-ის ან police.ge-ის მეშვეობით).' },
         { en: 'The platform itself - in-app "Report" is faster than most people expect for accounts targeting minors.', ka: 'თავად პლატფორმა - აპშივე „Report“ ღილაკი არასრულწლოვნებზე ორიენტირებული ანგარიშების შემთხვევაში მოსალოდნელზე სწრაფად მუშაობს.' },
         { en: 'Take It Down (takeitdown.ncmec.org) - free NCMEC service that blocks intimate images of under-18s on major platforms.', ka: 'Take It Down (takeitdown.ncmec.org) - NCMEC-ის უფასო სერვისი, რომელიც 18 წლამდე პირთა ინტიმურ ფოტოებს დიდ პლატფორმებზე ბლოკავს.' },
+        { en: 'Personal Data Protection Service (personaldata.ge) - for photos or personal data published without consent.', ka: 'პერსონალურ მონაცემთა დაცვის სამსახური (personaldata.ge) - თანხმობის გარეშე გამოქვეყნებული ფოტოებისა და პირადი მონაცემებისთვის.' },
+        { en: 'CERT.GOV.GE - for reporting technical cyber incidents, such as hacked accounts or devices at scale.', ka: 'CERT.GOV.GE - ტექნიკური კიბერინციდენტების შესატყობინებლად, მაგალითად, როცა ანგარიშები ან მოწყობილობები მასშტაბურად არის გატეხილი.' },
         { en: 'The school psychologist - for the weeks after; recovery is emotional, not just technical.', ka: 'სკოლის ფსიქოლოგი - მომდევნო კვირეებისთვის; აღდგენა ემოციური პროცესია და არა მხოლოდ ტექნიკური.' },
       ],
     },

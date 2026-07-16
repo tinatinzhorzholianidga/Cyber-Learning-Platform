@@ -145,6 +145,33 @@ export default {
         ka: 'და როცა კრიზისი დასრულდება, ლექციისგან თავი შეიკავეთ. ერთი კითხვა - „მომავალში პირველად რას შეამოწმებდი?“ - ცუდ დღეს უნარად აქცევს. თქვენს შვილს ვარჯიში უსაფრთხო ადგილასაც შეუძლია: CyberHero-ს მისია „ფიშინგზე მონადირე“ ნამდვილის მსგავსი შეტყობინებებით სავსე საფოსტო ყუთია, სადაც შეცდომა არაფერი ღირს.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'The fake bank SMS arrives in Georgian - „თქვენი ბარათი დაიბლოკა, გაიარეთ ვერიფიკაცია…“ with a lookalike link. No Georgian bank asks for card details through an SMS link.',
+          ka: 'ყალბი საბანკო SMS ქართულად მოდის - „თქვენი ბარათი დაიბლოკა, გაიარეთ ვერიფიკაცია…“ - თან ახლავს ბანკის მისამართის მსგავსი ბმული. არც ერთი ქართული ბანკი არ ითხოვს ბარათის მონაცემებს SMS-ის ბმულით.',
+        },
+        {
+          en: 'Marketplace prepayment scams are common on olx.ge, mymarket.ge, and Facebook Marketplace: a "buyer" or "seller" pushes for prepayment or card details. Teens selling an old phone or sneakers meet these too.',
+          ka: 'წინასწარი გადახდის თაღლითობები გავრცელებულია olx.ge-ზე, mymarket.ge-სა და Facebook Marketplace-ზე: „მყიდველი“ ან „გამყიდველი“ დაჟინებით ითხოვს წინასწარ გადახდას ან ბარათის მონაცემებს. ამას ძველი ტელეფონისა თუ სპორტული ფეხსაცმლის გამყიდველი მოზარდებიც აწყდებიან.',
+        },
+        {
+          en: '"Money doubling" messages come from hacked friends’ accounts - the offer arrives from a real friend’s profile, which is exactly why it works. Call the friend and verify before believing anything.',
+          ka: '„ფულის გაორმაგების“ შეტყობინებები გატეხილი მეგობრების ანგარიშებიდან მოდის - შეთავაზება ნამდვილი მეგობრის პროფილიდან ჩანს, და სწორედ ამიტომ მუშაობს. სანამ დაიჯერებთ, დაურეკეთ მეგობარს და გადაამოწმეთ.',
+        },
+        {
+          en: 'Fake job ads that charge a "registration fee" target teens looking for a first job - a real employer never charges you to hire you.',
+          ka: 'ყალბი ვაკანსიები „სარეგისტრაციო გადასახადით“ პირველი სამსახურის მაძიებელ მოზარდებს ემიზნება - ნამდვილი დამსაქმებელი დასაქმებისთვის ფულს არასოდეს გთხოვთ.',
+        },
+        {
+          en: 'To report online fraud, call 112 or contact the MIA cyber-crime division via police.ge.',
+          ka: 'ონლაინ თაღლითობის შესატყობინებლად დარეკეთ 112-ზე ან მიმართეთ შსს კიბერდანაშაულის სამმართველოს police.ge-ის მეშვეობით.',
+        },
+      ],
+    },
   ],
   sources: [
     'Childnet - common online safety questions from parents: childnet.com/blog/common-online-safety-questions-from-parents',

@@ -126,6 +126,29 @@ export default {
         ka: 'რამდენიმე კვირის წინააღმდეგობას ელოდეთ, განსაკუთრებით საძინებლის წესის გამო. იდექით მშვიდად, მაგრამ მტკიცედ. უკეთესი ძილი განწყობას რამდენიმე დღეში აუმჯობესებს - მოზარდი კი, რომელიც თავს უკეთ გრძნობს, ნაკლებად ედავება წესს, რომელმაც აქამდე მიიყვანა.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'Homework in Georgian schools often travels through the class chat on Messenger or WhatsApp - a blanket evening device ban cuts your child off from homework too. Agreed quiet hours work better than bans.',
+          ka: 'ქართულ სკოლებში საშინაო დავალება ხშირად კლასის ჩატით მოდის - Messenger-ში ან WhatsApp-ში. საღამოს ტელეფონის სრული აკრძალვა შვილს დავალებასაც მოსწყვეტს. შეთანხმებული „წყნარი საათები“ აკრძალვაზე უკეთ მუშაობს.',
+        },
+        {
+          en: 'Family life is online too: the evening Viber or Messenger family group is how many Georgian families stay in touch. When you set the rules, distinguish connection - a call with grandmother - from aimless scrolling.',
+          ka: 'ოჯახური ცხოვრებაც ონლაინაა: საღამოს საოჯახო ჯგუფი Viber-ში ან Messenger-ში მრავალი ქართული ოჯახის ურთიერთობის ნაწილია. წესების შედგენისას განასხვავეთ ურთიერთობა - ზარი ბებიასთან - და უმიზნო სქროლვა.',
+        },
+        {
+          en: 'The sleep and comparison statistics here come from international research (Pew, APA), but Georgian teens sit in the same feeds - Instagram, TikTok, the midnight group chat - so the conclusions carry over directly.',
+          ka: 'ძილისა და შედარების შესახებ აქ მოყვანილი ციფრები საერთაშორისო კვლევებიდანაა (Pew, APA), მაგრამ ქართველი მოზარდები იმავე ლენტებში სხედან - Instagram, TikTok, შუაღამის ჯგუფური ჩატი - ამიტომ დასკვნები პირდაპირ ვრცელდება.',
+        },
+        {
+          en: 'If problem-use signs persist for weeks, the school psychologist is a natural and free first stop in Georgia.',
+          ka: 'თუ პრობლემური გამოყენების ნიშნები კვირების განმავლობაში გრძელდება, საქართველოში ბუნებრივი და უფასო პირველი ნაბიჯი სკოლის ფსიქოლოგია.',
+        },
+      ],
+    },
   ],
   sources: [
     'APA - Health Advisory on Social Media Use in Adolescence: apa.org/topics/social-media-internet/health-advisory-adolescent-social-media-use',

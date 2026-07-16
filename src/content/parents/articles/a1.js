@@ -122,6 +122,29 @@ export default {
         ka: 'როცა შემდეგი ნაბიჯისთვის მზად იქნებით, შესთავაზეთ თქვენს მოზარდს CyberHero-ს მისია „კვალის დეტექტივი“ - ორივე ნახავთ, ზუსტად რისი გაგება შეუძლია უცნობს საჯარო პროფილიდან, და ეს ვახშმის მაგიდასთან საუბრის შესანიშნავი თემაა.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'Georgian teens live mostly on Instagram, TikTok, and Facebook/Messenger - the map in this article describes their world without translation.',
+          ka: 'ქართველი მოზარდები ძირითადად Instagram-ზე, TikTok-სა და Facebook/Messenger-ში ცხოვრობენ - ამ სტატიაში დახატული რუკა მათ სამყაროსაც ზუსტად აღწერს.',
+        },
+        {
+          en: 'Class group chats usually run on Messenger or WhatsApp - for a Georgian teen that chat really is the school hallway, so leaving it is rarely a realistic option.',
+          ka: 'კლასის ჯგუფური ჩატები ჩვეულებრივ Messenger-ში ან WhatsApp-შია - ქართველი მოზარდისთვის ეს ჩატი მართლაც სკოლის დერეფანია, ამიტომ მისი დატოვება იშვიათად არის რეალური არჩევანი.',
+        },
+        {
+          en: 'Family and school groups often live on Viber and WhatsApp - joining them is a natural, low-pressure way to see one corner of your child’s online world.',
+          ka: 'საოჯახო და სასკოლო ჯგუფები ხშირად Viber-სა და WhatsApp-შია - მათში ჩართვა ბუნებრივი და უწყინარი გზაა, რომ შვილის ონლაინ სამყაროს ერთი კუთხე მაინც დაინახოთ.',
+        },
+        {
+          en: 'The statistics cited here come from international research (Pew), but they describe the same platforms Georgian teens use every day - the patterns apply to Georgian families too.',
+          ka: 'აქ მოყვანილი ციფრები საერთაშორისო კვლევებიდან (Pew) მოდის, მაგრამ ისინი ზუსტად იმ პლატფორმებს აღწერს, რომლებსაც ქართველი მოზარდები ყოველდღე იყენებენ - ეს კანონზომიერებები ქართულ ოჯახებზეც ვრცელდება.',
+        },
+      ],
+    },
   ],
   sources: [
     'Pew Research (2025) - Teens, Social Media & Mental Health: pewresearch.org/internet/2025/04/22/teens-social-media-and-mental-health',

@@ -116,6 +116,29 @@ export default {
         ka: 'ეს ჩამონათვალი გონების კუთხეში შეინახეთ და არა მაცივარზე. მისი მიზანი არ არის, რომ შვილს საქმის მასალასავით უთვალთვალოთ - ის გეხმარებათ, დროულად შეამჩნიოთ, რბილად იკითხოთ და მშვიდად იმოქმედოთ. დროული შემჩნევა კი მთავარი უპირატესობაა: თითქმის ყველა ონლაინ პრობლემის მოგვარება პირველ კვირაში ბევრად უფრო ადვილია, ვიდრე მესამე თვეში.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'Unexplained money requests in Georgia often trace back to the same few schemes: prepayment scams on olx.ge, mymarket.ge, or Facebook Marketplace, "money doubling" offers from hacked friends’ accounts, or fake job ads that charge a registration fee.',
+          ka: 'აუხსნელი ფულის თხოვნა საქართველოში ხშირად ერთსა და იმავე რამდენიმე სქემამდე მიდის: წინასწარი გადახდის თაღლითობები olx.ge-ზე, mymarket.ge-სა თუ Facebook Marketplace-ზე, „ფულის გაორმაგების“ შეთავაზებები გატეხილი მეგობრების ანგარიშებიდან, ან ყალბი ვაკანსიები „სარეგისტრაციო გადასახადით“.',
+        },
+        {
+          en: 'The mood crash after the phone usually happens where Georgian teens actually live - Instagram, TikTok, and the class chat on Messenger or WhatsApp - so a calm question about that specific chat often opens the door.',
+          ka: 'განწყობის ვარდნა ტელეფონის შემდეგ ჩვეულებრივ იქ ხდება, სადაც ქართველი მოზარდები ნამდვილად ცხოვრობენ - Instagram-ზე, TikTok-სა და კლასის ჩატში Messenger-ში ან WhatsApp-ში - ამიტომ მშვიდი კითხვა კონკრეტულად ამ ჩატზე ხშირად კარს აღებს.',
+        },
+        {
+          en: 'If the conversation reveals a crime - blackmail, threats, fraud - call 112 or contact the MIA cyber-crime division via police.ge.',
+          ka: 'თუ საუბარი დანაშაულს გამოავლენს - შანტაჟს, მუქარას, თაღლითობას - დარეკეთ 112-ზე ან მიმართეთ შსს კიბერდანაშაულის სამმართველოს police.ge-ის მეშვეობით.',
+        },
+        {
+          en: 'For professional support, the school psychologist is the natural first stop; if classmates are involved, the class teacher and the school administration should hear about it too.',
+          ka: 'პროფესიული მხარდაჭერისთვის ბუნებრივი პირველი ნაბიჯი სკოლის ფსიქოლოგია; თუ საქმეში თანაკლასელები არიან, ამბავი კლასის დამრიგებელმა და სკოლის ადმინისტრაციამაც უნდა იცოდეს.',
+        },
+      ],
+    },
   ],
   sources: [
     'APA Health Advisory on Social Media Use in Adolescence: apa.org/topics/social-media-internet/health-advisory-adolescent-social-media-use',

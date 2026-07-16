@@ -107,6 +107,29 @@ export default {
         ka: 'არაფერი ამათგან არ მოითხოვს, რომ აპლიკაციები შვილზე უკეთ იცოდეთ - მხოლოდ ცნობისმოყვარეობა და გულწრფელობა სჭირდება. მიზნად დაისახეთ ერთ კითხვაზე აგებული ოჯახური რეფლექსი: „საიდან ვიცით ეს?“ მოზარდი, რომელიც ამას ყალბ ფოტოზე იკითხავს, იმავეს იკითხავს უცნობის დაპირებაზეც და დაუჯერებლად კარგ გათამაშებაზეც - და ეს ერთი რეფლექსი ნებისმიერ მშობლის კონტროლზე მეტად დაიცავს მას.',
       },
     },
+    {
+      type: 'callout',
+      variant: 'note',
+      title: { en: 'In Georgia', ka: 'საქართველოში' },
+      items: [
+        {
+          en: 'Georgian teens get their "news" from the same feeds - Instagram, TikTok, and Facebook - so everything in this article applies unchanged. Practise the checking habits on Georgian-language posts too.',
+          ka: 'ქართველი მოზარდები „ახალ ამბებს“ იმავე ლენტებიდან იღებენ - Instagram, TikTok და Facebook - ამიტომ ამ სტატიაში ყველაფერი უცვლელად ვრცელდება. შემოწმების ჩვევები ქართულენოვან პოსტებზეც გაავარჯიშეთ.',
+        },
+        {
+          en: 'Fakery circulates in Georgian too: "money doubling" offers arrive from hacked friends’ accounts, and fake giveaways or job ads borrow the names of real Georgian companies - the "who posted this first?" question catches them all.',
+          ka: 'გაყალბება ქართულადაც ვრცელდება: „ფულის გაორმაგების“ შეთავაზებები გატეხილი მეგობრების ანგარიშებიდან მოდის, ყალბი გათამაშებები და ვაკანსიები კი ნამდვილი ქართული კომპანიების სახელებს სესხულობს - კითხვა „პირველად ვინ გამოაქვეყნა?“ ყველა მათგანს იჭერს.',
+        },
+        {
+          en: 'If a fabricated image of your child is published without consent, contact the Personal Data Protection Service (personaldata.ge); if the fake image is intimate and the child is under 18, Take It Down (takeitdown.ncmec.org) works from Georgia.',
+          ka: 'თუ თქვენი შვილის გაყალბებული გამოსახულება თანხმობის გარეშე გამოქვეყნდა, მიმართეთ პერსონალურ მონაცემთა დაცვის სამსახურს (personaldata.ge); ხოლო თუ ყალბი გამოსახულება ინტიმურია და ბავშვი 18 წლამდეა, Take It Down (takeitdown.ncmec.org) საქართველოდანაც მუშაობს.',
+        },
+        {
+          en: 'When fabricated content is used for blackmail or fraud, that is a police matter: call 112 or contact the MIA cyber-crime division via police.ge.',
+          ka: 'როცა გაყალბებული მასალა შანტაჟისთვის ან თაღლითობისთვის გამოიყენება, ეს პოლიციის საქმეა: დარეკეთ 112-ზე ან მიმართეთ შსს კიბერდანაშაულის სამმართველოს police.ge-ის მეშვეობით.',
+        },
+      ],
+    },
   ],
   sources: [
     'Common Sense Media - Digital Citizenship Curriculum (news & media literacy): commonsense.org/education/digital-citizenship',
