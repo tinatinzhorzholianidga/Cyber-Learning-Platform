@@ -12,7 +12,7 @@ function detectLang() {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === 'en' || saved === 'ka') return saved
   } catch {
-    /* storage unavailable — fall through to browser language */
+    /* storage unavailable - fall through to browser language */
   }
   return (navigator.language || '').toLowerCase().startsWith('ka') ? 'ka' : 'en'
 }
@@ -28,7 +28,7 @@ export function I18nProvider({ children }) {
     try {
       localStorage.setItem(STORAGE_KEY, lang)
     } catch {
-      /* private mode — language just won't persist */
+      /* private mode - language just won't persist */
     }
     document.documentElement.lang = lang
   }, [lang])

@@ -3,8 +3,8 @@
 // Gameplay data contract (one file per mission, default export):
 //   {
 //     brief: {en,ka},                    // scenario setup, 2nd person, no lecture
-//     helpStrip: {en,ka},                // optional — sensitive missions only
-//     timer: seconds, passRatio: 0..1,   // optional — final exam only
+//     helpStrip: {en,ka},                // optional - sensitive missions only
+//     timer: seconds, passRatio: 0..1,   // optional - final exam only
 //     rounds: [
 //       { type:'choice', card?, q, options:[{label,correct}], explain }   // max 10
 //       { type:'flags', prompt, items:[{from?,text,flag,explain}], explain } // max 5×flags
@@ -12,7 +12,7 @@
 //         options:[{label,note?,value}], explain, explainNegative? }      // max 15
 //       { type:'branch', start, max, nodes:{ id:{chat?,scene?,choices?|end} } } // max declared
 //     ],
-//     takeaways: [{en,ka}, …]            // 3–5 debrief bullets
+//     takeaways: [{en,ka}, …]            // 3-5 debrief bullets
 //   }
 // All text leaves are {en,ka} objects.
 import { MISSION_META } from './meta.js'

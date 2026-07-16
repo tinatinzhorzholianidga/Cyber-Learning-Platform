@@ -10,8 +10,8 @@ export const MISSION_META = [
     article: 'a2',
     name: { en: 'Phishing Hunter', ka: 'ფიშინგზე მონადირე' },
     desc: {
-      en: 'Emails, DMs and SMS land in your inbox. Real or phish — you decide.',
-      ka: 'იმეილები, პირადი შეტყობინებები და SMS მოდის შენს საფოსტო ყუთში. ნამდვილია თუ ფიშინგი — შენ წყვეტ.',
+      en: 'Emails, DMs and SMS land in your inbox. Real or phish - you decide.',
+      ka: 'იმეილები, პირადი შეტყობინებები და SMS მოდის შენს საფოსტო ყუთში. ნამდვილია თუ ფიშინგი - შენ წყვეტ.',
     },
   },
   {
@@ -22,8 +22,8 @@ export const MISSION_META = [
     article: 'a1',
     name: { en: 'Footprint Detective', ka: 'კვალის დეტექტივი' },
     desc: {
-      en: 'Investigate a profile the way a stalker — or a recruiter — would.',
-      ka: 'გამოიკვლიე პროფილი ისე, როგორც სტოკერი — ან რეკრუტერი — გამოიკვლევდა.',
+      en: 'Investigate a profile the way a stalker - or a recruiter - would.',
+      ka: 'გამოიკვლიე პროფილი ისე, როგორც სტოკერი - ან რეკრუტერი - გამოიკვლევდა.',
     },
   },
   {
@@ -34,8 +34,8 @@ export const MISSION_META = [
     article: 'b3',
     name: { en: 'Fort Knox', ka: 'ფორტ ნოქსი' },
     desc: {
-      en: 'Build a defense attackers cannot crack — passwords, 2FA, recovery.',
-      ka: 'ააგე დაცვა, რომელსაც ვერ გატეხავენ — პაროლები, 2FA, აღდგენა.',
+      en: 'Build a defense attackers cannot crack - passwords, 2FA, recovery.',
+      ka: 'ააგე დაცვა, რომელსაც ვერ გატეხავენ - პაროლები, 2FA, აღდგენა.',
     },
   },
   {
@@ -48,8 +48,8 @@ export const MISSION_META = [
     sensitive: true,
     name: { en: 'The Blackmail Trap', ka: 'შანტაჟის ხაფანგი' },
     desc: {
-      en: 'A DM turns into a threat. Every choice matters — and there is always a way out.',
-      ka: 'მიმოწერა მუქარაში გადაიზრდება. ყველა არჩევანი მნიშვნელოვანია — და გამოსავალი ყოველთვის არსებობს.',
+      en: 'A DM turns into a threat. Every choice matters - and there is always a way out.',
+      ka: 'მიმოწერა მუქარაში გადაიზრდება. ყველა არჩევანი მნიშვნელოვანია - და გამოსავალი ყოველთვის არსებობს.',
     },
   },
   {
@@ -85,8 +85,8 @@ export const MISSION_META = [
     article: 'a7',
     name: { en: 'Reality Check', ka: 'რეალობის შემოწმება' },
     desc: {
-      en: 'News, photos, AI content — real or fake? Test your radar.',
-      ka: 'ამბები, ფოტოები, ხელოვნური ინტელექტის კონტენტი — ნამდვილია თუ ყალბი? გამოცადე შენი რადარი.',
+      en: 'News, photos, AI content - real or fake? Test your radar.',
+      ka: 'ამბები, ფოტოები, ხელოვნური ინტელექტის კონტენტი - ნამდვილია თუ ყალბი? გამოცადე შენი რადარი.',
     },
   },
   {
@@ -110,8 +110,8 @@ export const MISSION_META = [
     article: 'a6',
     name: { en: 'Balance Boss', ka: 'ბალანსის ოსტატი' },
     desc: {
-      en: 'Sleep, doomscrolling, comparison. Audit yourself — no lectures.',
-      ka: 'ძილი, უსასრულო სქროლვა, შედარება. შეაფასე საკუთარი თავი — ლექციების გარეშე.',
+      en: 'Sleep, doomscrolling, comparison. Audit yourself - no lectures.',
+      ka: 'ძილი, უსასრულო სქროლვა, შედარება. შეაფასე საკუთარი თავი - ლექციების გარეშე.',
     },
   },
   {

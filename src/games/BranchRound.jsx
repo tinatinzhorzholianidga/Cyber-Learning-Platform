@@ -4,7 +4,7 @@ import { useI18n } from '../i18n/I18nContext.jsx'
 export const branchMax = (round) => round.max
 
 // Branching scenario: chat messages + a situation, choices lead to other
-// nodes. Every path reaches an end node — wrong turns show consequences,
+// nodes. Every path reaches an end node - wrong turns show consequences,
 // never a dead end. Round data declares `max` (points on the best path).
 export default function BranchRound({ round, onDone }) {
   const { t, tx } = useI18n()

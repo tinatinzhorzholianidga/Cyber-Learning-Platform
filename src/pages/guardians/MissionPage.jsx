@@ -23,7 +23,7 @@ export default function MissionPage() {
   const [score, setScore] = useState(0)
 
   // The route keeps this component mounted when only :missionId changes
-  // (e.g. the "next mission" button) — reset the run state explicitly.
+  // (e.g. the "next mission" button) - reset the run state explicitly.
   useEffect(() => {
     setPhase('brief')
     setScore(0)

@@ -34,7 +34,7 @@ export function ProgressProvider({ children }) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
     } catch {
-      /* private mode — progress just won't persist */
+      /* private mode - progress just won't persist */
     }
   }, [progress])
 

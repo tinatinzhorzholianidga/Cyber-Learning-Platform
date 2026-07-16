@@ -3,7 +3,7 @@ import { useI18n } from '../i18n/I18nContext.jsx'
 
 export const flagsMax = (round) => round.items.filter((i) => i.flag).length * 5
 
-// "Tap every red flag" — multi-select over a list of messages/posts,
+// "Tap every red flag" - multi-select over a list of messages/posts,
 // then a reveal with per-item explanations.
 export default function FlagsRound({ round, onDone }) {
   const { t, tx } = useI18n()

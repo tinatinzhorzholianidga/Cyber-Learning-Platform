@@ -7,8 +7,8 @@ export const TIERS = [
     color: '#ff8c42',
     emoji: '🐣',
     active: false,
-    tag: { en: 'Grades 1–3 · ages 6–9', ka: '1–3 კლასი · 6–9 წელი' },
-    name: { en: 'Little Heroes', ka: 'პატარა გმირები' },
+    tag: { en: 'Grades 1-3 · ages 6-9', ka: '1-3 კლასი · 6-9 წელი' },
+    name: { en: 'Digital Foundations', ka: 'ციფრული საფუძვლები' },
     desc: {
       en: "Fun games that teach what's safe to click, share, and say online.",
       ka: 'სახალისო თამაშები იმის შესახებ, თუ რა არის უსაფრთხო ინტერნეტში.',
@@ -22,13 +22,13 @@ export const TIERS = [
         'Close tricky pop-ups and fake prizes',
         'Know what stays secret online',
         'Always ask a grown-up first',
-        'Never answer strangers — tell a trusted adult',
+        'Never answer strangers - tell a trusted adult',
       ],
       ka: [
         'დახურე მოტყუებული ფანჯრები და ყალბი პრიზები',
         'იცოდე, რა რჩება საიდუმლოდ ინტერნეტში',
         'ყოველთვის ჯერ უფროსს ჰკითხე',
-        'არასდროს უპასუხო უცნობს — უთხარი სანდო უფროსს',
+        'არასდროს უპასუხო უცნობს - უთხარი სანდო უფროსს',
       ],
     },
   },
@@ -37,11 +37,11 @@ export const TIERS = [
     color: '#3ecf8e',
     emoji: '🎮',
     active: false,
-    tag: { en: 'Grades 4–7 · ages 9–13', ka: '4–7 კლასი · 9–13 წელი' },
-    name: { en: 'Cyber Cadets', ka: 'კიბერ კადეტები' },
+    tag: { en: 'Grades 4-7 · ages 9-13', ka: '4-7 კლასი · 9-13 წელი' },
+    name: { en: 'Digital Citizens', ka: 'ციფრული მოქალაქეები' },
     desc: {
-      en: 'Your first accounts and phone — passwords, privacy, and being kind online.',
-      ka: 'შენი პირველი ანგარიშები და ტელეფონი — პაროლები, პრივატულობა და კეთილგანწყობა.',
+      en: 'Your first accounts and phone - passwords, privacy, and being kind online.',
+      ka: 'შენი პირველი ანგარიშები და ტელეფონი - პაროლები, პრივატულობა და კეთილგანწყობა.',
     },
     intro: {
       en: 'Real scenarios from social apps and games, with points and challenges to keep it fun.',
@@ -72,11 +72,11 @@ export const TIERS = [
     emoji: '🛡️',
     active: true,
     route: '/guardians',
-    tag: { en: 'Grades 8–12 · ages 13–18', ka: '8–12 კლასი · 13–18 წელი' },
+    tag: { en: 'Grades 8-12 · ages 13-18', ka: '8-12 კლასი · 13-18 წელი' },
     name: { en: 'Cyber Guardians', ka: 'კიბერ დამცველები' },
     desc: {
-      en: 'Phishing, scams, and protecting your digital footprint — serious skills.',
-      ka: 'ფიშინგი, თაღლითობა და ციფრული კვალის დაცვა — სერიოზული უნარები.',
+      en: 'Phishing, scams, and protecting your digital footprint - serious skills.',
+      ka: 'ფიშინგი, თაღლითობა და ციფრული კვალის დაცვა - სერიოზული უნარები.',
     },
   },
   {
@@ -84,15 +84,15 @@ export const TIERS = [
     color: '#8b5cff',
     emoji: '🎓',
     active: false,
-    tag: { en: 'University · ages 18–21', ka: 'სტუდენტები · 18–21 წელი' },
-    name: { en: 'Campus Cyber', ka: 'კამპუს კიბერი' },
+    tag: { en: 'University · ages 18-21', ka: 'სტუდენტები · 18-21 წელი' },
+    name: { en: 'Student Security', ka: 'უსაფრთხოება სტუდენტებისთვის' },
     desc: {
       en: 'The full toolkit: passwords, 2FA, scams, deepfakes, and data privacy.',
       ka: 'სრული ხელსაწყოები: პაროლები, 2FA, თაღლითობა, დიპფეიქები, მონაცემები.',
     },
     intro: {
-      en: 'The complete curriculum — every core topic, at full depth, for independent adults.',
-      ka: 'სრული კურსი — ყველა ძირითადი თემა, სრული სიღრმით, დამოუკიდებელი ადამიანებისთვის.',
+      en: 'The complete curriculum - every core topic, at full depth, for independent adults.',
+      ka: 'სრული კურსი - ყველა ძირითადი თემა, სრული სიღრმით, დამოუკიდებელი ადამიანებისთვის.',
     },
     topics: {
       en: [
@@ -121,7 +121,7 @@ export const TIERS = [
     emoji: '💼',
     active: false,
     tag: { en: 'Working adults', ka: 'მომუშავე ადამიანები' },
-    name: { en: 'Cyber@Work', ka: 'კიბერი სამსახურში' },
+    name: { en: 'Workplace Security', ka: 'უსაფრთხოება სამსახურში' },
     desc: {
       en: 'Practical security for work, money, and protecting your family.',
       ka: 'პრაქტიკული უსაფრთხოება სამსახურის, ფულისა და ოჯახისთვის.',
@@ -155,7 +155,7 @@ export const TIERS = [
     emoji: '🏡',
     active: false,
     tag: { en: '50+ · Seniors', ka: '50+ · უფროსი თაობა' },
-    name: { en: 'Safe & Sound', ka: 'უსაფრთხოდ' },
+    name: { en: 'Security 50+', ka: 'უსაფრთხოება 50+' },
     desc: {
       en: 'Spot scam calls and fake messages with calm confidence.',
       ka: 'ამოიცანი თაღლითური ზარები და ყალბი შეტყობინებები სიმშვიდით.',
@@ -192,7 +192,7 @@ export const PARENTS_TIER = {
   tag: { en: 'For the adults who help', ka: 'უფროსებისთვის, ვინც გვერდში დგას' },
   name: { en: 'Teachers & Parents', ka: 'მასწავლებლები და მშობლები' },
   desc: {
-    en: 'Understand the risks, act with confidence, and bring it to the classroom — calm, practical, no jargon.',
-    ka: 'გაიგეთ რისკები, იმოქმედეთ თავდაჯერებულად და წაიღეთ საკლასო ოთახში — მშვიდად, პრაქტიკულად, ჟარგონის გარეშე.',
+    en: 'Understand the risks, act with confidence, and bring it to the classroom - calm, practical, no jargon.',
+    ka: 'გაიგეთ რისკები, იმოქმედეთ თავდაჯერებულად და წაიღეთ საკლასო ოთახში - მშვიდად, პრაქტიკულად, ჟარგონის გარეშე.',
   },
 }
