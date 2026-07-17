@@ -1,8 +1,8 @@
 /* IO's (იო) face, drawn on a 2D canvas that is mapped onto the curved
    "screen" cap on the front of the robot. Everything uses the Candy Clay
    palette so the mascot reads as part of the design system.
-   The little details (DGA plate, corner hatches, "+" mark) are carried
-   over from the original mascot render. */
+   The little details (DGA plate, corner hatches) are carried over from
+   the original mascot render. */
 
 export const FACE_SIZE = 512
 
