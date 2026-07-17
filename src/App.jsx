@@ -13,7 +13,7 @@ import GuardiansMapPage from './pages/guardians/GuardiansMapPage.jsx'
 import MissionPage from './pages/guardians/MissionPage.jsx'
 import CertificatePage from './pages/guardians/CertificatePage.jsx'
 
-// Byte, the helper-robot demo. Lazy so three.js never loads on normal pages;
+// IO, the helper-robot demo. Lazy so three.js never loads on normal pages;
 // the page is reachable only by URL while he is being tested on this branch.
 const MascotDemoPage = lazy(() => import('./pages/MascotDemoPage.jsx'))
 

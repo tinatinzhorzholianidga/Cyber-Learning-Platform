@@ -8,9 +8,13 @@ const C = {
   body: '#f8f6ff',
   violet: '#6c5ce7',
   violet2: '#8b5cff',
-  orange: '#ff8c42',
   white: '#ffffff',
   pod: '#d6cdf3',
+  phones: '#2f2a4e',
+  phonePad: '#221d3d',
+  leafA: '#2fbf83',
+  leafB: '#3ecf8e',
+  leafKnot: '#1fae70',
   leds: ['#2fbf83', '#ef5d8a', '#ffb020', '#6c5ce7', '#4aa8ff'],
 }
 
@@ -52,6 +56,7 @@ export default function RobotModel({
   const tilt = useRef() // pointer-follow rotation
   const mittR = useRef()
   const mittL = useRef()
+  const leaves = useRef() // the sprout on the headphone band
   const shadow = useRef()
   const stars = useRef()
   const ledMats = useRef([])
@@ -131,10 +136,7 @@ export default function RobotModel({
       if (!reducedMotion) {
         a.gesture = { type: gesture.type, start: t }
         if (gesture.type === 'bounce') a.spring.v = -3.4
-        a.overlay = {
-          emotion: gesture.type === 'spin' ? 'surprised' : 'excited',
-          until: t + (gesture.type === 'fly' ? 2.7 : 1.9),
-        }
+        a.overlay = { emotion: gesture.type === 'spin' ? 'surprised' : 'excited', until: t + 1.9 }
       }
     }
     if (a.overlay && t > a.overlay.until) a.overlay = null
@@ -208,18 +210,6 @@ export default function RobotModel({
         const dur = 0.95
         if (e >= dur) a.gesture = null
         else if (tilt.current) tilt.current.rotation.y += easeInOut(e / dur) * Math.PI * 2
-      } else if (a.gesture.type === 'fly') {
-        // little superhero take-off: lean back, fist up, rise
-        const dur = 2.6
-        if (e >= dur) a.gesture = null
-        else {
-          const b = clamp01(e / 0.3) * clamp01((dur - e) / 0.4)
-          y += 0.45 * b
-          mittRY = -0.18 + 0.75 * b
-          mittRX = 1.02
-          mittRRotZ = -0.22 - 1.3 * b
-          if (tilt.current) tilt.current.rotation.x -= 0.3 * b
-        }
       }
     }
 
@@ -239,6 +229,9 @@ export default function RobotModel({
     ledMats.current.forEach((m, i) => {
       if (m) m.emissiveIntensity = 0.6 + 0.4 * Math.sin(t * 2.3 + i * 0.9)
     })
+
+    /* ---- the sprout sways gently ---- */
+    if (leaves.current) leaves.current.rotation.z = Math.sin(t * 2.1) * 0.07
 
     /* ---- celebration stars ---- */
     if (stars.current) {
@@ -316,19 +309,39 @@ export default function RobotModel({
             <meshBasicMaterial map={texture} transparent toneMapped={false} />
           </mesh>
 
-          {/* beanie hat: brim + dome + pompom, tilted like the brand logo */}
-          <group position={[0, 0.74, 0]} rotation={[0.06, 0, -0.13]}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[0.66, 0.17, 20, 48]} />
-              <meshPhysicalMaterial color={C.white} roughness={0.5} clearcoat={0.35} />
+          {/* summer headphones: band over the head + ear cups */}
+          <group position={[0, 0.06, 0]}>
+            <mesh>
+              <torusGeometry args={[1.04, 0.075, 16, 56, Math.PI * 1.12]} />
+              <meshPhysicalMaterial color={C.phones} roughness={0.45} clearcoat={0.4} />
             </mesh>
-            <mesh position={[0, 0.14, 0]} scale={[1, 0.82, 1]}>
-              <sphereGeometry args={[0.68, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
-              <meshPhysicalMaterial color={C.violet} roughness={0.45} clearcoat={0.5} />
+            {[-1, 1].map((side) => (
+              <group key={side} position={[side * 1.0, 0.06, 0]} rotation={[0, 0, side * -0.1]}>
+                <mesh rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.22, 0.22, 0.14, 24]} />
+                  <meshPhysicalMaterial color={C.phones} roughness={0.42} clearcoat={0.45} />
+                </mesh>
+                <mesh position={[side * -0.08, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.175, 0.175, 0.05, 20]} />
+                  <meshPhysicalMaterial color={C.phonePad} roughness={0.65} />
+                </mesh>
+              </group>
+            ))}
+          </group>
+
+          {/* the little green sprout tied to the band (summer!) */}
+          <group ref={leaves} position={[0, 1.14, 0]}>
+            <mesh position={[0, 0.01, 0]}>
+              <sphereGeometry args={[0.08, 16, 12]} />
+              <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
             </mesh>
-            <mesh position={[0, 0.72, 0]}>
-              <sphereGeometry args={[0.19, 24, 18]} />
-              <meshPhysicalMaterial color={C.orange} roughness={0.55} clearcoat={0.3} />
+            <mesh position={[-0.18, 0.13, 0]} rotation={[0, 0, 0.8]} scale={[1.5, 0.6, 0.32]}>
+              <sphereGeometry args={[0.16, 20, 14]} />
+              <meshPhysicalMaterial color={C.leafA} roughness={0.5} clearcoat={0.3} />
+            </mesh>
+            <mesh position={[0.18, 0.13, 0]} rotation={[0, 0, -0.8]} scale={[1.5, 0.6, 0.32]}>
+              <sphereGeometry args={[0.16, 20, 14]} />
+              <meshPhysicalMaterial color={C.leafB} roughness={0.5} clearcoat={0.3} />
             </mesh>
           </group>
 
@@ -340,12 +353,12 @@ export default function RobotModel({
             </mesh>
           ))}
 
-          {/* mittens, cuffs plugged into the shoulder pods */}
+          {/* bare summer hands, wrists plugged into the shoulder pods */}
           <group ref={mittR} position={[1.08, -0.18, 0.14]} rotation={[0, 0, -0.22]}>
-            <Mitten />
+            <Hand />
           </group>
           <group ref={mittL} position={[-1.08, -0.18, 0.14]} rotation={[0, 0, 0.22]}>
-            <Mitten mirrored />
+            <Hand mirrored />
           </group>
 
           {/* chest LEDs */}
@@ -394,30 +407,28 @@ export default function RobotModel({
   )
 }
 
-/* A proper mitten: rounded fist, thumbs-up thumb, and a white cuff that
-   plugs into the shoulder pod (local -x points at the body). */
-function Mitten({ mirrored = false }) {
+/* A bare robot hand (no winter gloves in summer): pearl fist with a
+   thumbs-up thumb, its wrist joint plugged into the shoulder pod
+   (local -x points at the body). */
+function Hand({ mirrored = false }) {
   const dir = mirrored ? -1 : 1
+  const pearl = { color: C.body, roughness: 0.34, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.32 }
   return (
     <group>
-      {/* cuff: short white sleeve aimed at the shoulder pod */}
-      <mesh position={[dir * -0.19, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.135, 0.155, 0.18, 24]} />
-        <meshPhysicalMaterial color={C.white} roughness={0.45} clearcoat={0.35} />
-      </mesh>
-      <mesh position={[dir * -0.11, 0, 0]} rotation={[0, dir * (Math.PI / 2), 0]}>
-        <torusGeometry args={[0.15, 0.035, 14, 28]} />
-        <meshPhysicalMaterial color={C.white} roughness={0.45} clearcoat={0.35} />
+      {/* wrist joint */}
+      <mesh position={[dir * -0.16, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.09, 0.11, 0.16, 20]} />
+        <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
       </mesh>
       {/* fist */}
-      <mesh position={[dir * 0.09, 0, 0.01]} scale={[1.08, 0.94, 0.86]}>
-        <sphereGeometry args={[0.235, 28, 20]} />
-        <meshPhysicalMaterial color={C.orange} roughness={0.4} clearcoat={0.55} clearcoatRoughness={0.3} />
+      <mesh position={[dir * 0.07, 0, 0.01]} scale={[1.06, 0.92, 0.85]}>
+        <sphereGeometry args={[0.215, 28, 20]} />
+        <meshPhysicalMaterial {...pearl} />
       </mesh>
       {/* thumb: a small capsule, thumbs-up */}
-      <mesh position={[dir * -0.01, 0.2, 0.05]} rotation={[0, 0, dir * -0.32]}>
-        <capsuleGeometry args={[0.068, 0.11, 6, 14]} />
-        <meshPhysicalMaterial color={C.orange} roughness={0.4} clearcoat={0.55} clearcoatRoughness={0.3} />
+      <mesh position={[dir * -0.02, 0.17, 0.05]} rotation={[0, 0, dir * -0.32]}>
+        <capsuleGeometry args={[0.06, 0.1, 6, 14]} />
+        <meshPhysicalMaterial {...pearl} />
       </mesh>
     </group>
   )

@@ -6,7 +6,7 @@ import MascotWidget from '../mascot/MascotWidget.jsx'
 import RobotCanvas, { useReducedMotion } from '../mascot/RobotCanvas.jsx'
 
 const EMOTIONS = ['happy', 'excited', 'funny', 'wink', 'thinking', 'celebrate', 'surprised', 'sleepy', 'sad']
-const GESTURES = ['wave', 'bounce', 'spin', 'fly']
+const GESTURES = ['wave', 'bounce', 'spin']
 const SIZES = { s: 220, m: 320, l: 430 }
 
 /* simulated routes, so testers can hear how his tips change per page */
@@ -81,7 +81,7 @@ export default function MascotDemoPage() {
     setReactionNode(MASCOT_REACTIONS.mission[simCount.current % MASCOT_REACTIONS.mission.length])
     simCount.current += 1
     setEmotion('celebrate')
-    fireGesture(simCount.current % 2 === 0 ? 'fly' : 'bounce')
+    fireGesture('bounce')
     clearTimeout(reactTimer.current)
     reactTimer.current = setTimeout(() => {
       setReactionNode(null)
@@ -153,7 +153,7 @@ export default function MascotDemoPage() {
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>
-            {' · v2.1-oval'}
+            {' · v2.2-io'}
             {reduced && ' · prefers-reduced-motion ✓'}
           </p>
         </section>

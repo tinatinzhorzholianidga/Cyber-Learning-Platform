@@ -1,4 +1,4 @@
-/* Hero (გმირა) & Byte (ბაიტი) - the CyberHero helpers.
+/* IO (იო) & Hero (გმირა) - the CyberHero helpers.
    Tips are tagged with topics so the mascot can match what he says to
    where the user is: on the Phishing Hunter mission he talks phishing,
    on the certificate page he congratulates, in the Parents hub he

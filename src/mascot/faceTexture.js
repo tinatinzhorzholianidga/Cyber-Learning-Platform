@@ -1,8 +1,8 @@
-/* Byte's face, drawn on a 2D canvas that is mapped onto the curved
+/* IO's (იო) face, drawn on a 2D canvas that is mapped onto the curved
    "screen" cap on the front of the robot. Everything uses the Candy Clay
    palette so the mascot reads as part of the design system.
-   The little details (DGA plate, corner hatches, "+" mark, barcode
-   sticker) are carried over from the original mascot render. */
+   The little details (DGA plate, corner hatches, "+" mark) are carried
+   over from the original mascot render. */
 
 export const FACE_SIZE = 512
 
@@ -160,19 +160,6 @@ function decorations(ctx) {
   ctx.moveTo(386, 192)
   ctx.lineTo(414, 192)
   ctx.stroke()
-  // barcode sticker, bottom right
-  ctx.strokeStyle = INK
-  ctx.lineWidth = 5
-  roundRect(ctx, 316, 436, 118, 30, 7)
-  ctx.stroke()
-  for (let i = 0; i < 11; i++) {
-    const bx = 326 + i * 9
-    ctx.lineWidth = i % 3 === 0 ? 5 : 3
-    ctx.beginPath()
-    ctx.moveTo(bx, 443)
-    ctx.lineTo(bx, 459)
-    ctx.stroke()
-  }
 }
 
 /**
