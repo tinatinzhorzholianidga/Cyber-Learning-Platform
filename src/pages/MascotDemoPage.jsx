@@ -153,7 +153,7 @@ export default function MascotDemoPage() {
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>
-            {' · v2.2-io'}
+            {' · v2.3-builder'}
             {reduced && ' · prefers-reduced-motion ✓'}
           </p>
         </section>
@@ -289,6 +289,26 @@ export default function MascotDemoPage() {
           </div>
         </aside>
       </div>
+
+      <section className="mascot-soon-preview">
+        <h2>🚧 {t('mascot.demo.builderTitle')}</h2>
+        <p className="mascot-ctrl-note">{t('mascot.demo.builderNote')}</p>
+        <div className="soon-mock">
+          <RobotCanvas
+            size={210}
+            character="robot"
+            variant="builder"
+            label={t('mascot.widget.label')}
+            emotion="happy"
+            follow
+            idle
+          />
+          <div className="soon-mock-body">
+            <span className="soon-chip">🚧 {t('welcome.comingSoon')}</span>
+            <p>{t('track.soon')}</p>
+          </div>
+        </div>
+      </section>
 
       <section className="mascot-checklist">
         <h2>✅ {t('mascot.demo.checklist')}</h2>
