@@ -2434,6 +2434,43 @@ main {
   box-shadow: 0 3px 10px -2px var(--accent);
 }
 
+/* coming-soon builder preview --------------------------------------------- */
+.mascot-soon-preview {
+  margin-top: 26px;
+  background: var(--card);
+  border: 2px dashed #d5cdf0;
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+
+.mascot-soon-preview h2 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.soon-mock {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  background: #fbfaff;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+}
+
+.soon-mock-body {
+  flex: 1;
+  min-width: 240px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
 /* pre-launch checklist ---------------------------------------------------- */
 .mascot-checklist {
   margin-top: 26px;

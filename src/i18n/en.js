@@ -137,6 +137,9 @@ export default {
       simulateNote: 'On the real site this fires automatically the moment a mission is finished.',
       widget: 'Site widget preview',
       widgetOn: 'Show him as he will appear on the site',
+      builderTitle: 'Coming-soon preview - IO the builder',
+      builderNote:
+        'This is how IO will greet visitors on topics that are still under construction. If you approve, we mount him on the real coming-soon pages.',
       checklist: 'Before we launch him',
       note: 'This page is not linked from the site - it exists only for testing on this branch.',
       fps: 'FPS',

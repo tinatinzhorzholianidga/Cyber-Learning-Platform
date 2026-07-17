@@ -8,6 +8,7 @@ const C = {
   body: '#f8f6ff',
   violet: '#6c5ce7',
   violet2: '#8b5cff',
+  violetDeep: '#5546c8',
   white: '#ffffff',
   pod: '#d6cdf3',
   phones: '#2f2a4e',
@@ -21,6 +22,23 @@ const C = {
 /* face cap: a slice of a slightly larger sphere, centred on +z */
 const FACE_PHI_LEN = 1.9
 const FACE_THETA_LEN = 1.58
+
+/* "DGA" decal for the builder hard hat, drawn once */
+function makeHelmetLabel() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 256
+  canvas.height = 96
+  const g = canvas.getContext('2d')
+  g.fillStyle = '#ffffff'
+  g.font = '800 62px "Noto Sans Georgian Variable", "Arial Black", sans-serif'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText('D G A', 128, 52)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 8
+  return tex
+}
 
 const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
 const clamp01 = (x) => Math.min(1, Math.max(0, x))
@@ -50,6 +68,7 @@ export default function RobotModel({
   windowPointer,
   idle = true,
   reducedMotion = false,
+  variant = 'default', // 'default' (headphones + sprout) | 'builder' (DGA hard hat)
   onTap,
 }) {
   const invalidate = useThree((s) => s.invalidate)
@@ -74,6 +93,9 @@ export default function RobotModel({
   })
 
   const { leds, dial } = useSurfacePoints()
+
+  const helmetLabel = useMemo(() => (variant === 'builder' ? makeHelmetLabel() : null), [variant])
+  useEffect(() => () => helmetLabel?.dispose(), [helmetLabel])
 
   const { ctx, texture } = useMemo(() => {
     const canvas = document.createElement('canvas')
@@ -310,41 +332,74 @@ export default function RobotModel({
             <meshBasicMaterial map={texture} transparent toneMapped={false} />
           </mesh>
 
-          {/* summer headphones: band over the head + ear cups */}
-          <group position={[0, 0.06, 0]}>
-            <mesh>
-              <torusGeometry args={[1.04, 0.075, 16, 56, Math.PI * 1.12]} />
-              <meshPhysicalMaterial color={C.phones} roughness={0.45} clearcoat={0.4} />
-            </mesh>
-            {[-1, 1].map((side) => (
-              <group key={side} position={[side * 1.0, 0.06, 0]} rotation={[0, 0, side * -0.1]}>
-                <mesh rotation={[0, 0, Math.PI / 2]}>
-                  <cylinderGeometry args={[0.22, 0.22, 0.14, 24]} />
-                  <meshPhysicalMaterial color={C.phones} roughness={0.42} clearcoat={0.45} />
+          {variant === 'builder' ? (
+            /* construction hard hat with the DGA decal (coming-soon pages) */
+            <group position={[0, 0, 0]}>
+              <mesh position={[0, 0.38, 0]} scale={[1, 0.72, 1.05]}>
+                <sphereGeometry args={[0.95, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <meshPhysicalMaterial color={C.violet} roughness={0.22} clearcoat={0.85} clearcoatRoughness={0.18} />
+              </mesh>
+              {/* ridges running front-to-back */}
+              {[
+                [0, 0.9, 0.05, 0.78],
+                [-0.3, 0.82, 0.04, 0.7],
+                [0.3, 0.82, 0.04, 0.7],
+              ].map(([x, r, tube, squash], i) => (
+                <mesh key={i} position={[x, 0.4, 0]} rotation={[0, Math.PI / 2, 0]} scale={[1, squash, 1]}>
+                  <torusGeometry args={[r, tube, 12, 40, Math.PI]} />
+                  <meshPhysicalMaterial color={C.violet2} roughness={0.25} clearcoat={0.8} clearcoatRoughness={0.2} />
                 </mesh>
-                <mesh position={[side * -0.08, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-                  <cylinderGeometry args={[0.175, 0.175, 0.05, 20]} />
-                  <meshPhysicalMaterial color={C.phonePad} roughness={0.65} />
+              ))}
+              {/* all-around brim, a little longer front and back */}
+              <mesh position={[0, 0.42, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1.14, 0.32]}>
+                <torusGeometry args={[0.97, 0.09, 14, 56]} />
+                <meshPhysicalMaterial color={C.violetDeep} roughness={0.3} clearcoat={0.7} clearcoatRoughness={0.25} />
+              </mesh>
+              {/* DGA decal on the front */}
+              <mesh position={[0, 0.66, 0.95]} rotation={[-0.5, 0, 0]}>
+                <planeGeometry args={[0.56, 0.21]} />
+                <meshBasicMaterial map={helmetLabel} transparent toneMapped={false} depthWrite={false} />
+              </mesh>
+            </group>
+          ) : (
+            <>
+              {/* summer headphones: band over the head + ear cups */}
+              <group position={[0, 0.06, 0]}>
+                <mesh>
+                  <torusGeometry args={[1.04, 0.075, 16, 56, Math.PI * 1.12]} />
+                  <meshPhysicalMaterial color={C.phones} roughness={0.45} clearcoat={0.4} />
+                </mesh>
+                {[-1, 1].map((side) => (
+                  <group key={side} position={[side * 1.0, 0.06, 0]} rotation={[0, 0, side * -0.1]}>
+                    <mesh rotation={[0, 0, Math.PI / 2]}>
+                      <cylinderGeometry args={[0.22, 0.22, 0.14, 24]} />
+                      <meshPhysicalMaterial color={C.phones} roughness={0.42} clearcoat={0.45} />
+                    </mesh>
+                    <mesh position={[side * -0.08, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                      <cylinderGeometry args={[0.175, 0.175, 0.05, 20]} />
+                      <meshPhysicalMaterial color={C.phonePad} roughness={0.65} />
+                    </mesh>
+                  </group>
+                ))}
+              </group>
+
+              {/* the little green sprout tied to the band (summer!) */}
+              <group ref={leaves} position={[0, 1.14, 0]} scale={1.28}>
+                <mesh position={[0, 0.01, 0]}>
+                  <sphereGeometry args={[0.08, 16, 12]} />
+                  <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
+                </mesh>
+                <mesh position={[-0.2, 0.14, 0]} rotation={[0, 0, -0.7]} scale={[1.5, 0.6, 0.32]}>
+                  <sphereGeometry args={[0.16, 20, 14]} />
+                  <meshPhysicalMaterial color={C.leafA} roughness={0.5} clearcoat={0.3} />
+                </mesh>
+                <mesh position={[0.2, 0.14, 0]} rotation={[0, 0, 0.7]} scale={[1.5, 0.6, 0.32]}>
+                  <sphereGeometry args={[0.16, 20, 14]} />
+                  <meshPhysicalMaterial color={C.leafB} roughness={0.5} clearcoat={0.3} />
                 </mesh>
               </group>
-            ))}
-          </group>
-
-          {/* the little green sprout tied to the band (summer!) */}
-          <group ref={leaves} position={[0, 1.14, 0]} scale={1.28}>
-            <mesh position={[0, 0.01, 0]}>
-              <sphereGeometry args={[0.08, 16, 12]} />
-              <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
-            </mesh>
-            <mesh position={[-0.2, 0.14, 0]} rotation={[0, 0, -0.7]} scale={[1.5, 0.6, 0.32]}>
-              <sphereGeometry args={[0.16, 20, 14]} />
-              <meshPhysicalMaterial color={C.leafA} roughness={0.5} clearcoat={0.3} />
-            </mesh>
-            <mesh position={[0.2, 0.14, 0]} rotation={[0, 0, 0.7]} scale={[1.5, 0.6, 0.32]}>
-              <sphereGeometry args={[0.16, 20, 14]} />
-              <meshPhysicalMaterial color={C.leafB} roughness={0.5} clearcoat={0.3} />
-            </mesh>
-          </group>
+            </>
+          )}
 
           {/* shoulder pods the arms plug into */}
           {[-1, 1].map((side) => (
