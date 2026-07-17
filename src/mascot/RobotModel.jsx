@@ -239,27 +239,37 @@ export default function RobotModel({
       }
     }
 
-    /* ---- "hold up" palm: raise smoothly, yield to gestures ---- */
-    a.holdBlend += ((holdup && !a.gesture ? 1 : 0) - a.holdBlend) * Math.min(1, dt * 3.5)
+    /* ---- "hold up": the LEFT palm rises with a springy overshoot,
+       then hovers calmly with occasional little air-pats. The right
+       hand stays free for waves, so the two never fight. ---- */
+    a.holdBlend += ((holdup ? 1 : 0) - a.holdBlend) * Math.min(1, dt * 3)
     const hb = a.holdBlend
-    let mittRZ = 0.18
-    if (hb > 0.001) {
-      mittRX = mittRX * (1 - hb) + 1.14 * hb
-      mittRY = mittRY * (1 - hb) + (0.44 + Math.sin(t * 1.5) * 0.02) * hb
-      mittRZ = 0.18 * (1 - hb) + 0.52 * hb
-      mittRRotZ = mittRRotZ * (1 - hb) + -0.12 * hb
-    }
 
     if (root.current) {
       root.current.position.y = y
       root.current.scale.set(1 + (1 - sp.s) * 0.45, sp.s, 1 + (1 - sp.s) * 0.45)
     }
     if (mittR.current) {
-      mittR.current.position.set(mittRX, mittRY, mittRZ)
+      mittR.current.position.set(mittRX, mittRY, 0.18)
       mittR.current.rotation.z = mittRRotZ
     }
     if (mittL.current) {
-      mittL.current.position.y = -0.18 + (idle ? Math.sin(t * 1.35 + 1.4) * 0.02 : 0)
+      const restY = -0.18 + (idle ? Math.sin(t * 1.35 + 1.4) * 0.02 : 0)
+      if (hb > 0.001) {
+        // two quick forward pats every few seconds, tilting with the push
+        const cycle = (t + 1.2) % 4.6
+        const pat = cycle < 0.7 ? Math.sin((cycle / 0.7) * Math.PI * 2) * 0.05 : 0
+        const overshoot = Math.sin(hb * Math.PI) * 0.1
+        mittL.current.position.x = -1.08 * (1 - hb) + -1.16 * hb
+        mittL.current.position.y = restY * (1 - hb) + (0.46 + overshoot + Math.sin(t * 1.6) * 0.025) * hb
+        mittL.current.position.z = 0.14 * (1 - hb) + (0.5 + pat) * hb
+        mittL.current.rotation.z = 0.22 * (1 - hb) + 0.1 * hb
+        mittL.current.rotation.x = -pat * 3 * hb
+      } else {
+        mittL.current.position.set(-1.08, restY, 0.14)
+        mittL.current.rotation.z = 0.22
+        mittL.current.rotation.x = 0
+      }
     }
 
     /* ---- chest LEDs pulse ---- */
@@ -426,10 +436,10 @@ export default function RobotModel({
 
           {/* bare summer hands, wrists plugged into the shoulder pods */}
           <group ref={mittR} position={[1.08, -0.18, 0.14]} rotation={[0, 0, -0.22]}>
-            {holdup ? <Palm /> : <Hand />}
+            <Hand />
           </group>
           <group ref={mittL} position={[-1.08, -0.18, 0.14]} rotation={[0, 0, 0.22]}>
-            <Hand mirrored />
+            {holdup ? <Palm mirrored /> : <Hand mirrored />}
           </group>
 
           {/* chest LEDs */}
