@@ -69,6 +69,7 @@ export default function RobotModel({
   idle = true,
   reducedMotion = false,
   variant = 'default', // 'default' (headphones + sprout) | 'builder' (DGA hard hat)
+  holdup = false, // raise an open palm: "hold up, under construction"
   onTap,
 }) {
   const invalidate = useThree((s) => s.invalidate)
@@ -89,6 +90,7 @@ export default function RobotModel({
     pupil: { x: 0, y: 0 },
     spring: { s: 1, v: 0 }, // squash & stretch
     overlay: null, // { emotion, until }
+    holdBlend: 0, // 0 = arm resting, 1 = palm raised in "hold up"
     drawnKey: '',
   })
 
@@ -123,10 +125,11 @@ export default function RobotModel({
   useEffect(() => () => shadowTexture.dispose(), [shadowTexture])
 
   const paintFace = (state) => {
-    const key = faceKey(state)
+    const full = { ...state, noPlate: variant === 'builder' }
+    const key = faceKey(full)
     if (key === anim.current.drawnKey) return
     anim.current.drawnKey = key
-    drawFace(ctx, state)
+    drawFace(ctx, full)
     texture.needsUpdate = true
   }
 
@@ -236,12 +239,23 @@ export default function RobotModel({
       }
     }
 
+    /* ---- "hold up" palm: raise smoothly, yield to gestures ---- */
+    a.holdBlend += ((holdup && !a.gesture ? 1 : 0) - a.holdBlend) * Math.min(1, dt * 3.5)
+    const hb = a.holdBlend
+    let mittRZ = 0.18
+    if (hb > 0.001) {
+      mittRX = mittRX * (1 - hb) + 1.14 * hb
+      mittRY = mittRY * (1 - hb) + (0.44 + Math.sin(t * 1.5) * 0.02) * hb
+      mittRZ = 0.18 * (1 - hb) + 0.52 * hb
+      mittRRotZ = mittRRotZ * (1 - hb) + -0.12 * hb
+    }
+
     if (root.current) {
       root.current.position.y = y
       root.current.scale.set(1 + (1 - sp.s) * 0.45, sp.s, 1 + (1 - sp.s) * 0.45)
     }
     if (mittR.current) {
-      mittR.current.position.set(mittRX, mittRY, 0.18)
+      mittR.current.position.set(mittRX, mittRY, mittRZ)
       mittR.current.rotation.z = mittRRotZ
     }
     if (mittL.current) {
@@ -333,8 +347,9 @@ export default function RobotModel({
           </mesh>
 
           {variant === 'builder' ? (
-            /* construction hard hat with the DGA decal (coming-soon pages) */
-            <group position={[0, 0, 0]}>
+            /* construction hard hat with the DGA decal (coming-soon pages);
+               raised + scaled up so it sits loose over his head */
+            <group position={[0, 0.09, 0]} scale={1.09}>
               <mesh position={[0, 0.38, 0]} scale={[1, 0.72, 1.05]}>
                 <sphereGeometry args={[0.95, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
                 <meshPhysicalMaterial color={C.violet} roughness={0.22} clearcoat={0.85} clearcoatRoughness={0.18} />
@@ -411,7 +426,7 @@ export default function RobotModel({
 
           {/* bare summer hands, wrists plugged into the shoulder pods */}
           <group ref={mittR} position={[1.08, -0.18, 0.14]} rotation={[0, 0, -0.22]}>
-            <Hand />
+            {holdup ? <Palm /> : <Hand />}
           </group>
           <group ref={mittL} position={[-1.08, -0.18, 0.14]} rotation={[0, 0, 0.22]}>
             <Hand mirrored />
@@ -458,6 +473,39 @@ export default function RobotModel({
       <mesh ref={shadow} position={[0, -1.32, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2.6, 2.2]} />
         <meshBasicMaterial map={shadowTexture} transparent opacity={0.85} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
+/* An open palm with splayed fingers - the "hold up, under construction"
+   hand (like the ✋ emoji), used while `holdup` is active. */
+function Palm({ mirrored = false }) {
+  const dir = mirrored ? -1 : 1
+  const pearl = { color: C.body, roughness: 0.34, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.32 }
+  return (
+    <group>
+      {/* wrist joint */}
+      <mesh position={[dir * -0.16, -0.08, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.09, 0.11, 0.16, 20]} />
+        <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
+      </mesh>
+      {/* palm, flat side to the viewer */}
+      <mesh position={[0, 0.05, 0.02]} scale={[1.05, 1.2, 0.45]}>
+        <sphereGeometry args={[0.185, 24, 18]} />
+        <meshPhysicalMaterial {...pearl} />
+      </mesh>
+      {/* four splayed fingers */}
+      {[-0.115, -0.04, 0.04, 0.115].map((x) => (
+        <mesh key={x} position={[x, 0.27 - Math.abs(x) * 0.5, 0.02]} rotation={[0, 0, -x * 1.4]}>
+          <capsuleGeometry args={[0.047, 0.1, 6, 12]} />
+          <meshPhysicalMaterial {...pearl} />
+        </mesh>
+      ))}
+      {/* thumb out to the side */}
+      <mesh position={[dir * 0.185, 0.03, 0.03]} rotation={[0, 0, dir * -1.05]}>
+        <capsuleGeometry args={[0.05, 0.09, 6, 12]} />
+        <meshPhysicalMaterial {...pearl} />
       </mesh>
     </group>
   )

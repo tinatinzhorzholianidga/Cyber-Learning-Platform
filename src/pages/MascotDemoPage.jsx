@@ -153,7 +153,7 @@ export default function MascotDemoPage() {
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>
-            {' · v2.3-builder'}
+            {' · v2.4-holdup'}
             {reduced && ' · prefers-reduced-motion ✓'}
           </p>
         </section>
@@ -298,6 +298,7 @@ export default function MascotDemoPage() {
             size={210}
             character="robot"
             variant="builder"
+            holdup
             label={t('mascot.widget.label')}
             emotion="happy"
             follow

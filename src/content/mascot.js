@@ -141,6 +141,10 @@ export const MASCOT_REACTIONS = {
     en: 'Pick a mission - I will be right here.',
     ka: 'აირჩიე მისია - მე აქვე ვიქნები.',
   },
+  building: {
+    en: "Hold up - this area is still under construction! I'm working on it. 🚧",
+    ka: 'მოიცადე - აქ ჯერ მშენებლობაა! უკვე ვმუშაობ. 🚧',
+  },
 }
 
 /* which topics each Guardian mission is about (ids from guardians/meta.js) */
@@ -163,6 +167,9 @@ const PARENT_TIPS = MASCOT_TIPS.filter((tip) => tip.topics.includes('parents'))
 /* Resolve what the helper should say for a route (HashRouter pathname).
    Returns { tips, opener? } - opener is an optional context greeting. */
 export function getMascotContext(pathname = '/') {
+  if (pathname.startsWith('/track/')) {
+    return { tips: KID_TIPS, opener: MASCOT_REACTIONS.building }
+  }
   const mission = pathname.match(/^\/guardians\/mission\/(g\d+)/)
   if (mission) {
     const topics = MISSION_TOPICS[mission[1]] ?? []
