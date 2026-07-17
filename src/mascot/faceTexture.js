@@ -159,7 +159,7 @@ function decorations(ctx) {
  *           mouthOpen 0..1 }
  */
 export function drawFace(ctx, state) {
-  const { emotion = 'happy', blink = 0, pupilX = 0, pupilY = 0, mouthOpen = 0 } = state
+  const { emotion = 'happy', blink = 0, pupilX = 0, pupilY = 0, mouthOpen = 0, noPlate = false } = state
   const S = FACE_SIZE
   ctx.clearRect(0, 0, S, S)
 
@@ -176,12 +176,14 @@ export function drawFace(ctx, state) {
   roundRect(ctx, 48, 48, S - 96, S - 96, 86)
   ctx.stroke()
 
-  // DGA plate on the forehead
-  ctx.fillStyle = INK
-  ctx.font = '800 46px "Noto Sans Georgian Variable", "Arial Black", sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('D G A', S / 2, 122)
+  // DGA plate on the forehead (hidden when the hard hat carries the decal)
+  if (!noPlate) {
+    ctx.fillStyle = INK
+    ctx.font = '800 46px "Noto Sans Georgian Variable", "Arial Black", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('D G A', S / 2, 122)
+  }
 
   decorations(ctx)
 
@@ -293,5 +295,5 @@ function cy_(y) {
    actually changed (texture uploads are the expensive part). */
 export function faceKey(state) {
   const q = (v) => Math.round(v * 24)
-  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}`
+  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}`
 }
