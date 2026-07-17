@@ -85,8 +85,6 @@ export default {
     keyTakeaways: 'რა არის აქ მთავარი',
     backToMap: 'მისიებთან დაბრუნება',
     nextMission: 'შემდეგი მისია',
-    forParents: 'გაწუხებს ეს თემა? მშობლებისთვის ცალკე გზამკვლევი არსებობს - აჩვენე მათ.',
-    openParentGuide: 'მშობლების გზამკვლევის გახსნა',
     correct: 'სწორია',
     notQuite: 'ვერ გამოვიდა',
     timeLeft: 'დარჩენილი დრო',

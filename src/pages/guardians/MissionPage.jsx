@@ -123,14 +123,6 @@ export default function MissionPage() {
             </ul>
           </div>
           {helpStrip}
-          {mission.article && (
-            <p style={{ marginTop: 14 }}>
-              {t('guardians.forParents')}{' '}
-              <Link to={`/parents/${mission.article}`} className="text-link">
-                {t('guardians.openParentGuide')} →
-              </Link>
-            </p>
-          )}
           <div className="debrief-actions">
             {mission.passRatio && !passed && (
               <button

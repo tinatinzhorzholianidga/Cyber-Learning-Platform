@@ -85,8 +85,6 @@ export default {
     keyTakeaways: 'What matters here',
     backToMap: 'Back to missions',
     nextMission: 'Next mission',
-    forParents: 'Worried about this topic? There is a guide for your parents - show them.',
-    openParentGuide: 'Open the parents’ guide',
     correct: 'Correct',
     notQuite: 'Not quite',
     timeLeft: 'Time left',
