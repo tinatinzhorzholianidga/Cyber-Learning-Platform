@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 /* Hero (გმირა) - the hooded guardian, matched to the character sheet:
-   teardrop face opening with glowing eyes, smooth tapering hood antenna,
+   oval face opening with glowing eyes, smooth tapering hood antenna,
    dark ink body with stubby arms and legs, a breathing shield-padlock
    emblem, a big double-mesh cape (violet outside, lighter lining) with
    per-frame cloth simulation, and a soft glow aura behind him.

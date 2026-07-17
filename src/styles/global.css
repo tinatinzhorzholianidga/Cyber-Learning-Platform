@@ -2188,7 +2188,7 @@ main {
   outline-offset: 1px;
 }
 
-/* Mascot: Byte the helper robot ------------------------------------------ */
+/* Mascot: IO the helper robot ---------------------------------------------- */
 .mascot-demo .mascot-hero {
   margin-bottom: clamp(18px, 3vh, 30px);
 }

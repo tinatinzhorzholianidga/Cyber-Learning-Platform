@@ -53,7 +53,7 @@ export default function MascotWidget({ character = 'robot' }) {
       const passedExamNow = examDone && !prevExam.current
       setReaction(passedExamNow ? MASCOT_REACTIONS.exam : MASCOT_REACTIONS.mission[doneCount % MASCOT_REACTIONS.mission.length])
       gestureId.current += 1
-      setGesture({ id: gestureId.current, type: passedExamNow ? 'fly' : 'bounce' })
+      setGesture({ id: gestureId.current, type: 'bounce' })
       clearTimeout(reactionTimer.current)
       reactionTimer.current = setTimeout(() => setReaction(null), 6000)
     }

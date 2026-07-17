@@ -110,7 +110,7 @@ export default {
     },
   },
   mascot: {
-    name: 'Byte',
+    name: 'IO',
     heroName: 'Hero',
     demo: {
       badge: 'Demo - not public',
@@ -158,15 +158,14 @@ export default {
       wave: 'Wave',
       bounce: 'Bounce',
       spin: 'Spin',
-      fly: 'Fly',
     },
     widget: {
-      greeting: "Hi! I'm Byte - your cyber helper. Click me for a tip.",
+      greeting: "Hi! I'm IO - your cyber helper. Click me for a tip.",
       greetingHero: "Hi! I'm Hero - I protect this place. Click me for a tip.",
       open: 'Open the helper',
       close: 'Hide the helper',
       nextTip: 'Another tip',
-      label: 'Byte, the CyberHero helper robot',
+      label: 'IO, the CyberHero helper robot',
       labelHero: 'Hero, the CyberHero hooded guardian',
     },
   },
