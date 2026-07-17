@@ -1622,6 +1622,33 @@ main {
   font-weight: 800;
 }
 
+/* IO as mission companion ------------------------------------------- */
+.mascot-bubble.is-wrong {
+  background: #fff8e9;
+  border-color: #f3ddb0;
+}
+
+.mascot-bubble.is-correct {
+  background: #e9fcf3;
+  border-color: #b9ecd4;
+}
+
+.fireworks-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  width: 100vw;
+  height: 100vh;
+}
+
+.fireworks-static {
+  display: grid;
+  place-items: center;
+  font-size: clamp(4rem, 14vw, 9rem);
+  animation: fade 1.6s var(--ease-soft);
+}
+
 /* short theory primer on the mission brief screen */
 .theory-box {
   margin-top: 18px;

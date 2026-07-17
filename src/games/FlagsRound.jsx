@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { useMascot } from '../mascot/MascotProvider.jsx'
 
 export const flagsMax = (round) => round.items.filter((i) => i.flag).length * 5
 
@@ -7,6 +8,7 @@ export const flagsMax = (round) => round.items.filter((i) => i.flag).length * 5
 // then a reveal with per-item explanations.
 export default function FlagsRound({ round, onDone }) {
   const { t, tx } = useI18n()
+  const { react: mascotReact, companionActive } = useMascot()
   const [selected, setSelected] = useState(() => new Set())
   const [checked, setChecked] = useState(false)
 
@@ -71,7 +73,11 @@ export default function FlagsRound({ round, onDone }) {
             className="btn-solid"
             disabled={selected.size === 0}
             style={selected.size === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-            onClick={() => setChecked(true)}
+            onClick={() => {
+              setChecked(true)
+              if (perfect) mascotReact('correct')
+              else mascotReact('wrong', { text: round.explain })
+            }}
           >
             {t('guardians.check')}
           </button>
@@ -82,7 +88,7 @@ export default function FlagsRound({ round, onDone }) {
             <span aria-hidden="true">{perfect ? '✅' : '💡'}</span>
             {perfect ? t('guardians.correct') : t('guardians.notQuite')} · {hits}/{totalFlags} 🚩
           </div>
-          <p>{tx(round.explain)}</p>
+          {(perfect || !companionActive) && <p>{tx(round.explain)}</p>}
           <div className="actions">
             <button type="button" className="btn-solid" onClick={() => onDone(earned)}>
               {t('guardians.continue')} →

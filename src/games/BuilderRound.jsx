@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { useMascot } from '../mascot/MascotProvider.jsx'
 
 export const BUILDER_MAX = 15
 
@@ -7,6 +8,7 @@ export const BUILDER_MAX = 15
 // Submit unlocks when the meter reaches the target.
 export default function BuilderRound({ round, onDone }) {
   const { t, tx } = useI18n()
+  const { react: mascotReact, companionActive } = useMascot()
   const [selected, setSelected] = useState(() => new Set())
   const [submitted, setSubmitted] = useState(false)
 
@@ -57,7 +59,11 @@ export default function BuilderRound({ round, onDone }) {
             className="btn-solid"
             disabled={!ready}
             style={!ready ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-            onClick={() => setSubmitted(true)}
+            onClick={() => {
+              setSubmitted(true)
+              if (pickedNegative) mascotReact('wrong', { text: round.explainNegative || round.explain })
+              else mascotReact('correct')
+            }}
           >
             {t('guardians.submit')}
           </button>
@@ -68,7 +74,9 @@ export default function BuilderRound({ round, onDone }) {
             <span aria-hidden="true">{pickedNegative ? '💡' : '✅'}</span>
             {pickedNegative ? t('guardians.notQuite') : t('guardians.correct')}
           </div>
-          <p>{tx(pickedNegative && round.explainNegative ? round.explainNegative : round.explain)}</p>
+          {(!pickedNegative || !companionActive) && (
+            <p>{tx(pickedNegative && round.explainNegative ? round.explainNegative : round.explain)}</p>
+          )}
           <div className="actions">
             <button type="button" className="btn-solid" onClick={() => onDone(earned)}>
               {t('guardians.continue')} →

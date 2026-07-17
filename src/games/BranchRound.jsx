@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { useMascot } from '../mascot/MascotProvider.jsx'
 
 export const branchMax = (round) => round.max
 
@@ -8,6 +9,7 @@ export const branchMax = (round) => round.max
 // never a dead end. Round data declares `max` (points on the best path).
 export default function BranchRound({ round, onDone }) {
   const { t, tx } = useI18n()
+  const { react: mascotReact, companionActive } = useMascot()
   const [nodeId, setNodeId] = useState(round.start)
   const [earned, setEarned] = useState(0)
   const [feedback, setFeedback] = useState(null) // { text, points, next }
@@ -15,9 +17,13 @@ export default function BranchRound({ round, onDone }) {
   const node = round.nodes[nodeId]
 
   const pick = (choice) => {
-    setEarned((p) => p + (choice.points || 0))
+    const points = choice.points || 0
+    setEarned((p) => p + points)
     if (choice.feedback) {
-      setFeedback({ text: choice.feedback, points: choice.points || 0, next: choice.next })
+      // strong choices earn a celebration; weak ones get IO's explanation
+      if (points >= 8) mascotReact('correct')
+      else mascotReact('wrong', { text: choice.feedback })
+      setFeedback({ text: choice.feedback, points, next: choice.next })
     } else {
       setNodeId(choice.next)
     }
@@ -44,7 +50,7 @@ export default function BranchRound({ round, onDone }) {
             <span aria-hidden="true">{feedback.points > 0 ? '✅' : '💡'}</span>
             {feedback.points > 0 ? t('guardians.correct') : t('guardians.notQuite')}
           </div>
-          <p>{tx(feedback.text)}</p>
+          {(feedback.points >= 8 || !companionActive) && <p>{tx(feedback.text)}</p>}
           <div className="actions">
             <button type="button" className="btn-solid" onClick={advance}>
               {t('guardians.continue')} →

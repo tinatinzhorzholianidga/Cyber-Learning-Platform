@@ -6,6 +6,7 @@ import BuilderRound from '../../games/BuilderRound.jsx'
 import ChoiceRound from '../../games/ChoiceRound.jsx'
 import FlagsRound from '../../games/FlagsRound.jsx'
 import { useI18n } from '../../i18n/I18nContext.jsx'
+import { useMascot } from '../../mascot/MascotProvider.jsx'
 import { useProgress } from '../../store/progress.jsx'
 
 const ROUND_COMPONENTS = {
@@ -19,6 +20,7 @@ export default function MissionPage() {
   const { missionId } = useParams()
   const { t, tx } = useI18n()
   const { progress, recordMission } = useProgress()
+  const { react: mascotReact } = useMascot()
   const [phase, setPhase] = useState('brief') // 'brief' | round index | 'debrief'
   const [score, setScore] = useState(0)
 
@@ -28,6 +30,9 @@ export default function MissionPage() {
     setPhase('brief')
     setScore(0)
   }, [missionId])
+
+  // leaving the mission returns IO to his idle tips
+  useEffect(() => () => mascotReact('clear'), [mascotReact])
 
   const mission = missionById[missionId]
   if (!mission) return <Navigate to="/guardians" replace />
@@ -45,11 +50,17 @@ export default function MissionPage() {
     const newScore = score + earned
     setScore(newScore)
     if (phase + 1 < mission.rounds.length) {
+      mascotReact('clear')
       setPhase(phase + 1)
       window.scrollTo({ top: 0 })
     } else {
       const finalPassed = !mission.passRatio || newScore >= Math.ceil(max * mission.passRatio)
-      if (finalPassed) recordMission(mission.id, { score: newScore, total: max })
+      if (finalPassed) {
+        recordMission(mission.id, { score: newScore, total: max })
+        mascotReact('missionDone', { passed: true })
+      } else {
+        mascotReact('clear')
+      }
       setPhase('debrief')
       window.scrollTo({ top: 0 })
     }

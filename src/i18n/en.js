@@ -159,6 +159,10 @@ export default {
       bounce: 'Bounce',
       spin: 'Spin',
     },
+    companion: {
+      praise: ['Exactly right!', 'Sharp eye!', 'That was the right move!', 'Clean work!'],
+      missionDone: 'Mission complete! That deserves fireworks. 🎆',
+    },
     widget: {
       greeting: "Hi! I'm IO - your cyber helper. Click me for a tip.",
       greetingHero: "Hi! I'm Hero - I protect this place. Click me for a tip.",

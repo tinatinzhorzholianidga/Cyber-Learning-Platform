@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { useMascot } from '../mascot/MascotProvider.jsx'
 import MsgCard from './MsgCard.jsx'
 
 export const CHOICE_MAX = 10
@@ -8,11 +9,23 @@ export const CHOICE_MAX = 10
 // optional countdown timer (used by the final exam).
 export default function ChoiceRound({ round, timer = 0, onDone }) {
   const { t, tx } = useI18n()
+  const { react: mascotReact, companionActive } = useMascot()
   const [picked, setPicked] = useState(null) // option index
   const [timedOut, setTimedOut] = useState(false)
   const [timeLeft, setTimeLeft] = useState(timer)
   const answered = picked !== null || timedOut
   const intervalRef = useRef(null)
+
+  const pick = (i) => {
+    setPicked(i)
+    if (round.options[i].correct) mascotReact('correct')
+    else mascotReact('wrong', { text: round.explain })
+  }
+
+  useEffect(() => {
+    if (timedOut) mascotReact('wrong', { text: round.explain })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timedOut])
 
   useEffect(() => {
     if (!timer) return undefined
@@ -53,13 +66,7 @@ export default function ChoiceRound({ round, timer = 0, onDone }) {
               else if (option.correct) cls += ' reveal-ok'
             }
             return (
-              <button
-                key={i}
-                type="button"
-                className={cls}
-                disabled={answered}
-                onClick={() => setPicked(i)}
-              >
+              <button key={i} type="button" className={cls} disabled={answered} onClick={() => pick(i)}>
                 {tx(option.label)}
               </button>
             )
@@ -72,7 +79,9 @@ export default function ChoiceRound({ round, timer = 0, onDone }) {
               {correct ? t('guardians.correct') : t('guardians.notQuite')}
             </div>
             {timedOut && <p>{t('guardians.timeUp')}</p>}
-            <p>{tx(round.explain)}</p>
+            {/* wrong answers are explained by IO in his bubble; the text
+                stays inline only when the helper is closed or unavailable */}
+            {(correct || !companionActive) && <p>{tx(round.explain)}</p>}
             <div className="actions">
               <button
                 type="button"

@@ -1,9 +1,11 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Header from './components/Header.jsx'
 import Footer from './components/Footer.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import { useI18n } from './i18n/I18nContext.jsx'
+import { MascotProvider } from './mascot/MascotProvider.jsx'
+import Fireworks from './mascot/Fireworks.jsx'
 import WelcomePage from './pages/WelcomePage.jsx'
 import TrackPage from './pages/TrackPage.jsx'
 import ParentsHubPage from './pages/parents/ParentsHubPage.jsx'
@@ -13,14 +15,29 @@ import GuardiansMapPage from './pages/guardians/GuardiansMapPage.jsx'
 import MissionPage from './pages/guardians/MissionPage.jsx'
 import CertificatePage from './pages/guardians/CertificatePage.jsx'
 
-// IO, the helper-robot demo. Lazy so three.js never loads on normal pages;
-// the page is reachable only by URL while he is being tested on this branch.
+// IO lives on every page, but three.js loads lazily after first paint so
+// the site itself stays light on slow school machines.
 const MascotDemoPage = lazy(() => import('./pages/MascotDemoPage.jsx'))
+const MascotWidget = lazy(() => import('./mascot/MascotWidget.jsx'))
+
+function DeferredMascot() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 900)
+    return () => clearTimeout(timer)
+  }, [])
+  if (!ready) return null
+  return (
+    <Suspense fallback={null}>
+      <MascotWidget />
+    </Suspense>
+  )
+}
 
 export default function App() {
   const { t } = useI18n()
   return (
-    <>
+    <MascotProvider>
       <a className="skip-link" href="#content">
         {t('nav.skipToContent')}
       </a>
@@ -48,6 +65,8 @@ export default function App() {
         </Routes>
       </main>
       <Footer />
-    </>
+      <DeferredMascot />
+      <Fireworks />
+    </MascotProvider>
   )
 }
