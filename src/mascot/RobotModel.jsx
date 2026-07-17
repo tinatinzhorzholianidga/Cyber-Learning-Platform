@@ -335,11 +335,11 @@ export default function RobotModel({
               <sphereGeometry args={[0.08, 16, 12]} />
               <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
             </mesh>
-            <mesh position={[-0.18, 0.13, 0]} rotation={[0, 0, 0.8]} scale={[1.5, 0.6, 0.32]}>
+            <mesh position={[-0.2, 0.14, 0]} rotation={[0, 0, -0.7]} scale={[1.5, 0.6, 0.32]}>
               <sphereGeometry args={[0.16, 20, 14]} />
               <meshPhysicalMaterial color={C.leafA} roughness={0.5} clearcoat={0.3} />
             </mesh>
-            <mesh position={[0.18, 0.13, 0]} rotation={[0, 0, -0.8]} scale={[1.5, 0.6, 0.32]}>
+            <mesh position={[0.2, 0.14, 0]} rotation={[0, 0, 0.7]} scale={[1.5, 0.6, 0.32]}>
               <sphereGeometry args={[0.16, 20, 14]} />
               <meshPhysicalMaterial color={C.leafB} roughness={0.5} clearcoat={0.3} />
             </mesh>
