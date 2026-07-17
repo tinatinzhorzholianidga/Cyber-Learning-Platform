@@ -1,4 +1,4 @@
-import { Component, useEffect, useState } from 'react'
+import { Component, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import HeroModel from './HeroModel.jsx'
 import RobotModel from './RobotModel.jsx'
@@ -50,6 +50,19 @@ export default function RobotCanvas({ size = 300, className = '', label, charact
   const [hasWebgl] = useState(webglAvailable)
   const Model = character === 'hero' ? HeroModel : RobotModel
 
+  // Track the cursor across the WHOLE window (r3f's own pointer only
+  // updates while the cursor is over this small canvas). Normalized to
+  // the same -1..1 space r3f uses, so the models can consume either.
+  const windowPointer = useRef({ x: 0, y: 0 })
+  useEffect(() => {
+    const onMove = (e) => {
+      windowPointer.current.x = (e.clientX / window.innerWidth) * 2 - 1
+      windowPointer.current.y = 1 - (e.clientY / window.innerHeight) * 2
+    }
+    window.addEventListener('mousemove', onMove, { passive: true })
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
+
   return (
     <div
       className={`mascot-canvas ${className}`.trim()}
@@ -69,7 +82,7 @@ export default function RobotCanvas({ size = 300, className = '', label, charact
             <directionalLight position={[3, 5, 4]} intensity={1.5} color="#ffffff" />
             <pointLight position={[-4, 2, -3]} intensity={14} color="#8b5cff" />
             <pointLight position={[0, -2, 3]} intensity={6} color="#ffd9a1" />
-            <Model reducedMotion={reduced} {...robotProps} />
+            <Model reducedMotion={reduced} windowPointer={windowPointer} {...robotProps} />
           </Canvas>
         </GLBoundary>
       ) : (

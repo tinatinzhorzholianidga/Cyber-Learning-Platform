@@ -47,6 +47,7 @@ export default function RobotModel({
   gesture = null, // { id, type: 'wave' | 'bounce' | 'spin' }
   talking = false,
   follow = true,
+  windowPointer,
   idle = true,
   reducedMotion = false,
   onTap,
@@ -155,7 +156,7 @@ export default function RobotModel({
     }
 
     /* ---- pupils: follow the cursor, otherwise wander ---- */
-    const p = state.pointer ?? state.mouse
+    const p = windowPointer?.current ?? state.pointer ?? state.mouse
     const wanderX = Math.sin(t * 0.32) * 0.35 + Math.sin(t * 0.13 + 2.1) * 0.2
     const wanderY = Math.sin(t * 0.24 + 1.2) * 0.22
     const targetX = follow ? p.x : idle ? wanderX : 0

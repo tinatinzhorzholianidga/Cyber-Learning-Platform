@@ -6,6 +6,19 @@ import { getMascotContext, MASCOT_REACTIONS } from '../content/mascot.js'
 import RobotCanvas, { useReducedMotion } from './RobotCanvas.jsx'
 import { useMascot } from './MascotProvider.jsx'
 
+// bigger IO on monitors, compact on phones
+function useWidgetSize() {
+  const [size, setSize] = useState(() =>
+    typeof window === 'undefined' ? 150 : window.innerWidth >= 1100 ? 230 : window.innerWidth >= 720 ? 185 : 150,
+  )
+  useEffect(() => {
+    const onResize = () => setSize(window.innerWidth >= 1100 ? 230 : window.innerWidth >= 720 ? 185 : 150)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  return size
+}
+
 /* The floating helper, as he appears on the real site.
    - flies in from the corner on mount, then waves hello
    - tips match the page: mission topics, certificate congratulations,
@@ -28,6 +41,7 @@ export default function MascotWidget({ character = 'robot' }) {
   const reactionTimer = useRef(null)
 
   const isHero = character === 'hero'
+  const size = useWidgetSize()
   const context = useMemo(() => getMascotContext(pathname), [pathname])
   const pool = context.tips
 
@@ -157,7 +171,7 @@ export default function MascotWidget({ character = 'robot' }) {
           ✕
         </button>
         <RobotCanvas
-          size={150}
+          size={size}
           character={character}
           label={isHero ? t('mascot.widget.labelHero') : t('mascot.widget.label')}
           emotion={emotion}

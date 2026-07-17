@@ -192,6 +192,7 @@ export default function HeroModel({
   gesture = null, // { id, type: 'wave' | 'bounce' | 'spin' | 'fly' }
   talking = false,
   follow = true,
+  windowPointer,
   idle = true,
   reducedMotion = false,
   onTap,
@@ -355,7 +356,7 @@ export default function HeroModel({
     if (antic?.type === 'yawn') blinkScale = Math.min(blinkScale, 1 - anticB * 0.7)
 
     /* ---- gaze ---- */
-    const p = state.pointer ?? state.mouse
+    const p = windowPointer?.current ?? state.pointer ?? state.mouse
     const wanderX = Math.sin(t * 0.35) * 0.3 + Math.sin(t * 0.14 + 1.8) * 0.18
     const wanderY = Math.sin(t * 0.26 + 0.9) * 0.2
     let gx = reducedMotion ? 0 : follow ? p.x : idle ? wanderX : 0

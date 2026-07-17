@@ -1649,6 +1649,16 @@ main {
   animation: fade 1.6s var(--ease-soft);
 }
 
+/* roomier bubble next to the bigger desktop IO */
+@media (min-width: 1100px) {
+  .mascot-widget .mascot-bubble {
+    max-width: 340px;
+  }
+  .mascot-widget .mascot-bubble p {
+    font-size: 0.98rem;
+  }
+}
+
 /* short theory primer on the mission brief screen */
 .theory-box {
   margin-top: 18px;
