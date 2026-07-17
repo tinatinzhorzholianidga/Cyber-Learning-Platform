@@ -151,15 +151,6 @@ function decorations(ctx) {
     ctx.lineTo(350 + i * 11 - 6, 116 + h)
     ctx.stroke()
   }
-  // "+" mark near the right eye
-  ctx.strokeStyle = INK
-  ctx.lineWidth = 8
-  ctx.beginPath()
-  ctx.moveTo(400, 178)
-  ctx.lineTo(400, 206)
-  ctx.moveTo(386, 192)
-  ctx.lineTo(414, 192)
-  ctx.stroke()
 }
 
 /**

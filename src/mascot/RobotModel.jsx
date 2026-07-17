@@ -330,7 +330,7 @@ export default function RobotModel({
           </group>
 
           {/* the little green sprout tied to the band (summer!) */}
-          <group ref={leaves} position={[0, 1.14, 0]}>
+          <group ref={leaves} position={[0, 1.14, 0]} scale={1.28}>
             <mesh position={[0, 0.01, 0]}>
               <sphereGeometry args={[0.08, 16, 12]} />
               <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
