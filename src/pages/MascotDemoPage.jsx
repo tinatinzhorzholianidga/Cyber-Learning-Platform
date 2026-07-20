@@ -279,7 +279,7 @@ export default function MascotDemoPage() {
           <div className="ctrl-group">
             <h2>🧠 IO Chat · AI</h2>
             <Link to="/io-chat" className="btn-solid">
-              💬 IO Chat (Qwen2.5)
+              💬 IO Chat (Gemini)
             </Link>
             <p className="mascot-ctrl-note">{t('mascot.chat.privacy')}</p>
           </div>

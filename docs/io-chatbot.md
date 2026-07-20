@@ -1,13 +1,18 @@
 # IO Chat — the CyberHero AI helper
 
 IO Chat turns **IO (იო)**, the platform mascot, into a real bilingual
-(English / ქართული) chatbot that teaches online safety. It runs the
-**Qwen2.5** language model **entirely inside the visitor's browser** and
-grounds every answer on CyberHero's own learning content.
+(English / ქართული) chatbot that teaches online safety. It is powered by
+**Google's Gemini API** and grounds every answer on CyberHero's own
+learning content.
 
-> **Status:** `IO Chat α1` — demo / test only. It lives on a hidden page
+> **Status:** `IO Chat β1` — demo / test only. It lives on a hidden page
 > (`/#/io-chat`) that nothing on the public site links to, and it has not
 > been mounted on the live product yet.
+
+> **History:** an earlier α1 ran Qwen2.5 fully in the browser (WebLLM /
+> WebGPU). It was private and free but its Georgian was weak, so the
+> backend was switched to Gemini. The knowledge/RAG layer and the UI are
+> unchanged.
 
 ---
 
@@ -15,17 +20,16 @@ grounds every answer on CyberHero's own learning content.
 
 A child (or teacher/parent) asks IO a question in Georgian or English.
 The app finds the most relevant pieces of the platform's missions and
-guides, hands them to Qwen2.5 as context together with IO's persona and
-safety rules, and Qwen writes a short, kid-friendly answer — all on the
-user's own device. No server, no API key, no data leaves the browser.
+guides, sends them to **Gemini** as context together with IO's persona
+and safety rules, and Gemini streams back a short, kid-friendly answer.
 
 ---
 
 ## 2. Architecture
 
-The site is a **static GitHub Pages app** (no backend). So instead of
-calling a cloud LLM API, IO Chat runs the model client-side with
-[**WebLLM**](https://github.com/mlc-ai/web-llm) on **WebGPU**.
+The site is a **static GitHub Pages app** (no backend). The chat page
+calls the Gemini REST API directly from the browser and streams the
+reply.
 
 ```
  User question
@@ -38,27 +42,15 @@ calling a cloud LLM API, IO Chat runs the model client-side with
       │  system prompt = persona + rules + context        └──────────────────────┘
       ▼
  ┌─────────────────────────┐   streams tokens   ┌──────────────────────────────┐
- │  IoChatPage.jsx (UI)     │ ◀───────────────── │  Qwen2.5 Instruct (WebLLM)    │
- │  chat thread, IO 3D, …   │                    │  runs in-browser on WebGPU    │
+ │  IoChatPage.jsx (UI)     │ ◀───────────────── │  Google Gemini API            │
+ │  useIoChat + llmClient   │                    │  (gemini-*-flash)             │
  └─────────────────────────┘                     └──────────────────────────────┘
 ```
 
-This is a **Retrieval-Augmented Generation (RAG)** design. IO is not a
-fine-tuned model — the base Qwen2.5 weights are unchanged. Instead, the
-platform's material is injected into the prompt at question time, so the
-answers reflect CyberHero's content and tone. See §7 for what "training"
-would mean beyond this.
-
-### Why in-browser?
-
-| Benefit | Detail |
-|---|---|
-| **Privacy** | Nothing a child types ever leaves their device. Important for a kids' product. |
-| **Cost** | No inference servers, no API bills — it scales for free. |
-| **No keys** | Nothing secret ships in the static site. |
-| **Offline-ish** | After the one-time model download, it works without a network. |
-
-The trade-off is the client requirements — see §5.
+This is a **Retrieval-Augmented Generation (RAG)** design. Gemini's own
+weights are unchanged; the platform's material is injected into the
+prompt at question time, so answers reflect CyberHero's content and tone.
+See §7 for what real "training" would mean beyond this.
 
 ---
 
@@ -66,14 +58,15 @@ The trade-off is the client requirements — see §5.
 
 | File | Role |
 |---|---|
-| `src/mascot/ioBrain.js` | The "brain": builds the knowledge base, retrieves relevant chunks, and assembles the system prompt + persona/guardrails. Pure JS, framework-free, unit-testable in Node. |
-| `src/pages/IoChatPage.jsx` | The chat UI: WebGPU check, model picker + download progress, streaming conversation, source chips, IO rendered beside the thread. |
+| `src/mascot/ioBrain.js` | The knowledge layer: builds the knowledge base, retrieves relevant chunks, and assembles the RAG system prompt + persona/guardrails. Pure JS, model-agnostic. |
+| `src/chat/llmClient.js` | Gemini client: API-key resolution, the streaming `streamGemini()` call, and the model list (`GEMINI_MODELS`). |
+| `src/chat/useIoChat.js` | React hook holding the chat state: builds a fresh prompt per question, streams the answer, keeps a rolling window. |
+| `src/pages/IoChatPage.jsx` | The chat UI: model picker, API-key field, streaming thread, source chips, IO rendered beside the conversation. |
 | `src/App.jsx` | Registers the lazy route `/io-chat`. |
 | `src/i18n/en.js`, `src/i18n/ka.js` | UI strings under `mascot.chat.*` (bilingual). |
-| `src/styles/global.css` | `.io-chat-*` styles, in the site's "Candy Clay" design system. |
-| `package.json` | Adds the `@mlc-ai/web-llm` dependency. |
+| `.env.example` | Template for the local API key (copy to `.env.local`). |
 
-The route is **lazy-loaded**, so WebLLM and this page are a separate
+The route is **lazy-loaded**, so the chat code is a separate ~12 KB
 bundle chunk — the main site's size and load time are unaffected.
 
 ---
@@ -81,69 +74,57 @@ bundle chunk — the main site's size and load time are unaffected.
 ## 4. The knowledge base (RAG)
 
 `ioBrain.js` builds the knowledge base **automatically from the existing
-content modules** — there is no separate copy to maintain:
+content modules** — no separate copy to maintain:
 
-- **Missions** (`src/content/guardians/*`): each mission's name,
-  description, brief, every theory point, and every answer explanation.
-- **Guides** (`src/content/parents/articles/*`): title, teaser, lead, and
-  all body text (paragraphs, lists, callouts).
+- **Missions** (`src/content/guardians/*`): name, description, brief,
+  every theory point, every answer explanation.
+- **Guides** (`src/content/parents/articles/*`): title, teaser, lead and
+  all body text.
 - **IO tips** (`src/content/mascot.js`).
 
-Every chunk keeps **both languages** (`{ en, ka }`). As of α1 this
-produces **~330 chunks**. Because it's derived from the content files,
-**adding or editing a mission/guide updates IO's knowledge on the next
-build — no extra step.**
+Every chunk keeps **both languages** (`{ en, ka }`) — currently **~330
+chunks**. Adding or editing a mission/guide updates IO's knowledge on the
+next build, no extra step.
 
-### Retrieval
-
-`retrieve(query, topN = 4)` scores chunks by term overlap against both
-languages at once, with a prefix-match fallback so inflected Georgian
-words still hit (Georgian is heavily inflected). It's **lexical**
-(keyword) retrieval — simple, fast, zero dependencies, and good enough
-for a focused domain. Upgrading to embedding-based semantic search is a
-known future improvement (§7).
-
-`buildSystemPrompt(query)` returns `{ prompt, sources }`, where `sources`
-are the chunks used — the UI shows them as 📚 chips under each answer so
-you can see what IO drew on.
+`retrieve(query, topN)` scores chunks by term overlap across both
+languages, with a prefix fallback so inflected Georgian words still hit.
+It's lexical (keyword) retrieval — simple and dependency-free. Replies
+show 📚 source chips naming the chunks used.
 
 ---
 
-## 5. Requirements & how to test
+## 5. API key & how to test
 
-**Requirements**
+Gemini needs an API key ([aistudio.google.com](https://aistudio.google.com)
+→ **Get API key** → **Create**; free, no card).
 
-- A **WebGPU** browser: **Chrome or Edge on a desktop/laptop** (recent
-  versions). The page detects missing WebGPU and shows a friendly notice.
-- Enough disk/RAM for the chosen model (it's cached by the browser after
-  the first download).
+The key is resolved in this order:
 
-**Models offered** (edit in `ioBrain.js → IO_MODELS`):
+1. **`import.meta.env.VITE_GEMINI_API_KEY`** — from `.env.local`, for
+   local `npm run dev`.
+2. **Runtime key** — a key the tester pastes into the page; stored only
+   in `localStorage`, never in the code or bundle.
 
-| Model | Download | Notes |
-|---|---|---|
-| `Qwen2.5-7B-Instruct-q4f16_1-MLC` | ~4.6 GB | Best quality + best Georgian. Needs a capable GPU. |
-| `Qwen2.5-3B-Instruct-q4f16_1-MLC` | ~2.0 GB | Good balance. |
-| `Qwen2.5-1.5B-Instruct-q4f16_1-MLC` | ~0.9 GB | Fast to try; weaker Georgian. |
+> ⚠️ **Never commit a key.** `.env.local` is gitignored. A `VITE_` var is
+> **inlined into the built JavaScript**, so a key placed in `.env.local`
+> would be exposed if that build were published to a public site. The
+> deployed demo therefore ships **no** key and uses the paste-in-browser
+> field instead (see §8).
 
-**Test on the deployed demo**
-
-```
-https://tinatinzhorzholianidga.github.io/Cyber-Learning-Platform/?fresh#/io-chat
-```
-
-1. Pick a model and click **Download & start the brain** (one-time
-   download; watch the progress line).
-2. Ask in either language, or tap a starter question.
-3. Watch the 📚 source chips to confirm IO is grounded on real content.
-
-**Test locally**
+**Local (recommended for first tests)**
 
 ```bash
-npm install
-npm run dev
-# open the printed URL, then add:  #/io-chat
+cp .env.example .env.local        # then paste your key into .env.local
+npm run dev                       # restart if it was already running
+# open the printed URL, add:  #/io-chat
 ```
+
+**Deployed demo** — open `…/#/io-chat`, paste your key into the
+**Gemini API key** box on the left (stored only in your browser), chat.
+
+**Models** (`llmClient.js → GEMINI_MODELS`): `gemini-2.0-flash` (default,
+fast, strong Georgian), `gemini-2.5-flash`, `gemini-1.5-flash`. Switch in
+the UI; unavailable models show a clear error.
 
 ---
 
@@ -151,67 +132,73 @@ npm run dev
 
 Defined in `buildSystemPrompt()` (`ioBrain.js`). IO is instructed to:
 
-- **Answer in the user's language** (Georgian or English), matching their
-  last message.
-- **Stay on topic** — online safety and the platform. Off-topic questions
-  get one friendly sentence, then a steer back.
-- Be **warm, short (2–5 sentences), kid-friendly**, at most one emoji.
-- **Ground answers** on the retrieved platform content and recommend the
-  matching mission/guide by name when useful.
-- **Safety first:** if someone is threatened or blackmailed — never pay,
-  save the evidence, tell a trusted adult, and in Georgia call **112**.
-- **Never** ask for or store personal data (passwords, codes, addresses,
-  full names).
-- **Refuse** to help with hacking, attacking, or breaking into accounts —
-  IO defends, it does not attack.
-- **Not invent** platform features, prices, or contacts.
+- **Answer in the user's language** (Georgian or English).
+- **Stay on topic** — online safety and the platform; off-topic gets one
+  friendly sentence then a steer back.
+- Be **warm, short (2–5 sentences), kid-friendly**, ≤ one emoji.
+- **Ground answers** on retrieved platform content; recommend the
+  matching mission/guide by name.
+- **Safety first:** threats/blackmail → never pay, save evidence, tell a
+  trusted adult, in Georgia call **112**.
+- **Never** ask for or store personal data.
+- **Refuse** hacking/attack help — IO defends, not attacks.
+- **Not invent** platform features, prices or contacts.
 
-A visible disclaimer on the page reminds users that IO is an AI, can make
-mistakes, and is a helper — not a replacement for a trusted adult.
+Gemini also applies its own safety filters; a blocked answer surfaces a
+friendly "try rephrasing" message.
 
-> ⚠️ These are prompt-level guardrails on a small open model. They are
-> strong for a demo but **not** a substitute for human moderation. Before
-> any public launch, the outputs should be reviewed with real
-> child-safety testing (see §7).
+> ⚠️ These are prompt-level guardrails plus Gemini's filters — strong for
+> a demo but **not** a substitute for human moderation. Do real
+> child-safety testing before any public launch.
 
 ---
 
-## 7. Limitations & roadmap
+## 7. Privacy note (important for a kids' product)
+
+Unlike the earlier in-browser version, **questions are now sent to
+Google's Gemini API** to generate answers — they leave the device. The UI
+says so and warns against typing passwords or personal details. Before a
+public launch, review Google's data-use terms for the chosen tier (free
+vs paid differ) and your obligations for minors (e.g. COPPA / GDPR-K).
+
+---
+
+## 8. Limitations & roadmap
 
 **Current limitations**
 
-- **WebGPU only** — no support on most phones or Safari yet; low-end
-  laptops may be slow or unable to run the 7B model.
-- **Large first download** for the bigger models.
-- **RAG, not fine-tuned** — IO uses the base Qwen2.5 with platform context
-  injected; it hasn't learned the content into its weights.
-- **Lexical retrieval** — keyword-based; can miss paraphrases an
-  embedding search would catch.
-- **Guardrails are prompt-based** — see the safety note in §6.
+- **Needs an API key** and a network connection.
+- **RAG, not fine-tuned** — Gemini uses platform context in the prompt; it
+  hasn't learned the content into its weights.
+- **Lexical retrieval** — keyword-based; can miss paraphrases.
+- **Data leaves the device** (see §7).
+- **Guardrails are prompt + filter based** — see §6.
 
-**Possible next steps (in rough order of value)**
+**Possible next steps**
 
-1. **Embedding-based retrieval** for better recall on paraphrased
-   questions (still fully in-browser).
-2. **Hosted-model fallback** for phones / weak devices (a small managed
-   API), toggled per device — trades some privacy/cost for reach.
-3. **Child-safety review**: adversarial testing, an answer-logging
-   opt-in for QA, stronger refusal tuning.
-4. **True fine-tuning / LoRA** of Qwen on the platform's content and tone
-   — needs GPU training infrastructure; improves fluency and Georgian.
+1. **Backend key proxy** (serverless function) so the deployed site can
+   use one server-side key safely, without each user pasting their own.
+2. **Embedding-based retrieval** for better recall on paraphrases.
+3. **Child-safety review**: adversarial testing, optional QA logging,
+   stronger refusal tuning.
+4. **Real fine-tuning / LoRA** on the platform's content and tone — needs
+   training infrastructure.
 5. **Mount IO Chat into the floating widget** so he's reachable from every
    page once approved.
 
 ---
 
-## 8. Deployment notes
+## 9. Deployment notes
 
 - Everything currently lives on the demo branch
   `claude/mascot-robot-demo-9oclw8` and the hidden `/io-chat` page.
+- The deployed build contains **no API key** (it is gitignored and absent
+  from CI), so the public demo is inert until a tester pastes their own
+  key — safe to publish.
 - Promotion to the live line (`claude/cyberhero-platform-setup-gd5ur7`)
   happens **only on explicit approval**.
-- The feature is self-contained and lazy-loaded; merging it does not alter
-  any existing page.
+- Self-contained and lazy-loaded; merging does not alter any existing
+  page.
 
 ---
 
