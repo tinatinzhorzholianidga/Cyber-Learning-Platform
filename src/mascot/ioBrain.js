@@ -127,3 +127,10 @@ PLATFORM KNOWLEDGE:
 ${context || '(nothing matched this question - answer from your general cyber-safety knowledge, following the rules above)'}`,
   }
 }
+
+/* models offered in the demo, biggest first (quality ↔ download size) */
+export const IO_MODELS = [
+  { id: 'Qwen2.5-7B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 7B', size: '~4.6 GB', note: 'best quality + Georgian' },
+  { id: 'Qwen2.5-3B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 3B', size: '~2.0 GB', note: 'good balance' },
+  { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 1.5B', size: '~0.9 GB', note: 'fast test (weak Georgian)' },
+]

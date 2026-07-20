@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n/I18nContext.jsx'
-import { GEMINI_MODELS, getApiKey, hasEnvKey, setRuntimeKey } from '../chat/llmClient.js'
-import { useIoChat } from '../chat/useIoChat.js'
+import { buildSystemPrompt, IO_MODELS } from '../mascot/ioBrain.js'
 import RobotCanvas from '../mascot/RobotCanvas.jsx'
 
-/* IO Chat (demo): IO powered by Google's Gemini API, grounded on the
-   platform's own bilingual content (see mascot/ioBrain.js).
-   Hidden test page - not linked from the site. */
+/* IO Chat (demo): Qwen2.5 running fully in the visitor's browser via
+   WebLLM/WebGPU - no server, no API keys, nothing leaves the device.
+   Each question is grounded on the platform's own bilingual content
+   (see ioBrain.js). Hidden test page - not linked from the site. */
 
 const STARTERS = [
   { en: 'What is phishing?', ka: 'რა არის ფიშინგი?' },
@@ -16,55 +16,102 @@ const STARTERS = [
   { en: 'My friend is being teased in a group chat.', ka: 'ჩემს მეგობარს ჯგუფურ ჩატში დასცინიან.' },
 ]
 
-function friendlyError(t, err) {
-  if (!err) return null
-  if (err === 'NO_KEY' || err === 'BAD_KEY') return t('mascot.chat.errKey')
-  if (err === 'SAFETY_BLOCK') return t('mascot.chat.errSafety')
-  if (err === 'EMPTY') return t('mascot.chat.errEmpty')
-  if (err.startsWith('MODEL_NOT_FOUND')) return t('mascot.chat.errModel')
-  return t('mascot.chat.genError') + ' ' + err
-}
-
 export default function IoChatPage() {
   const { t, tx, lang } = useI18n()
-  const [modelId, setModelId] = useState(GEMINI_MODELS[0].id)
-  const [keyReady, setKeyReady] = useState(() => Boolean(getApiKey()))
-  const [keyInput, setKeyInput] = useState('')
+  const [webgpu, setWebgpu] = useState(null) // null = checking
+  const [modelId, setModelId] = useState(IO_MODELS[0].id)
+  const [loadState, setLoadState] = useState('idle') // idle | loading | ready | error
+  const [progress, setProgress] = useState('')
+  const [messages, setMessages] = useState([]) // {role:'user'|'assistant', content, sources?}
   const [input, setInput] = useState('')
+  const [busy, setBusy] = useState(false)
+  const engineRef = useRef(null)
   const threadRef = useRef(null)
-  const { messages, busy, error, send, reset } = useIoChat(modelId)
+  const generationRef = useRef(0)
 
+  useEffect(() => {
+    setWebgpu(Boolean(navigator.gpu))
+  }, [])
+
+  // auto-scroll the thread
   useEffect(() => {
     const el = threadRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, busy])
 
-  const saveKey = (e) => {
-    e.preventDefault()
-    const k = keyInput.trim()
-    if (!k) return
-    setRuntimeKey(k)
-    setKeyInput('')
-    setKeyReady(true)
+  useEffect(
+    () => () => {
+      engineRef.current?.unload?.()
+    },
+    [],
+  )
+
+  const loadModel = async () => {
+    setLoadState('loading')
+    setProgress('')
+    try {
+      const { CreateMLCEngine } = await import('@mlc-ai/web-llm')
+      const eng = await CreateMLCEngine(modelId, {
+        initProgressCallback: (p) => setProgress(p.text || ''),
+      })
+      engineRef.current = eng
+      setLoadState('ready')
+    } catch (err) {
+      console.error(err)
+      setProgress(String(err?.message || err))
+      setLoadState('error')
+    }
   }
 
-  const clearKey = () => {
-    setRuntimeKey('')
-    setKeyReady(false)
-    reset()
-  }
-
-  const submit = (e) => {
-    e.preventDefault()
-    if (!input.trim()) return
-    send(input)
+  const send = async (rawText) => {
+    const text = (rawText ?? input).trim()
+    if (!text || !engineRef.current || busy) return
     setInput('')
+    setBusy(true)
+    const gen = ++generationRef.current
+
+    const { prompt, sources } = buildSystemPrompt(text)
+    const history = [...messages, { role: 'user', content: text }]
+    setMessages([...history, { role: 'assistant', content: '', sources }])
+
+    try {
+      const stream = await engineRef.current.chat.completions.create({
+        stream: true,
+        messages: [
+          { role: 'system', content: prompt },
+          // short rolling window keeps small models focused
+          ...history.slice(-8).map(({ role, content }) => ({ role, content })),
+        ],
+        temperature: 0.6,
+        max_tokens: 320,
+      })
+      let acc = ''
+      for await (const part of stream) {
+        if (generationRef.current !== gen) return // thread was reset
+        acc += part.choices?.[0]?.delta?.content || ''
+        setMessages([...history, { role: 'assistant', content: acc, sources }])
+      }
+    } catch (err) {
+      console.error(err)
+      if (generationRef.current === gen) {
+        setMessages([...history, { role: 'assistant', content: t('mascot.chat.genError'), sources: [] }])
+      }
+    } finally {
+      if (generationRef.current === gen) setBusy(false)
+    }
+  }
+
+  const reset = () => {
+    generationRef.current += 1
+    setMessages([])
+    setBusy(false)
+    engineRef.current?.resetChat?.()
   }
 
   const lastAssistant = messages[messages.length - 1]
   const ioTalking = busy && Boolean(lastAssistant?.content)
   const ioEmotion = busy && !lastAssistant?.content ? 'thinking' : 'happy'
-  const model = GEMINI_MODELS.find((m) => m.id === modelId)
+  const model = IO_MODELS.find((m) => m.id === modelId)
 
   return (
     <div className="fade-in io-chat">
@@ -80,6 +127,8 @@ export default function IoChatPage() {
         <p>{t('mascot.chat.sub')}</p>
       </header>
 
+      {webgpu === false && <div className="io-warn">⚠️ {t('mascot.chat.needsWebgpu')}</div>}
+
       <div className="io-chat-layout">
         <aside className="io-side">
           <RobotCanvas
@@ -91,52 +140,32 @@ export default function IoChatPage() {
             follow
             idle
           />
-
           <div className="ctrl-group">
             <h2>{t('mascot.chat.model')}</h2>
             <div className="chip-row">
-              {GEMINI_MODELS.map((m) => (
+              {IO_MODELS.map((m) => (
                 <button
                   key={m.id}
                   type="button"
                   className={`chip-btn ${modelId === m.id ? 'active' : ''}`}
                   aria-pressed={modelId === m.id}
+                  disabled={loadState === 'loading'}
                   onClick={() => setModelId(m.id)}
                 >
-                  {m.label}
+                  {m.label} · {m.size}
                 </button>
               ))}
             </div>
             <p className="mascot-ctrl-note">{model?.note}</p>
-          </div>
-
-          <div className="ctrl-group">
-            <h2>{t('mascot.chat.key')}</h2>
-            {hasEnvKey() ? (
-              <p className="io-ready">✅ {t('mascot.chat.keyEnv')}</p>
-            ) : keyReady ? (
-              <>
-                <p className="io-ready">✅ {t('mascot.chat.keySaved')}</p>
-                <button type="button" className="btn-ghost" onClick={clearKey}>
-                  {t('mascot.chat.keyClear')}
-                </button>
-              </>
+            {loadState !== 'ready' ? (
+              <button type="button" className="btn-solid" disabled={loadState === 'loading' || webgpu === false} onClick={loadModel}>
+                {loadState === 'loading' ? '⏳ ' + t('mascot.chat.loading') : '⬇️ ' + t('mascot.chat.load')}
+              </button>
             ) : (
-              <form onSubmit={saveKey} className="io-key-form">
-                <p className="mascot-ctrl-note">{t('mascot.chat.keyHelp')}</p>
-                <input
-                  type="password"
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="AIza…"
-                  aria-label={t('mascot.chat.key')}
-                  autoComplete="off"
-                />
-                <button type="submit" className="btn-solid" disabled={!keyInput.trim()}>
-                  {t('mascot.chat.keySave')}
-                </button>
-              </form>
+              <p className="io-ready">✅ {t('mascot.chat.ready')}</p>
             )}
+            {loadState === 'loading' && <p className="io-progress">{progress}</p>}
+            {loadState === 'error' && <p className="io-warn">⚠️ {t('mascot.chat.loadError')} {progress}</p>}
             <p className="mascot-ctrl-note">{t('mascot.chat.privacy')}</p>
           </div>
         </aside>
@@ -145,7 +174,7 @@ export default function IoChatPage() {
           <div className="io-thread" ref={threadRef}>
             {messages.length === 0 && (
               <div className="io-msg io-msg-bot">
-                <p>{keyReady ? t('mascot.chat.hello') : t('mascot.chat.helloNoKey')}</p>
+                <p>{t('mascot.chat.hello')}</p>
               </div>
             )}
             {messages.map((m, i) => (
@@ -160,28 +189,32 @@ export default function IoChatPage() {
             ))}
           </div>
 
-          {error && <p className="io-warn">⚠️ {friendlyError(t, error)}</p>}
-
-          {messages.length === 0 && keyReady && (
+          {messages.length === 0 && (
             <div className="chip-row io-starters">
               {STARTERS.map((s, i) => (
-                <button key={i} type="button" className="chip-btn" disabled={busy} onClick={() => send(tx(s))}>
+                <button key={i} type="button" className="chip-btn" disabled={loadState !== 'ready'} onClick={() => send(tx(s))}>
                   {tx(s)}
                 </button>
               ))}
             </div>
           )}
 
-          <form className="io-input-row" onSubmit={submit}>
+          <form
+            className="io-input-row"
+            onSubmit={(e) => {
+              e.preventDefault()
+              send()
+            }}
+          >
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={keyReady ? t('mascot.chat.placeholder') : t('mascot.chat.placeholderNoKey')}
-              disabled={!keyReady || busy}
+              placeholder={loadState === 'ready' ? t('mascot.chat.placeholder') : t('mascot.chat.placeholderIdle')}
+              disabled={loadState !== 'ready' || busy}
               aria-label={t('mascot.chat.placeholder')}
             />
-            <button type="submit" className="btn-solid" disabled={!keyReady || busy || !input.trim()}>
+            <button type="submit" className="btn-solid" disabled={loadState !== 'ready' || busy || !input.trim()}>
               {t('mascot.chat.send')}
             </button>
             <button type="button" className="btn-ghost" onClick={reset} disabled={messages.length === 0}>
@@ -193,7 +226,7 @@ export default function IoChatPage() {
       </div>
 
       <p className="mascot-fps" style={{ textAlign: 'center', marginTop: 14 }}>
-        IO Chat β1 · {lang === 'ka' ? 'ქართული/English' : 'English/ქართული'} · Gemini + RAG
+        IO Chat α1 · {lang === 'ka' ? 'ქართული/English' : 'English/ქართული'} · Qwen2.5 + WebLLM + RAG
       </p>
     </div>
   )
