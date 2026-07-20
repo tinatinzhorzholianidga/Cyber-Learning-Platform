@@ -277,6 +277,14 @@ export default function MascotDemoPage() {
           </div>
 
           <div className="ctrl-group">
+            <h2>🧠 IO Chat · AI</h2>
+            <Link to="/io-chat" className="btn-solid">
+              💬 IO Chat (Qwen2.5)
+            </Link>
+            <p className="mascot-ctrl-note">{t('mascot.chat.privacy')}</p>
+          </div>
+
+          <div className="ctrl-group">
             <h2>{t('mascot.demo.widget')}</h2>
             <button
               type="button"
