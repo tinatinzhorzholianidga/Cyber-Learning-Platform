@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@fontsource-variable/noto-sans-georgian": "^5.0.0",
-    "@mlc-ai/web-llm": "^0.2.84",
     "@react-three/fiber": "^8.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

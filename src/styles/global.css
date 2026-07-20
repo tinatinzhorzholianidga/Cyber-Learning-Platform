@@ -2572,6 +2572,27 @@ main {
   text-align: center;
 }
 
+.io-key-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.io-key-form input {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.io-key-form input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
 /* coming-soon builder preview --------------------------------------------- */
 .mascot-soon-preview {
   margin-top: 26px;
