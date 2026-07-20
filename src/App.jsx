@@ -18,6 +18,7 @@ import CertificatePage from './pages/guardians/CertificatePage.jsx'
 // IO lives on every page, but three.js loads lazily after first paint so
 // the site itself stays light on slow school machines.
 const MascotDemoPage = lazy(() => import('./pages/MascotDemoPage.jsx'))
+const IoChatPage = lazy(() => import('./pages/IoChatPage.jsx'))
 const MascotWidget = lazy(() => import('./mascot/MascotWidget.jsx'))
 
 function DeferredMascot() {
@@ -53,6 +54,14 @@ export default function App() {
           <Route path="/guardians" element={<GuardiansMapPage />} />
           <Route path="/guardians/mission/:missionId" element={<MissionPage />} />
           <Route path="/guardians/certificate" element={<CertificatePage />} />
+          <Route
+            path="/io-chat"
+            element={
+              <Suspense fallback={null}>
+                <IoChatPage />
+              </Suspense>
+            }
+          />
           <Route
             path="/mascot-demo"
             element={
