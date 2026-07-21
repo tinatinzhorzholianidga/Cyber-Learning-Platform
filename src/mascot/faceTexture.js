@@ -158,8 +158,70 @@ function decorations(ctx) {
  * state = { emotion, blink 0..1 (1 = closed), pupilX -1..1, pupilY -1..1,
  *           mouthOpen 0..1 }
  */
+/* brushed-steel frame with rivets and panel cuts - the droid look of
+   the original IO render (Star Wars mode) */
+function metalFrame(ctx, S) {
+  const grad = ctx.createLinearGradient(0, 22, 0, S - 22)
+  grad.addColorStop(0, '#f2f3f7')
+  grad.addColorStop(0.25, '#c3c7d3')
+  grad.addColorStop(0.5, '#eceef4')
+  grad.addColorStop(0.75, '#b4b8c6')
+  grad.addColorStop(1, '#e4e6ee')
+  ctx.strokeStyle = grad
+  ctx.lineWidth = 30
+  roundRect(ctx, 37, 37, S - 74, S - 74, 94)
+  ctx.stroke()
+  // dark panel edges
+  ctx.strokeStyle = 'rgba(43,35,80,0.55)'
+  ctx.lineWidth = 3
+  roundRect(ctx, 22, 22, S - 44, S - 44, 108)
+  ctx.stroke()
+  roundRect(ctx, 52, 52, S - 104, S - 104, 84)
+  ctx.stroke()
+  // angled panel cuts across the band
+  ctx.strokeStyle = 'rgba(43,35,80,0.4)'
+  ctx.lineWidth = 3
+  ;[
+    [150, 24, 138, 50],
+    [S - 150, 24, S - 138, 50],
+    [24, 170, 50, 160],
+    [S - 24, 170, S - 50, 160],
+    [150, S - 24, 138, S - 50],
+    [S - 150, S - 24, S - 138, S - 50],
+  ].forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.stroke()
+  })
+  // rivets on the band
+  const rivet = (x, y) => {
+    ctx.fillStyle = '#9aa0af'
+    ctx.beginPath()
+    ctx.arc(x, y, 6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'
+    ctx.beginPath()
+    ctx.arc(x - 1.6, y - 1.6, 2.2, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ;[
+    [68, 68], [S - 68, 68], [68, S - 68], [S - 68, S - 68],
+    [S / 2, 37], [S / 2, S - 37], [37, S / 2], [S - 37, S / 2],
+  ].forEach(([x, y]) => rivet(x, y))
+}
+
 export function drawFace(ctx, state) {
-  const { emotion = 'happy', blink = 0, pupilX = 0, pupilY = 0, mouthOpen = 0, noPlate = false, bezel = false } = state
+  const {
+    emotion = 'happy',
+    blink = 0,
+    pupilX = 0,
+    pupilY = 0,
+    mouthOpen = 0,
+    noPlate = false,
+    bezel = false,
+    metal = false,
+  } = state
   const S = FACE_SIZE
   ctx.clearRect(0, 0, S, S)
 
@@ -167,7 +229,9 @@ export function drawFace(ctx, state) {
   ctx.fillStyle = SCREEN
   roundRect(ctx, 22, 22, S - 44, S - 44, 108)
   ctx.fill()
-  if (bezel) {
+  if (metal && !bezel) {
+    metalFrame(ctx, S)
+  } else if (bezel) {
     // Cyber Guardian: thick luminous bezel ring, like the reference render
     ctx.save()
     ctx.shadowColor = 'rgba(122,107,255,0.95)'
@@ -314,5 +378,5 @@ function cy_(y) {
    actually changed (texture uploads are the expensive part). */
 export function faceKey(state) {
   const q = (v) => Math.round(v * 24)
-  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}|${state.bezel ? 1 : 0}`
+  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}|${state.bezel ? 1 : 0}|${state.metal ? 1 : 0}`
 }
