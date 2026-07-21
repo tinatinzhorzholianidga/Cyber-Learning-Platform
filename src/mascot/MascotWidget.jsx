@@ -26,7 +26,7 @@ function useWidgetSize() {
    - during missions he is the coach: wrong answers become his
      explanations (thinking face), right answers get a move + praise,
      finished missions get a celebration (fireworks render separately) */
-export default function MascotWidget({ character = 'robot' }) {
+export default function MascotWidget({ character = 'robot', skin = 'classic' }) {
   const { t, tx } = useI18n()
   const { pathname } = useLocation()
   const { progress } = useProgress()
@@ -175,6 +175,7 @@ export default function MascotWidget({ character = 'robot' }) {
         <RobotCanvas
           size={size}
           character={character}
+          skin={skin}
           variant={isBuilding ? 'builder' : 'default'}
           holdup={isBuilding}
           label={isHero ? t('mascot.widget.labelHero') : t('mascot.widget.label')}
