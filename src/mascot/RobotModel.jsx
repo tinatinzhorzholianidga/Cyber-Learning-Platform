@@ -268,8 +268,8 @@ export default function RobotModel({
        bob slightly (follow-through), the wave lifts the whole blade and
        rocks it, and "hold up" raises the left blade with little
        air-pats. ---- */
-    const restBase = guardian ? 0.3 : 0.36
-    const armY = guardian ? -0.02 : -0.08
+    const restBase = guardian ? 0.3 : 0.13
+    const armY = guardian ? -0.02 : -0.1
     if (mittR.current) {
       const rest = restBase + (idle ? Math.sin(t * 1.25 + 0.6) * 0.05 : 0)
       const target = rest + (1.7 + Math.sin(waveE * 9) * 0.26) * waveB
@@ -533,8 +533,8 @@ export default function RobotModel({
             <group
               key={side}
               ref={ref}
-              position={guardian ? [side * 1.04, -0.02, 0.06] : [side * 1.1, -0.08, 0.14]}
-              rotation={[0, 0, side * (guardian ? 0.3 : 0.36)]}
+              position={guardian ? [side * 1.04, -0.02, 0.06] : [side * 0.98, -0.1, 0.1]}
+              rotation={[0, 0, side * (guardian ? 0.3 : 0.13)]}
             >
               {guardian ? (
                 <group rotation={[0.06, 0, 0]}>
@@ -622,7 +622,7 @@ export default function RobotModel({
                   </group>
                 </group>
               ) : (
-                <mesh geometry={armGeo} scale={[1, 1, 0.45]} rotation={[0.05, 0, 0]}>
+                <mesh geometry={armGeo} scale={[1, 1, 0.58]} rotation={[0.05, 0, 0]}>
                   <meshPhysicalMaterial color="#f4f2fb" roughness={0.18} metalness={0.04} clearcoat={1} clearcoatRoughness={0.12} />
                 </mesh>
               )}
@@ -742,25 +742,26 @@ export default function RobotModel({
   )
 }
 
-/* EVE's real arm: a flat wing-blade. Broad rounded shoulder end,
-   width held through the upper half, then a fast elegant sweep down to
-   a fine tip. Heavily flattened in z so it reads as a blade, not a
-   capsule. Origin at the shoulder so rotation swings it naturally. */
+/* EVE's real arm: a slim teardrop blade. Rounded shoulder cap flowing
+   into a gentle bulge just below it, then one long smooth sweep down to
+   a fine tip. Narrow from the front, slightly flattened, hanging close
+   to the body. Origin at the shoulder so rotation swings it naturally. */
 function useEveArmGeometry() {
   return useMemo(() => {
-    const R = 0.19 // chord at the shoulder (broad)
-    const L = 0.95 // blade length
-    const N = 44
+    const R = 0.125 // widest chord, just below the shoulder
+    const L = 1.0 // blade length
+    const PEAK = 0.18 // where the bulge sits
+    const N = 56
     const pts = []
     for (let i = 0; i <= N; i++) {
       const f = i / N
       const r =
-        f < 0.12
-          ? R * Math.sin((f / 0.12) * (Math.PI / 2)) // rounded shoulder cap
-          : R * (1 - Math.pow((f - 0.12) / 0.88, 1.8) * 0.98) // held width, then sweep to a fine tip
-      pts.push(new THREE.Vector2(Math.max(r, 0.001), -f * L))
+        f < PEAK
+          ? R * Math.sin((f / PEAK) * (Math.PI / 2)) // rounded cap into the bulge
+          : R * Math.pow(1 - (f - PEAK) / (1 - PEAK), 1.35) // long graceful sweep to a fine tip
+      pts.push(new THREE.Vector2(Math.max(r, 0.004), -f * L))
     }
-    const geo = new THREE.LatheGeometry(pts, 32)
+    const geo = new THREE.LatheGeometry(pts, 36)
     geo.computeVertexNormals()
     return geo
   }, [])
