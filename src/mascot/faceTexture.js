@@ -159,7 +159,7 @@ function decorations(ctx) {
  *           mouthOpen 0..1 }
  */
 export function drawFace(ctx, state) {
-  const { emotion = 'happy', blink = 0, pupilX = 0, pupilY = 0, mouthOpen = 0, noPlate = false } = state
+  const { emotion = 'happy', blink = 0, pupilX = 0, pupilY = 0, mouthOpen = 0, noPlate = false, bezel = false } = state
   const S = FACE_SIZE
   ctx.clearRect(0, 0, S, S)
 
@@ -167,14 +167,33 @@ export function drawFace(ctx, state) {
   ctx.fillStyle = SCREEN
   roundRect(ctx, 22, 22, S - 44, S - 44, 108)
   ctx.fill()
-  ctx.strokeStyle = VIOLET
-  ctx.lineWidth = 16
-  roundRect(ctx, 30, 30, S - 60, S - 60, 100)
-  ctx.stroke()
-  ctx.strokeStyle = VIOLET_SOFT
-  ctx.lineWidth = 4
-  roundRect(ctx, 48, 48, S - 96, S - 96, 86)
-  ctx.stroke()
+  if (bezel) {
+    // Cyber Guardian: thick luminous bezel ring, like the reference render
+    ctx.save()
+    ctx.shadowColor = 'rgba(122,107,255,0.95)'
+    ctx.shadowBlur = 22
+    const grad = ctx.createLinearGradient(0, 30, 0, S - 30)
+    grad.addColorStop(0, '#8b5cff')
+    grad.addColorStop(1, '#6c5ce7')
+    ctx.strokeStyle = grad
+    ctx.lineWidth = 26
+    roundRect(ctx, 36, 36, S - 72, S - 72, 96)
+    ctx.stroke()
+    ctx.restore()
+    ctx.strokeStyle = 'rgba(139,92,255,0.45)'
+    ctx.lineWidth = 6
+    roundRect(ctx, 60, 60, S - 120, S - 120, 80)
+    ctx.stroke()
+  } else {
+    ctx.strokeStyle = VIOLET
+    ctx.lineWidth = 16
+    roundRect(ctx, 30, 30, S - 60, S - 60, 100)
+    ctx.stroke()
+    ctx.strokeStyle = VIOLET_SOFT
+    ctx.lineWidth = 4
+    roundRect(ctx, 48, 48, S - 96, S - 96, 86)
+    ctx.stroke()
+  }
 
   // DGA plate on the forehead (hidden when the hard hat carries the decal)
   if (!noPlate) {
@@ -295,5 +314,5 @@ function cy_(y) {
    actually changed (texture uploads are the expensive part). */
 export function faceKey(state) {
   const q = (v) => Math.round(v * 24)
-  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}`
+  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}|${state.bezel ? 1 : 0}`
 }

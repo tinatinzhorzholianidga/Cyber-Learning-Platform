@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { drawFace, faceKey, FACE_SIZE } from './faceTexture.js'
 
 /* Candy Clay palette (mirrors src/styles/global.css) */
@@ -108,16 +109,12 @@ export default function RobotModel({
 
   const { leds, dial } = useSurfacePoints()
   const armGeo = useEveArmGeometry()
-  const guardArmGeo = useGuardianArmGeometry()
-  useEffect(
-    () => () => {
-      armGeo.dispose()
-      guardArmGeo.dispose()
-    },
-    [armGeo, guardArmGeo],
-  )
-  const energyMats = useRef([]) // guardian: seams, wrist rings, status lights
-  const coreMat = useRef() // guardian: bottom energy core
+  const clawParts = useGuardianClawParts(guardian)
+  const envMap = useStudioEnv(guardian)
+  const panelTex = usePanelTexture(guardian)
+  useEffect(() => () => armGeo.dispose(), [armGeo])
+  const energyMats = useRef([]) // guardian: glowing rings and strips
+  const coreMat = useRef() // guardian: bottom engine core
 
   const helmetLabel = useMemo(() => (variant === 'builder' ? makeHelmetLabel() : null), [variant])
   useEffect(() => () => helmetLabel?.dispose(), [helmetLabel])
@@ -148,7 +145,7 @@ export default function RobotModel({
   useEffect(() => () => shadowTexture.dispose(), [shadowTexture])
 
   const paintFace = (state) => {
-    const full = { ...state, noPlate: variant === 'builder' }
+    const full = { ...state, noPlate: variant === 'builder', bezel: guardian }
     const key = faceKey(full)
     if (key === anim.current.drawnKey) return
     anim.current.drawnKey = key
@@ -271,15 +268,17 @@ export default function RobotModel({
        bob slightly (follow-through), the wave lifts the whole blade and
        rocks it, and "hold up" raises the left blade with little
        air-pats. ---- */
+    const restBase = guardian ? 0.3 : 0.36
+    const armY = guardian ? -0.02 : -0.08
     if (mittR.current) {
-      const rest = 0.36 + (idle ? Math.sin(t * 1.25 + 0.6) * 0.05 : 0)
+      const rest = restBase + (idle ? Math.sin(t * 1.25 + 0.6) * 0.05 : 0)
       const target = rest + (1.7 + Math.sin(waveE * 9) * 0.26) * waveB
       mittR.current.rotation.z += (target - mittR.current.rotation.z) * Math.min(1, dt * 10)
       mittR.current.rotation.x += (0 - mittR.current.rotation.x) * Math.min(1, dt * 8)
-      mittR.current.position.y = -0.08 + (idle ? Math.sin(t * 1.35 - 0.7) * 0.022 : 0)
+      mittR.current.position.y = armY + (idle ? Math.sin(t * 1.35 - 0.7) * 0.022 : 0)
     }
     if (mittL.current) {
-      let targetZ = -0.36 + (idle ? Math.sin(t * 1.25 + 2.3) * 0.05 : 0)
+      let targetZ = -restBase + (idle ? Math.sin(t * 1.25 + 2.3) * 0.05 : 0)
       let targetX = 0
       if (hb > 0.001) {
         const cycle = (t + 1.2) % 4.6
@@ -289,7 +288,7 @@ export default function RobotModel({
       }
       mittL.current.rotation.z += (targetZ - mittL.current.rotation.z) * Math.min(1, dt * 6)
       mittL.current.rotation.x += (targetX - mittL.current.rotation.x) * Math.min(1, dt * 8)
-      mittL.current.position.y = -0.08 + (idle ? Math.sin(t * 1.35 + 0.9) * 0.022 : 0)
+      mittL.current.position.y = armY + (idle ? Math.sin(t * 1.35 + 0.9) * 0.022 : 0)
     }
 
     /* ---- chest LEDs pulse ---- */
@@ -357,13 +356,29 @@ export default function RobotModel({
           {/* body */}
           <mesh>
             <sphereGeometry args={[1, 64, 48]} />
-            <meshPhysicalMaterial
-              color={C.body}
-              roughness={0.34}
-              metalness={0.05}
-              clearcoat={0.7}
-              clearcoatRoughness={0.32}
-            />
+            {guardian ? (
+              /* glossy white ceramic shell with engraved panel seams */
+              <meshPhysicalMaterial
+                color="#ffffff"
+                map={panelTex}
+                bumpMap={panelTex}
+                bumpScale={0.35}
+                roughness={0.16}
+                metalness={0.04}
+                clearcoat={1}
+                clearcoatRoughness={0.1}
+                envMap={envMap}
+                envMapIntensity={0.55}
+              />
+            ) : (
+              <meshPhysicalMaterial
+                color={C.body}
+                roughness={0.34}
+                metalness={0.05}
+                clearcoat={0.7}
+                clearcoatRoughness={0.32}
+              />
+            )}
           </mesh>
 
           {/* face screen (curved cap) */}
@@ -413,25 +428,49 @@ export default function RobotModel({
               </mesh>
             </group>
           ) : guardian ? (
-            /* Cyber Guardian: clean, uninterrupted head shell - the sprout
-               grows straight from a small graphite mount on the crown */
-            <group ref={leaves} position={[0, 1.0, 0]} scale={1.28}>
-              <mesh position={[0, -0.01, 0]}>
-                <cylinderGeometry args={[0.062, 0.088, 0.07, 20]} />
-                <meshStandardMaterial color={G.graphite} metalness={0.6} roughness={0.35} />
+            /* Cyber Guardian, straight from the reference sheet: a slim
+               graphite band over the crown, flush glowing sensor ports on
+               the sides (flat - NOT ear cups), sprout centred on the band */
+            <group position={[0, 0.02, 0]}>
+              <mesh>
+                <torusGeometry args={[1.005, 0.034, 14, 64, Math.PI]} />
+                <meshStandardMaterial color={G.graphite} metalness={0.55} roughness={0.35} envMap={envMap} />
               </mesh>
-              <mesh position={[0, 0.04, 0]}>
-                <sphereGeometry args={[0.08, 16, 12]} />
-                <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
-              </mesh>
-              <mesh position={[-0.2, 0.17, 0]} rotation={[0, 0, -0.7]} scale={[1.5, 0.6, 0.32]}>
-                <sphereGeometry args={[0.16, 20, 14]} />
-                <meshPhysicalMaterial color={C.leafA} roughness={0.5} clearcoat={0.3} />
-              </mesh>
-              <mesh position={[0.2, 0.17, 0]} rotation={[0, 0, 0.7]} scale={[1.5, 0.6, 0.32]}>
-                <sphereGeometry args={[0.16, 20, 14]} />
-                <meshPhysicalMaterial color={C.leafB} roughness={0.5} clearcoat={0.3} />
-              </mesh>
+              {[-1, 1].map((side) => (
+                <group key={side} position={[side * 0.975, 0.0, 0]}>
+                  <mesh rotation={[0, 0, Math.PI / 2]}>
+                    <cylinderGeometry args={[0.19, 0.19, 0.055, 28]} />
+                    <meshStandardMaterial color={G.graphite} metalness={0.55} roughness={0.35} envMap={envMap} />
+                  </mesh>
+                  <mesh position={[side * 0.03, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+                    <torusGeometry args={[0.115, 0.017, 10, 32]} />
+                    <meshStandardMaterial
+                      ref={(m) => (energyMats.current[side === 1 ? 0 : 1] = m)}
+                      color={G.violet}
+                      emissive={G.violet}
+                      emissiveIntensity={1}
+                    />
+                  </mesh>
+                  <mesh position={[side * 0.033, 0, 0]} rotation={[0, side * (Math.PI / 2), 0]}>
+                    <circleGeometry args={[0.098, 24]} />
+                    <meshStandardMaterial color={C.phonePad} metalness={0.3} roughness={0.5} />
+                  </mesh>
+                </group>
+              ))}
+              <group ref={leaves} position={[0, 1.0, 0]} scale={1.28}>
+                <mesh position={[0, 0.01, 0]}>
+                  <sphereGeometry args={[0.08, 16, 12]} />
+                  <meshPhysicalMaterial color={C.leafKnot} roughness={0.55} />
+                </mesh>
+                <mesh position={[-0.2, 0.14, 0]} rotation={[0, 0, -0.7]} scale={[1.5, 0.6, 0.32]}>
+                  <sphereGeometry args={[0.16, 20, 14]} />
+                  <meshPhysicalMaterial color={C.leafA} roughness={0.5} clearcoat={0.3} />
+                </mesh>
+                <mesh position={[0.2, 0.14, 0]} rotation={[0, 0, 0.7]} scale={[1.5, 0.6, 0.32]}>
+                  <sphereGeometry args={[0.16, 20, 14]} />
+                  <meshPhysicalMaterial color={C.leafB} roughness={0.5} clearcoat={0.3} />
+                </mesh>
+              </group>
             </group>
           ) : (
             <>
@@ -473,57 +512,114 @@ export default function RobotModel({
             </>
           )}
 
-          {/* shoulder pods the arms plug into (titanium sockets on guardian) */}
-          {[-1, 1].map((side) => (
-            <mesh key={side} position={[side * 0.94, -0.14, 0.06]} scale={[0.34, 0.42, 0.42]}>
-              <sphereGeometry args={[0.5, 24, 18]} />
-              {guardian ? (
-                <meshStandardMaterial color={G.graphite2} metalness={0.7} roughness={0.3} />
-              ) : (
+          {/* shoulder pods the arms plug into (hidden sockets on guardian) */}
+          {!guardian &&
+            [-1, 1].map((side) => (
+              <mesh key={side} position={[side * 0.94, -0.14, 0.06]} scale={[0.34, 0.42, 0.42]}>
+                <sphereGeometry args={[0.5, 24, 18]} />
                 <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
-              )}
-            </mesh>
-          ))}
+              </mesh>
+            ))}
 
           {/* arms - same pivots and animation for both skins.
               classic: EVE's flat wing-blades.
-              guardian: ceramic armor segments over a rotating ball joint,
-              chrome elbow ring + glowing wrist ring sunk into the seams. */}
+              guardian: three overlapping ceramic armor shells that curl
+              outward like the reference, dark joint cores showing in the
+              gaps and a glowing ring at every articulation. */}
           {[
-            [mittR, 1, 0.36],
-            [mittL, -1, -0.36],
-          ].map(([ref, side, rot]) => (
-            <group key={side} ref={ref} position={[side * 1.1, -0.08, 0.14]} rotation={[0, 0, rot]}>
+            [mittR, 1],
+            [mittL, -1],
+          ].map(([ref, side]) => (
+            <group
+              key={side}
+              ref={ref}
+              position={guardian ? [side * 1.04, -0.02, 0.06] : [side * 1.1, -0.08, 0.14]}
+              rotation={[0, 0, side * (guardian ? 0.3 : 0.36)]}
+            >
               {guardian ? (
-                <group rotation={[0.05, 0, 0]}>
-                  <mesh position={[0, 0.02, 0]}>
-                    <sphereGeometry args={[0.15, 24, 18]} />
-                    <meshStandardMaterial color={G.graphite2} metalness={0.75} roughness={0.28} />
+                <group rotation={[0.06, 0, 0]}>
+                  {/* rotating shoulder joint against the body */}
+                  <mesh position={[0, 0.05, 0]}>
+                    <sphereGeometry args={[0.165, 24, 18]} />
+                    <meshStandardMaterial color={G.graphite2} metalness={0.75} roughness={0.28} envMap={envMap} />
                   </mesh>
-                  <mesh geometry={guardArmGeo}>
-                    <meshPhysicalMaterial
-                      color="#f4f2fb"
-                      roughness={0.16}
-                      metalness={0.05}
-                      clearcoat={1}
-                      clearcoatRoughness={0.1}
-                    />
-                  </mesh>
-                  <mesh position={[0, -0.372, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                    <torusGeometry args={[0.126, 0.014, 10, 32]} />
-                    <meshStandardMaterial color={G.chrome} metalness={0.9} roughness={0.22} />
-                  </mesh>
-                  <mesh position={[0, -0.686, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                    <torusGeometry args={[0.082, 0.011, 10, 28]} />
+                  <mesh position={[0, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
+                    <torusGeometry args={[0.145, 0.013, 8, 32]} />
                     <meshStandardMaterial
-                      ref={(m) => (energyMats.current[side === 1 ? 4 : 5] = m)}
+                      ref={(m) => (energyMats.current[side === 1 ? 2 : 3] = m)}
                       color={G.violet}
                       emissive={G.violet}
                       emissiveIntensity={1}
-                      metalness={0.2}
-                      roughness={0.3}
                     />
                   </mesh>
+                  {/* segment 1 */}
+                  <group rotation={[0, 0, side * 0.05]}>
+                    <mesh geometry={clawParts?.[0]}>
+                      <meshPhysicalMaterial
+                        color="#f7f5ff"
+                        roughness={0.15}
+                        metalness={0.05}
+                        clearcoat={1}
+                        clearcoatRoughness={0.1}
+                        envMap={envMap}
+                        envMapIntensity={0.6}
+                      />
+                    </mesh>
+                    {/* segment 2, hinged at the bottom of segment 1 */}
+                    <group position={[0, -0.34, 0]} rotation={[0, 0, side * 0.13]}>
+                      <mesh position={[0, 0.03, 0]}>
+                        <cylinderGeometry args={[0.118, 0.118, 0.12, 24]} />
+                        <meshStandardMaterial color={G.graphite2} metalness={0.7} roughness={0.3} />
+                      </mesh>
+                      <mesh position={[0, 0.015, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                        <torusGeometry args={[0.13, 0.011, 8, 28]} />
+                        <meshStandardMaterial
+                          ref={(m) => (energyMats.current[side === 1 ? 4 : 5] = m)}
+                          color={G.violet}
+                          emissive={G.violet}
+                          emissiveIntensity={1}
+                        />
+                      </mesh>
+                      <mesh geometry={clawParts?.[1]}>
+                        <meshPhysicalMaterial
+                          color="#f7f5ff"
+                          roughness={0.15}
+                          metalness={0.05}
+                          clearcoat={1}
+                          clearcoatRoughness={0.1}
+                          envMap={envMap}
+                          envMapIntensity={0.6}
+                        />
+                      </mesh>
+                      {/* segment 3: the claw tip */}
+                      <group position={[0, -0.34, 0]} rotation={[0, 0, side * 0.17]}>
+                        <mesh position={[0, 0.03, 0]}>
+                          <cylinderGeometry args={[0.09, 0.09, 0.11, 20]} />
+                          <meshStandardMaterial color={G.graphite2} metalness={0.7} roughness={0.3} />
+                        </mesh>
+                        <mesh position={[0, 0.012, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                          <torusGeometry args={[0.1, 0.009, 8, 24]} />
+                          <meshStandardMaterial
+                            ref={(m) => (energyMats.current[side === 1 ? 6 : 7] = m)}
+                            color={G.violet}
+                            emissive={G.violet}
+                            emissiveIntensity={1}
+                          />
+                        </mesh>
+                        <mesh geometry={clawParts?.[2]}>
+                          <meshPhysicalMaterial
+                            color="#f7f5ff"
+                            roughness={0.15}
+                            metalness={0.05}
+                            clearcoat={1}
+                            clearcoatRoughness={0.1}
+                            envMap={envMap}
+                            envMapIntensity={0.6}
+                          />
+                        </mesh>
+                      </group>
+                    </group>
+                  </group>
                 </group>
               ) : (
                 <mesh geometry={armGeo} scale={[1, 1, 0.45]} rotation={[0.05, 0, 0]}>
@@ -546,90 +642,32 @@ export default function RobotModel({
             </mesh>
           ))}
 
-          {/* little dial, bottom right, a nod to the original */}
-          <group position={dial} onUpdate={(g) => g.lookAt(dial.x * 2, dial.y * 2, dial.z * 2)}>
-            <mesh>
-              <circleGeometry args={[0.1, 24]} />
-              <meshPhysicalMaterial color={C.pod} roughness={0.35} clearcoat={0.6} />
-            </mesh>
-            <mesh position={[0, 0, 0.004]}>
-              <ringGeometry args={[0.055, 0.075, 24]} />
-              <meshBasicMaterial color={C.violet} />
-            </mesh>
-          </group>
+          {/* little dial, bottom right, a nod to the original (classic only) */}
+          {!guardian && (
+            <group position={dial} onUpdate={(g) => g.lookAt(dial.x * 2, dial.y * 2, dial.z * 2)}>
+              <mesh>
+                <circleGeometry args={[0.1, 24]} />
+                <meshPhysicalMaterial color={C.pod} roughness={0.35} clearcoat={0.6} />
+              </mesh>
+              <mesh position={[0, 0, 0.004]}>
+                <ringGeometry args={[0.055, 0.075, 24]} />
+                <meshBasicMaterial color={C.violet} />
+              </mesh>
+            </group>
+          )}
 
           {guardian && (
             <group>
-              {/* elegant panel separations: crown ring, equator seam,
-                  two meridians over the back, one glowing lower ring */}
-              <mesh position={[0, 0.795, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.617, 0.007, 8, 64]} />
-                <meshStandardMaterial color={G.seam} metalness={0.35} roughness={0.4} />
-              </mesh>
-              <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[1.005, 0.006, 8, 96]} />
-                <meshStandardMaterial color={G.seam} metalness={0.35} roughness={0.4} />
-              </mesh>
-              {[0.6, -0.6].map((ry) => (
-                <mesh key={ry} rotation={[0, ry, 0]}>
-                  <torusGeometry args={[1.004, 0.005, 8, 96]} />
-                  <meshStandardMaterial color={G.seam} metalness={0.35} roughness={0.4} />
-                </mesh>
-              ))}
-              <mesh position={[0, -0.63, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.779, 0.0065, 8, 80]} />
-                <meshStandardMaterial
-                  ref={(m) => (energyMats.current[0] = m)}
-                  color={G.violet}
-                  emissive={G.violet}
-                  emissiveIntensity={0.9}
-                  metalness={0.2}
-                  roughness={0.3}
-                />
-              </mesh>
-
-              {/* tiny ventilation lines, low on each side */}
-              {[1, -1].map((side) => (
-                <group
-                  key={side}
-                  position={[side * 0.78, -0.52, 0.33]}
-                  onUpdate={(g) => g.lookAt(side * 1.56, -1.04, 0.66)}
-                >
-                  {[-0.026, 0, 0.026].map((dy) => (
-                    <mesh key={dy} position={[0, dy, 0.008]}>
-                      <boxGeometry args={[0.15, 0.014, 0.012]} />
-                      <meshStandardMaterial color={G.graphite} metalness={0.5} roughness={0.45} />
-                    </mesh>
-                  ))}
-                </group>
-              ))}
-
-              {/* small illuminated status lights on the sides */}
-              {[
-                [0.95, 0.28, -0.06, 1],
-                [-0.95, 0.28, -0.06, 2],
-              ].map(([x, sy, z, idx]) => (
-                <mesh key={idx} position={[x, sy, z]} onUpdate={(m) => m.lookAt(x * 2, sy * 2, z * 2)}>
-                  <circleGeometry args={[0.036, 16]} />
-                  <meshStandardMaterial
-                    ref={(m) => (energyMats.current[idx] = m)}
-                    color={G.cyan}
-                    emissive={G.cyan}
-                    emissiveIntensity={1}
-                  />
-                </mesh>
-              ))}
-
-              {/* graphite service module on the back */}
-              <group position={[0, 0.02, -0.98]}>
+              {/* graphite service module on the back, like the sheet's BACK view */}
+              <group position={[0, -0.18, -0.94]} rotation={[-0.18, 0, 0]}>
                 <mesh>
-                  <boxGeometry args={[0.36, 0.44, 0.16]} />
-                  <meshStandardMaterial color={G.graphite} metalness={0.55} roughness={0.35} />
+                  <boxGeometry args={[0.34, 0.42, 0.16]} />
+                  <meshStandardMaterial color={G.graphite} metalness={0.55} roughness={0.35} envMap={envMap} />
                 </mesh>
                 <mesh position={[0, 0, -0.083]}>
-                  <boxGeometry args={[0.1, 0.3, 0.012]} />
+                  <boxGeometry args={[0.1, 0.28, 0.012]} />
                   <meshStandardMaterial
-                    ref={(m) => (energyMats.current[3] = m)}
+                    ref={(m) => (energyMats.current[8] = m)}
                     color={G.violet}
                     emissive={G.violet}
                     emissiveIntensity={1}
@@ -637,35 +675,46 @@ export default function RobotModel({
                 </mesh>
               </group>
 
-              {/* flight-capable energy core underneath */}
-              <group position={[0, -0.95, 0]}>
-                <mesh position={[0, -0.02, 0]}>
-                  <cylinderGeometry args={[0.34, 0.27, 0.16, 32]} />
-                  <meshStandardMaterial color={G.graphite} metalness={0.6} roughness={0.3} />
+              {/* the big engine / energy core underneath */}
+              <group position={[0, -0.9, 0]}>
+                <mesh position={[0, -0.03, 0]}>
+                  <cylinderGeometry args={[0.42, 0.34, 0.2, 40]} />
+                  <meshStandardMaterial color={G.graphite} metalness={0.6} roughness={0.3} envMap={envMap} />
                 </mesh>
-                <mesh position={[0, -0.104, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                  <torusGeometry args={[0.27, 0.018, 10, 40]} />
-                  <meshStandardMaterial color={G.chrome} metalness={0.9} roughness={0.2} />
+                <mesh position={[0, -0.135, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <torusGeometry args={[0.345, 0.022, 12, 48]} />
+                  <meshStandardMaterial color={G.chrome} metalness={0.9} roughness={0.18} envMap={envMap} />
                 </mesh>
-                {/* glow rim visible from the front, not just from below */}
-                <mesh position={[0, -0.075, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                  <torusGeometry args={[0.308, 0.009, 8, 48]} />
+                {/* violet rim, visible from the front */}
+                <mesh position={[0, -0.095, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <torusGeometry args={[0.425, 0.013, 8, 56]} />
                   <meshStandardMaterial
-                    ref={(m) => (energyMats.current[6] = m)}
-                    color={G.cyan}
-                    emissive={G.cyan}
-                    emissiveIntensity={1.1}
+                    ref={(m) => (energyMats.current[9] = m)}
+                    color={G.violet}
+                    emissive={G.violet}
+                    emissiveIntensity={1}
                   />
                 </mesh>
-                <mesh position={[0, -0.108, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                  <circleGeometry args={[0.235, 32]} />
+                {/* bright blue core + soft additive bloom */}
+                <mesh position={[0, -0.145, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <circleGeometry args={[0.325, 40]} />
                   <meshStandardMaterial
                     ref={coreMat}
-                    color={G.cyan}
-                    emissive={G.cyan}
-                    emissiveIntensity={1.3}
+                    color="#5ab8ff"
+                    emissive="#5ab8ff"
+                    emissiveIntensity={1.4}
                     metalness={0.1}
                     roughness={0.25}
+                  />
+                </mesh>
+                <mesh position={[0, -0.16, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <circleGeometry args={[0.5, 40]} />
+                  <meshBasicMaterial
+                    color="#4aa8ff"
+                    transparent
+                    opacity={0.3}
+                    blending={THREE.AdditiveBlending}
+                    depthWrite={false}
                   />
                 </mesh>
               </group>
@@ -717,29 +766,131 @@ function useEveArmGeometry() {
   }, [])
 }
 
-/* Cyber Guardian arm: keeps the classic silhouette (same length, same
-   taper, rounded blunt tip) but built from three ceramic armor segments.
-   The seams between segments are slim notches baked into the lathe
-   profile - the chrome/glowing rings sit inside them. */
-function useGuardianArmGeometry() {
-  return useMemo(() => {
-    const L = 0.98
-    const N = 96
-    const seam = (f, at) => Math.exp(-Math.pow((f - at) / 0.02, 2)) * 0.018
-    const radiusAt = (f) => {
-      let r
-      if (f < 0.07) r = 0.165 * Math.sin((f / 0.07) * (Math.PI / 2)) // rounded shoulder
-      else if (f < 0.95) r = 0.165 - 0.115 * Math.pow((f - 0.07) / 0.88, 1.25) // gentle taper
-      else r = 0.05 * Math.cos(((f - 0.95) / 0.05) * (Math.PI / 2)) // soft blunt tip
-      return Math.max(r - seam(f, 0.38) - seam(f, 0.7), 0.004)
+/* Cyber Guardian claw arm: three tapered ceramic shells that telescope
+   like the reference sheet's arms. Each is an open lathe "cup" with a
+   rounded lip; the last one closes into a rounded claw tip. */
+function useGuardianClawParts(enabled) {
+  const parts = useMemo(() => {
+    if (!enabled) return null
+    const mk = (rTop, rBot, len, tip) => {
+      const N = 28
+      const pts = []
+      for (let i = 0; i <= N; i++) {
+        const f = i / N
+        let r
+        if (f < 0.06) r = rTop * Math.sin((f / 0.06) * (Math.PI / 2)) // rounded lip
+        else if (tip && f > 0.72) {
+          const g = (f - 0.72) / 0.28
+          r = (rTop + (rBot - rTop) * 0.72) * Math.cos(g * (Math.PI / 2)) // rounded point
+        } else r = rTop + (rBot - rTop) * f
+        pts.push(new THREE.Vector2(Math.max(r, 0.003), -f * len))
+      }
+      const geo = new THREE.LatheGeometry(pts, 36)
+      geo.computeVertexNormals()
+      return geo
     }
-    const pts = []
-    for (let i = 0; i <= N; i++) {
-      const f = i / N
-      pts.push(new THREE.Vector2(Math.max(radiusAt(f), 0.002), -f * L))
+    return [mk(0.205, 0.16, 0.42, false), mk(0.168, 0.126, 0.42, false), mk(0.135, 0.07, 0.56, true)]
+  }, [enabled])
+  useEffect(() => () => parts?.forEach((g) => g.dispose()), [parts])
+  return parts
+}
+
+/* Neutral studio environment so the guardian's ceramic + chrome pick up
+   real reflections (per-material envMap - the classic skin is untouched). */
+function useStudioEnv(enabled) {
+  const gl = useThree((s) => s.gl)
+  const tex = useMemo(() => {
+    if (!enabled) return null
+    const pmrem = new THREE.PMREMGenerator(gl)
+    const t = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
+    return t
+  }, [enabled, gl])
+  useEffect(() => () => tex?.dispose(), [tex])
+  return tex
+}
+
+/* Engraved panel-line texture for the guardian shell: long sweeping
+   seams with staggered connectors, a few service hatches and rivet dots.
+   Doubles as a bump map so the seams read as real grooves. */
+function usePanelTexture(enabled) {
+  const tex = useMemo(() => {
+    if (!enabled) return null
+    const W = 1024
+    const H = 512
+    const c = document.createElement('canvas')
+    c.width = W
+    c.height = H
+    const g = c.getContext('2d')
+    g.fillStyle = '#ffffff'
+    g.fillRect(0, 0, W, H)
+
+    const seamLine = (y0, amp, phase) => {
+      g.beginPath()
+      for (let x = 0; x <= W; x += 8) {
+        const y = y0 + Math.sin((x / W) * Math.PI * 2 * 2 + phase) * amp
+        if (x === 0) g.moveTo(x, y)
+        else g.lineTo(x, y)
+      }
+      g.stroke()
     }
-    const geo = new THREE.LatheGeometry(pts, 40)
-    geo.computeVertexNormals()
-    return geo
-  }, [])
+    const engrave = (width, alpha, draw) => {
+      g.lineCap = 'round'
+      g.strokeStyle = `rgba(96,86,140,${alpha})`
+      g.lineWidth = width
+      draw()
+      g.strokeStyle = `rgba(255,255,255,${alpha * 0.9})`
+      g.lineWidth = width * 0.45
+      g.save()
+      g.translate(0, width * 0.55)
+      draw()
+      g.restore()
+    }
+
+    // three long panel seams sweeping around the shell
+    engrave(7, 0.5, () => seamLine(150, 14, 0.6))
+    engrave(7, 0.46, () => seamLine(268, 18, 2.3))
+    engrave(6, 0.46, () => seamLine(372, 12, 4.1))
+
+    // staggered vertical connectors between the seams
+    const xs = [70, 210, 330, 470, 590, 700, 840, 950]
+    xs.forEach((x, i) => {
+      const top = i % 2 === 0 ? 150 : 268
+      const bot = i % 2 === 0 ? 268 : 372
+      engrave(5, 0.4, () => {
+        g.beginPath()
+        g.moveTo(x, top + 6)
+        g.lineTo(x + (i % 3) * 6 - 6, bot - 6)
+        g.stroke()
+      })
+    })
+
+    // service hatches + rivets
+    const hatch = (x, y, w, h) => {
+      engrave(5, 0.42, () => {
+        g.beginPath()
+        g.roundRect(x, y, w, h, 8)
+        g.stroke()
+      })
+    }
+    hatch(120, 300, 74, 44)
+    hatch(560, 176, 88, 52)
+    hatch(806, 296, 70, 42)
+    g.fillStyle = 'rgba(96,86,140,0.3)'
+    ;[
+      [260, 190], [420, 320], [660, 340], [900, 200], [80, 220], [520, 400],
+    ].forEach(([x, y]) => {
+      g.beginPath()
+      g.arc(x, y, 3.4, 0, Math.PI * 2)
+      g.fill()
+    })
+
+    const t = new THREE.CanvasTexture(c)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.wrapS = THREE.RepeatWrapping
+    t.anisotropy = 8
+    return t
+  }, [enabled])
+  useEffect(() => () => tex?.dispose(), [tex])
+  return tex
 }
