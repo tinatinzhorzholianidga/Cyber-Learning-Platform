@@ -45,6 +45,7 @@ export default function MascotDemoPage() {
   const fps = useFps()
 
   const [character, setCharacter] = useState('robot')
+  const [skin, setSkin] = useState('classic') // 'classic' (headphones) | 'guardian' (cyber armor)
   const [emotion, setEmotion] = useState('happy')
   const [gesture, setGesture] = useState(null)
   const gestureId = useRef(0)
@@ -142,6 +143,7 @@ export default function MascotDemoPage() {
           <RobotCanvas
             size={SIZES[size]}
             character={character}
+            skin={skin}
             label={character === 'hero' ? t('mascot.widget.labelHero') : t('mascot.widget.label')}
             emotion={emotion}
             gesture={gesture}
@@ -153,7 +155,7 @@ export default function MascotDemoPage() {
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>
-            {' · v2.4-holdup'}
+            {' · v3.0-guardian'}
             {reduced && ' · prefers-reduced-motion ✓'}
           </p>
         </section>
@@ -180,6 +182,30 @@ export default function MascotDemoPage() {
               </button>
             </div>
           </div>
+
+          {character === 'robot' && (
+            <div className="ctrl-group">
+              <h2>{t('mascot.demo.version')}</h2>
+              <div className="chip-row">
+                <button
+                  type="button"
+                  className={`chip-btn ${skin === 'classic' ? 'active' : ''}`}
+                  aria-pressed={skin === 'classic'}
+                  onClick={() => setSkin('classic')}
+                >
+                  🎧 {t('mascot.demo.versionClassic')}
+                </button>
+                <button
+                  type="button"
+                  className={`chip-btn ${skin === 'guardian' ? 'active' : ''}`}
+                  aria-pressed={skin === 'guardian'}
+                  onClick={() => setSkin('guardian')}
+                >
+                  🛡️ {t('mascot.demo.versionGuardian')}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="ctrl-group">
             <h2>{t('mascot.demo.emotions')}</h2>
@@ -338,7 +364,7 @@ export default function MascotDemoPage() {
         <p className="mascot-note">🔒 {t('mascot.demo.note')}</p>
       </section>
 
-      {widgetOn && <MascotWidget character={character} />}
+      {widgetOn && <MascotWidget character={character} skin={skin} />}
     </div>
   )
 }
