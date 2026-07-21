@@ -155,7 +155,7 @@ export default function MascotDemoPage() {
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>
-            {' · v3.0-guardian'}
+            {' · v3.1-guardian-x'}
             {reduced && ' · prefers-reduced-motion ✓'}
           </p>
         </section>
