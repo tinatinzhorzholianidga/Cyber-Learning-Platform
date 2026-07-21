@@ -251,14 +251,14 @@ export default function RobotModel({
        rocks it, and "hold up" raises the left blade with little
        air-pats. ---- */
     if (mittR.current) {
-      const rest = 0.3 + (idle ? Math.sin(t * 1.25 + 0.6) * 0.05 : 0)
+      const rest = 0.36 + (idle ? Math.sin(t * 1.25 + 0.6) * 0.05 : 0)
       const target = rest + (1.7 + Math.sin(waveE * 9) * 0.26) * waveB
       mittR.current.rotation.z += (target - mittR.current.rotation.z) * Math.min(1, dt * 10)
       mittR.current.rotation.x += (0 - mittR.current.rotation.x) * Math.min(1, dt * 8)
-      mittR.current.position.y = -0.1 + (idle ? Math.sin(t * 1.35 - 0.7) * 0.022 : 0)
+      mittR.current.position.y = -0.08 + (idle ? Math.sin(t * 1.35 - 0.7) * 0.022 : 0)
     }
     if (mittL.current) {
-      let targetZ = -0.3 + (idle ? Math.sin(t * 1.25 + 2.3) * 0.05 : 0)
+      let targetZ = -0.36 + (idle ? Math.sin(t * 1.25 + 2.3) * 0.05 : 0)
       let targetX = 0
       if (hb > 0.001) {
         const cycle = (t + 1.2) % 4.6
@@ -268,7 +268,7 @@ export default function RobotModel({
       }
       mittL.current.rotation.z += (targetZ - mittL.current.rotation.z) * Math.min(1, dt * 6)
       mittL.current.rotation.x += (targetX - mittL.current.rotation.x) * Math.min(1, dt * 8)
-      mittL.current.position.y = -0.1 + (idle ? Math.sin(t * 1.35 + 0.9) * 0.022 : 0)
+      mittL.current.position.y = -0.08 + (idle ? Math.sin(t * 1.35 + 0.9) * 0.022 : 0)
     }
 
     /* ---- chest LEDs pulse ---- */
@@ -433,19 +433,13 @@ export default function RobotModel({
             </mesh>
           ))}
 
-          {/* floating arms per the reference: shoulder ball at the pivot,
-              long tapered capsule below, glossy white plastic */}
+          {/* EVE's floating wing-blade arms - flat, bare, no socket */}
           {[
-            [mittR, 1, 0.3],
-            [mittL, -1, -0.3],
+            [mittR, 1, 0.36],
+            [mittL, -1, -0.36],
           ].map(([ref, side, rot]) => (
-            <group key={side} ref={ref} position={[side * 1.08, -0.1, 0.14]} rotation={[0, 0, rot]}>
-              {/* rounded shoulder socket, peeking at the top */}
-              <mesh position={[0, 0.05, -0.03]}>
-                <sphereGeometry args={[0.08, 24, 18]} />
-                <meshPhysicalMaterial color="#f4f2fb" roughness={0.18} metalness={0.04} clearcoat={1} clearcoatRoughness={0.12} />
-              </mesh>
-              <mesh geometry={armGeo} position={[0, -0.01, 0]} scale={[1, 1, 0.8]} rotation={[0.05, 0, 0]}>
+            <group key={side} ref={ref} position={[side * 1.1, -0.08, 0.14]} rotation={[0, 0, rot]}>
+              <mesh geometry={armGeo} scale={[1, 1, 0.45]} rotation={[0.05, 0, 0]}>
                 <meshPhysicalMaterial color="#f4f2fb" roughness={0.18} metalness={0.04} clearcoat={1} clearcoatRoughness={0.12} />
               </mesh>
             </group>
@@ -497,31 +491,22 @@ export default function RobotModel({
   )
 }
 
-/* Arm recreated 1:1 from the reference sheet: a long smooth capsule -
-   rounded dome top, near-cylindrical upper section, gentle organic
-   taper through the lower half, closing in a soft BLUNT rounded tip
-   (never a point). No seams or details. Built as a lathe whose origin
-   sits at the shoulder joint, so rotating the group swings it
-   naturally like a real arm. */
+/* EVE's real arm: a flat wing-blade. Broad rounded shoulder end,
+   width held through the upper half, then a fast elegant sweep down to
+   a fine tip. Heavily flattened in z so it reads as a blade, not a
+   capsule. Origin at the shoulder so rotation swings it naturally. */
 function useEveArmGeometry() {
   return useMemo(() => {
-    const R = 0.14 // shoulder radius
-    const L = 0.92 // arm length (long, ~reference proportions)
-    const TIP = 0.48 // tip radius as a fraction of R (soft blunt end)
-    const N = 40
+    const R = 0.19 // chord at the shoulder (broad)
+    const L = 0.95 // blade length
+    const N = 44
     const pts = []
     for (let i = 0; i <= N; i++) {
       const f = i / N
-      let r
-      if (f < 0.15) {
-        r = R * Math.sin((f / 0.15) * (Math.PI / 2)) // rounded dome cap
-      } else if (f < 0.45) {
-        r = R * (1 - 0.05 * ((f - 0.15) / 0.3)) // near-cylindrical
-      } else if (f < 0.92) {
-        r = R * (0.95 - (0.95 - TIP) * Math.pow((f - 0.45) / 0.47, 1.25)) // gentle taper
-      } else {
-        r = R * TIP * Math.sqrt(Math.max(0, 1 - Math.pow((f - 0.92) / 0.08, 2))) // hemispherical blunt tip
-      }
+      const r =
+        f < 0.12
+          ? R * Math.sin((f / 0.12) * (Math.PI / 2)) // rounded shoulder cap
+          : R * (1 - Math.pow((f - 0.12) / 0.88, 1.8) * 0.98) // held width, then sweep to a fine tip
       pts.push(new THREE.Vector2(Math.max(r, 0.001), -f * L))
     }
     const geo = new THREE.LatheGeometry(pts, 32)
