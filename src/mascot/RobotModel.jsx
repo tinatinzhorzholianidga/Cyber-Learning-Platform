@@ -95,6 +95,8 @@ export default function RobotModel({
   })
 
   const { leds, dial } = useSurfacePoints()
+  const armGeo = useEveArmGeometry()
+  useEffect(() => () => armGeo.dispose(), [armGeo])
 
   const helmetLabel = useMemo(() => (variant === 'builder' ? makeHelmetLabel() : null), [variant])
   useEffect(() => () => helmetLabel?.dispose(), [helmetLabel])
@@ -207,22 +209,18 @@ export default function RobotModel({
     sp.v += ((1 - sp.s) * 130 - sp.v * 11) * dt
     sp.s += sp.v * dt
 
-    /* ---- gestures ---- */
-    let mittRY = -0.18
-    let mittRX = 1.08
-    let mittRRotZ = -0.22
+    /* ---- gestures (body) ---- */
+    let waveB = 0
+    let waveE = 0
     if (a.gesture) {
       const e = t - a.gesture.start
       if (a.gesture.type === 'wave') {
         const dur = 1.7
         if (e >= dur) a.gesture = null
         else {
-          // raise the fist beside the head and rock it
-          const b = clamp01(e / 0.22) * clamp01((dur - e) / 0.28)
-          mittRY = -0.18 + 0.85 * b
-          mittRX = 1.08 + 0.08 * b
-          mittRRotZ = -0.22 - (1.1 + Math.sin(e * 11) * 0.45) * b
-          if (tilt.current) tilt.current.rotation.z = 0.09 * b
+          waveB = clamp01(e / 0.25) * clamp01((dur - e) / 0.3)
+          waveE = e
+          if (tilt.current) tilt.current.rotation.z = 0.08 * waveB
         }
       } else if (a.gesture.type === 'bounce') {
         const dur = 0.85
@@ -239,9 +237,6 @@ export default function RobotModel({
       }
     }
 
-    /* ---- "hold up": the LEFT palm rises with a springy overshoot,
-       then hovers calmly with occasional little air-pats. The right
-       hand stays free for waves, so the two never fight. ---- */
     a.holdBlend += ((holdup ? 1 : 0) - a.holdBlend) * Math.min(1, dt * 3)
     const hb = a.holdBlend
 
@@ -249,27 +244,31 @@ export default function RobotModel({
       root.current.position.y = y
       root.current.scale.set(1 + (1 - sp.s) * 0.45, sp.s, 1 + (1 - sp.s) * 0.45)
     }
+
+    /* ---- EVE arms: every motion is a damped swing around the
+       shoulder pivot - no position snapping. The hover trails the body
+       bob slightly (follow-through), the wave lifts the whole blade and
+       rocks it, and "hold up" raises the left blade with little
+       air-pats. ---- */
     if (mittR.current) {
-      mittR.current.position.set(mittRX, mittRY, 0.18)
-      mittR.current.rotation.z = mittRRotZ
+      const rest = 0.32 + (idle ? Math.sin(t * 1.25 + 0.6) * 0.05 : 0)
+      const target = rest + (1.7 + Math.sin(waveE * 9) * 0.26) * waveB
+      mittR.current.rotation.z += (target - mittR.current.rotation.z) * Math.min(1, dt * 10)
+      mittR.current.rotation.x += (0 - mittR.current.rotation.x) * Math.min(1, dt * 8)
+      mittR.current.position.y = -0.16 + (idle ? Math.sin(t * 1.35 - 0.7) * 0.022 : 0)
     }
     if (mittL.current) {
-      const restY = -0.18 + (idle ? Math.sin(t * 1.35 + 1.4) * 0.02 : 0)
+      let targetZ = -0.32 + (idle ? Math.sin(t * 1.25 + 2.3) * 0.05 : 0)
+      let targetX = 0
       if (hb > 0.001) {
-        // two quick forward pats every few seconds, tilting with the push
         const cycle = (t + 1.2) % 4.6
-        const pat = cycle < 0.7 ? Math.sin((cycle / 0.7) * Math.PI * 2) * 0.05 : 0
-        const overshoot = Math.sin(hb * Math.PI) * 0.1
-        mittL.current.position.x = -1.08 * (1 - hb) + -1.16 * hb
-        mittL.current.position.y = restY * (1 - hb) + (0.46 + overshoot + Math.sin(t * 1.6) * 0.025) * hb
-        mittL.current.position.z = 0.14 * (1 - hb) + (0.5 + pat) * hb
-        mittL.current.rotation.z = 0.22 * (1 - hb) + 0.1 * hb
-        mittL.current.rotation.x = -pat * 3 * hb
-      } else {
-        mittL.current.position.set(-1.08, restY, 0.14)
-        mittL.current.rotation.z = 0.22
-        mittL.current.rotation.x = 0
+        const pat = cycle < 0.7 ? Math.sin((cycle / 0.7) * Math.PI * 2) : 0
+        targetZ = targetZ * (1 - hb) + -(2.0 + Math.sin(hb * Math.PI) * 0.22) * hb
+        targetX = -pat * 0.2 * hb
       }
+      mittL.current.rotation.z += (targetZ - mittL.current.rotation.z) * Math.min(1, dt * 6)
+      mittL.current.rotation.x += (targetX - mittL.current.rotation.x) * Math.min(1, dt * 8)
+      mittL.current.position.y = -0.16 + (idle ? Math.sin(t * 1.35 + 0.9) * 0.022 : 0)
     }
 
     /* ---- chest LEDs pulse ---- */
@@ -434,12 +433,16 @@ export default function RobotModel({
             </mesh>
           ))}
 
-          {/* bare summer hands, wrists plugged into the shoulder pods */}
-          <group ref={mittR} position={[1.08, -0.18, 0.14]} rotation={[0, 0, -0.22]}>
-            <Hand />
+          {/* EVE-style floating arm blades, hovering just off the pods */}
+          <group ref={mittR} position={[1.12, -0.16, 0.16]} rotation={[0, 0, 0.32]}>
+            <mesh geometry={armGeo} scale={[1, 1, 0.82]} rotation={[0.06, 0, 0]}>
+              <meshPhysicalMaterial color="#efeafc" roughness={0.22} metalness={0.05} clearcoat={0.9} clearcoatRoughness={0.14} />
+            </mesh>
           </group>
-          <group ref={mittL} position={[-1.08, -0.18, 0.14]} rotation={[0, 0, 0.22]}>
-            {holdup ? <Palm mirrored /> : <Hand mirrored />}
+          <group ref={mittL} position={[-1.12, -0.16, 0.16]} rotation={[0, 0, -0.32]}>
+            <mesh geometry={armGeo} scale={[1, 1, 0.82]} rotation={[0.06, 0, 0]}>
+              <meshPhysicalMaterial color="#efeafc" roughness={0.22} metalness={0.05} clearcoat={0.9} clearcoatRoughness={0.14} />
+            </mesh>
           </group>
 
           {/* chest LEDs */}
@@ -488,62 +491,25 @@ export default function RobotModel({
   )
 }
 
-/* An open palm with splayed fingers - the "hold up, under construction"
-   hand (like the ✋ emoji), used while `holdup` is active. */
-function Palm({ mirrored = false }) {
-  const dir = mirrored ? -1 : 1
-  const pearl = { color: C.body, roughness: 0.34, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.32 }
-  return (
-    <group>
-      {/* wrist joint */}
-      <mesh position={[dir * -0.16, -0.08, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.09, 0.11, 0.16, 20]} />
-        <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
-      </mesh>
-      {/* palm, flat side to the viewer */}
-      <mesh position={[0, 0.05, 0.02]} scale={[1.05, 1.2, 0.45]}>
-        <sphereGeometry args={[0.185, 24, 18]} />
-        <meshPhysicalMaterial {...pearl} />
-      </mesh>
-      {/* four splayed fingers */}
-      {[-0.115, -0.04, 0.04, 0.115].map((x) => (
-        <mesh key={x} position={[x, 0.27 - Math.abs(x) * 0.5, 0.02]} rotation={[0, 0, -x * 1.4]}>
-          <capsuleGeometry args={[0.047, 0.1, 6, 12]} />
-          <meshPhysicalMaterial {...pearl} />
-        </mesh>
-      ))}
-      {/* thumb out to the side */}
-      <mesh position={[dir * 0.185, 0.03, 0.03]} rotation={[0, 0, dir * -1.05]}>
-        <capsuleGeometry args={[0.05, 0.09, 6, 12]} />
-        <meshPhysicalMaterial {...pearl} />
-      </mesh>
-    </group>
-  )
-}
-
-/* A bare robot hand (no winter gloves in summer): pearl fist with a
-   thumbs-up thumb, its wrist joint plugged into the shoulder pod
-   (local -x points at the body). */
-function Hand({ mirrored = false }) {
-  const dir = mirrored ? -1 : 1
-  const pearl = { color: C.body, roughness: 0.34, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.32 }
-  return (
-    <group>
-      {/* wrist joint */}
-      <mesh position={[dir * -0.16, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.09, 0.11, 0.16, 20]} />
-        <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
-      </mesh>
-      {/* fist */}
-      <mesh position={[dir * 0.07, 0, 0.01]} scale={[1.06, 0.92, 0.85]}>
-        <sphereGeometry args={[0.215, 28, 20]} />
-        <meshPhysicalMaterial {...pearl} />
-      </mesh>
-      {/* thumb: a small capsule, thumbs-up */}
-      <mesh position={[dir * -0.02, 0.17, 0.05]} rotation={[0, 0, dir * -0.32]}>
-        <capsuleGeometry args={[0.06, 0.1, 6, 14]} />
-        <meshPhysicalMaterial {...pearl} />
-      </mesh>
-    </group>
-  )
+/* EVE-style arm: a smooth teardrop blade - rounded at the shoulder end,
+   tapering to a soft tip - built as a lathe whose origin sits at the
+   TOP, so rotating the group swings it naturally like a real arm. */
+function useEveArmGeometry() {
+  return useMemo(() => {
+    const R = 0.17 // widest radius, near the shoulder
+    const L = 0.88 // blade length
+    const N = 28
+    const pts = []
+    for (let i = 0; i <= N; i++) {
+      const f = i / N
+      const r =
+        f < 0.22
+          ? R * Math.sin((f / 0.22) * (Math.PI / 2)) // rounded dome cap
+          : R * (1 - Math.pow((f - 0.22) / 0.78, 1.35) * 0.94) // long taper
+      pts.push(new THREE.Vector2(Math.max(r, 0.001), -f * L))
+    }
+    const geo = new THREE.LatheGeometry(pts, 28)
+    geo.computeVertexNormals()
+    return geo
+  }, [])
 }
