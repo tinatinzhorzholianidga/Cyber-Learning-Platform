@@ -66,7 +66,7 @@ function useSurfacePoints() {
         i += 1
       }
     }
-    const dial = new THREE.Vector3().setFromSphericalCoords(1.004, 2.08, 1.08)
+    const dial = new THREE.Vector3().setFromSphericalCoords(1.004, 2.08, 0.88)
     return { leds, dial }
   }, [])
 }
@@ -109,7 +109,7 @@ export default function RobotModel({
 
   const { leds, dial } = useSurfacePoints()
   const clawParts = useGuardianClawParts(guardian)
-  const envMap = useStudioEnv(guardian)
+  const envMap = useStudioEnv(true) // metal parts on both skins need reflections
   const panelTex = usePanelTexture(guardian)
   const energyMats = useRef([]) // guardian: glowing rings and strips
   const coreMat = useRef() // guardian: bottom engine core
@@ -143,7 +143,7 @@ export default function RobotModel({
   useEffect(() => () => shadowTexture.dispose(), [shadowTexture])
 
   const paintFace = (state) => {
-    const full = { ...state, noPlate: variant === 'builder', bezel: guardian }
+    const full = { ...state, noPlate: variant === 'builder', bezel: guardian, metal: !guardian }
     const key = faceKey(full)
     if (key === anim.current.drawnKey) return
     anim.current.drawnKey = key
@@ -523,6 +523,11 @@ export default function RobotModel({
                       <cylinderGeometry args={[0.175, 0.175, 0.05, 20]} />
                       <meshPhysicalMaterial color={C.phonePad} roughness={0.65} />
                     </mesh>
+                    {/* chrome trim ring on the outer face - droid earpiece */}
+                    <mesh position={[side * 0.072, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+                      <torusGeometry args={[0.185, 0.015, 10, 32]} />
+                      <meshStandardMaterial color="#e8eaf2" metalness={1} roughness={0.16} envMap={envMap} />
+                    </mesh>
                   </group>
                 ))}
               </group>
@@ -548,10 +553,17 @@ export default function RobotModel({
           {/* shoulder pods the arms plug into (hidden sockets on guardian) */}
           {!guardian &&
             [-1, 1].map((side) => (
-              <mesh key={side} position={[side * 0.94, -0.14, 0.06]} scale={[0.34, 0.42, 0.42]}>
-                <sphereGeometry args={[0.5, 24, 18]} />
-                <meshPhysicalMaterial color={C.pod} roughness={0.4} clearcoat={0.5} />
-              </mesh>
+              <group key={side} position={[side * 0.94, -0.14, 0.06]}>
+                {/* brushed-steel shoulder socket with a chrome collar */}
+                <mesh scale={[0.34, 0.42, 0.42]}>
+                  <sphereGeometry args={[0.5, 24, 18]} />
+                  <meshStandardMaterial color="#ced2dd" metalness={0.85} roughness={0.34} envMap={envMap} envMapIntensity={0.7} />
+                </mesh>
+                <mesh position={[side * 0.1, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+                  <torusGeometry args={[0.155, 0.016, 10, 32]} />
+                  <meshStandardMaterial color="#e8eaf2" metalness={1} roughness={0.16} envMap={envMap} />
+                </mesh>
+              </group>
             ))}
 
           {/* arms.
@@ -676,17 +688,92 @@ export default function RobotModel({
             </mesh>
           ))}
 
-          {/* little dial, bottom right, a nod to the original (classic only) */}
+          {/* metal mechanisms (Star Wars mode) - classic skin only */}
           {!guardian && (
-            <group position={dial} onUpdate={(g) => g.lookAt(dial.x * 2, dial.y * 2, dial.z * 2)}>
-              <mesh>
-                <circleGeometry args={[0.1, 24]} />
-                <meshPhysicalMaterial color={C.pod} roughness={0.35} clearcoat={0.6} />
+            <group>
+              {/* the dial becomes an embossed mechanical vent, like the
+                  round speaker on the original IO render */}
+              <group position={dial} onUpdate={(g) => g.lookAt(dial.x * 2, dial.y * 2, dial.z * 2)}>
+                <mesh>
+                  <circleGeometry args={[0.105, 28]} />
+                  <meshStandardMaterial color="#ced2dd" metalness={0.85} roughness={0.34} envMap={envMap} envMapIntensity={0.7} />
+                </mesh>
+                <mesh position={[0, 0, 0.006]}>
+                  <torusGeometry args={[0.098, 0.013, 10, 32]} />
+                  <meshStandardMaterial color="#e8eaf2" metalness={1} roughness={0.16} envMap={envMap} />
+                </mesh>
+                {Array.from({ length: 8 }).map((_, i) => {
+                  const ang = (i / 8) * Math.PI * 2
+                  return (
+                    <mesh
+                      key={i}
+                      position={[Math.cos(ang) * 0.056, Math.sin(ang) * 0.056, 0.008]}
+                      rotation={[0, 0, ang]}
+                    >
+                      <boxGeometry args={[0.05, 0.013, 0.008]} />
+                      <meshStandardMaterial color="#9aa0af" metalness={0.8} roughness={0.4} envMap={envMap} />
+                    </mesh>
+                  )
+                })}
+                {/* hex screw in the middle */}
+                <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.024, 0.024, 0.014, 6]} />
+                  <meshStandardMaterial color="#4a4660" metalness={0.7} roughness={0.35} envMap={envMap} />
+                </mesh>
+              </group>
+
+              {/* chrome trim seam around the undercarriage */}
+              <mesh position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[0.696, 0.012, 8, 64]} />
+                <meshStandardMaterial color="#c9ccd8" metalness={0.9} roughness={0.3} envMap={envMap} />
               </mesh>
-              <mesh position={[0, 0, 0.004]}>
-                <ringGeometry args={[0.055, 0.075, 24]} />
-                <meshBasicMaterial color={C.violet} />
-              </mesh>
+
+              {/* riveted service plates hugging the shell */}
+              {[
+                [-0.72, -0.42, 0.55],
+                [0.62, 0.1, -0.78],
+              ].map(([px, py, pz], pi) => (
+                <group key={pi} position={[px, py, pz]} onUpdate={(g) => g.lookAt(px * 2, py * 2, pz * 2)}>
+                  <mesh rotation={[Math.PI / 2, 0, 0]}>
+                    <cylinderGeometry args={[0.16, 0.16, 0.022, 28]} />
+                    <meshStandardMaterial color="#d3d6e0" metalness={0.85} roughness={0.32} envMap={envMap} envMapIntensity={0.7} />
+                  </mesh>
+                  {[
+                    [0.105, 0.105], [-0.105, 0.105], [0.105, -0.105], [-0.105, -0.105],
+                  ].map(([rx, ry], ri) => (
+                    <mesh key={ri} position={[rx * 0.72, ry * 0.72, 0.014]}>
+                      <sphereGeometry args={[0.014, 10, 8]} />
+                      <meshStandardMaterial color="#8f95a5" metalness={0.9} roughness={0.3} envMap={envMap} />
+                    </mesh>
+                  ))}
+                </group>
+              ))}
+
+              {/* ventilation grille, low on the left - droid style */}
+              <group position={[-0.86, -0.12, 0.48]} onUpdate={(g) => g.lookAt(-1.72, -0.24, 0.96)}>
+                <mesh position={[0, 0, -0.004]}>
+                  <boxGeometry args={[0.2, 0.13, 0.014]} />
+                  <meshStandardMaterial color="#ced2dd" metalness={0.85} roughness={0.34} envMap={envMap} envMapIntensity={0.7} />
+                </mesh>
+                {[-0.032, 0, 0.032].map((dy) => (
+                  <mesh key={dy} position={[0, dy, 0.006]}>
+                    <boxGeometry args={[0.15, 0.018, 0.01]} />
+                    <meshStandardMaterial color="#3a3550" metalness={0.5} roughness={0.45} />
+                  </mesh>
+                ))}
+              </group>
+
+              {/* little chrome holoprojector dome, R2-style, up on the back */}
+              <group position={[-0.62, 0.55, -0.55]} onUpdate={(g) => g.lookAt(-1.24, 1.1, -1.1)}>
+                <mesh rotation={[Math.PI / 2, 0, 0]}>
+                  <torusGeometry args={[0.075, 0.014, 10, 28]} />
+                  <meshStandardMaterial color="#c9ccd8" metalness={0.9} roughness={0.28} envMap={envMap} />
+                </mesh>
+                <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                  <sphereGeometry args={[0.068, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                  <meshStandardMaterial color="#e8eaf2" metalness={1} roughness={0.14} envMap={envMap} />
+                </mesh>
+              </group>
             </group>
           )}
 
