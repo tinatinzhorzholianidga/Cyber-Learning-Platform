@@ -6,14 +6,15 @@ import RobotCanvas from '../mascot/RobotCanvas.jsx'
 
 /* IO Chat (demo): Qwen2.5 running fully in the visitor's browser via
    WebLLM/WebGPU - no server, no API keys, nothing leaves the device.
-   Each question is grounded on the platform's own bilingual content
-   (see ioBrain.js). Hidden test page - not linked from the site. */
+   Each question is grounded ONLY on the Government of Georgia Basic
+   Cybersecurity Course (see ioBrain.js / ioCourse.js).
+   Hidden test page - not linked from the site. */
 
 const STARTERS = [
   { en: 'What is phishing?', ka: 'რა არის ფიშინგი?' },
   { en: 'How do I make a strong password?', ka: 'როგორ შევქმნა ძლიერი პაროლი?' },
-  { en: 'A stranger keeps messaging me. What should I do?', ka: 'უცნობი მწერს და მწერს. რა ვქნა?' },
-  { en: 'My friend is being teased in a group chat.', ka: 'ჩემს მეგობარს ჯგუფურ ჩატში დასცინიან.' },
+  { en: 'What is a VPN and when should I use it?', ka: 'რა არის VPN და როდის გამოვიყენო?' },
+  { en: 'Disinformation vs misinformation?', ka: 'დეზინფორმაცია vs მისინფორმაცია?' },
 ]
 
 export default function IoChatPage() {
@@ -226,7 +227,7 @@ export default function IoChatPage() {
       </div>
 
       <p className="mascot-fps" style={{ textAlign: 'center', marginTop: 14 }}>
-        IO Chat α1 · {lang === 'ka' ? 'ქართული/English' : 'English/ქართული'} · Qwen2.5 + WebLLM + RAG
+        IO Chat α2 · {lang === 'ka' ? 'ქართული/English' : 'English/ქართული'} · Qwen2.5 + WebLLM + RAG · course-only (elearning.gov.ge)
       </p>
     </div>
   )
