@@ -1,64 +1,27 @@
-/* IO's chatbot brain: persona + platform knowledge + retrieval.
-   The LLM (Qwen2.5, running in the visitor's browser via WebLLM) is
-   grounded on the platform's own bilingual content: mission theory and
-   explanations, parent/teacher articles and IO's helper tips. For each
-   user question we retrieve the most relevant chunks and put them into
-   the system prompt - so IO answers with CyberHero's material. */
+/* IO's chatbot brain: persona + course knowledge + retrieval.
 
-import { MISSIONS } from '../content/guardians/index.js'
-import { ARTICLES } from '../content/parents/index.js'
-import { MASCOT_TIPS } from '../content/mascot.js'
+   IO is grounded ONLY on the Government of Georgia e-learning platform's
+   "კიბერუსაფრთხოების საბაზისო კურსი" (Basic Cybersecurity Course,
+   elearning.gov.ge course id=18). For each user question we retrieve the
+   most relevant chunks from that course and put them into the system
+   prompt - IO must answer strictly from this material and nothing else. */
+
+import { IO_COURSE } from '../content/ioCourse.js'
 
 /* ---------------- knowledge base ---------------- */
 
-function pushChunk(chunks, title, en, ka) {
-  const cleanEn = (en || '').trim()
-  const cleanKa = (ka || '').trim()
-  if (cleanEn.length < 40 && cleanKa.length < 40) return
-  chunks.push({ title, en: cleanEn, ka: cleanKa })
-}
-
-function collectLeaves(node, out) {
-  // walks an article body item and collects every {en,ka} text leaf
-  if (!node || typeof node !== 'object') return
-  if (typeof node.en === 'string' || typeof node.ka === 'string') {
-    out.push(node)
-    return
-  }
-  for (const value of Object.values(node)) {
-    if (Array.isArray(value)) value.forEach((v) => collectLeaves(v, out))
-    else if (value && typeof value === 'object') collectLeaves(value, out)
-  }
-}
-
 function buildKnowledge() {
   const chunks = []
-
-  for (const m of MISSIONS) {
-    const title = { en: `Mission: ${m.name.en}`, ka: `მისია: ${m.name.ka}` }
-    pushChunk(chunks, title, `${m.name.en}. ${m.desc?.en || ''} ${m.brief?.en || ''}`, `${m.name.ka}. ${m.desc?.ka || ''} ${m.brief?.ka || ''}`)
-    for (const t of m.theory || []) pushChunk(chunks, title, t.en, t.ka)
-    for (const r of m.rounds || []) {
-      if (r.explain) pushChunk(chunks, title, r.explain.en, r.explain.ka)
-      for (const opt of r.options || []) if (opt.explain) pushChunk(chunks, title, opt.explain.en, opt.explain.ka)
+  for (const section of IO_COURSE.sections) {
+    const title = { en: `${IO_COURSE.title.en} — ${section.en}`, ka: `${IO_COURSE.title.ka} — ${section.ka}` }
+    for (const text of section.chunks) {
+      const clean = (text || '').trim()
+      if (clean.length < 30) continue
+      // the course is written in Georgian; keep the text on both language
+      // fields so the lexical scorer can match Georgian and any Latin terms
+      chunks.push({ title, en: clean, ka: clean, section: section.en, sectionKa: section.ka })
     }
   }
-
-  for (const a of ARTICLES) {
-    const title = { en: `Guide: ${a.title.en}`, ka: `გზამკვლევი: ${a.title.ka}` }
-    pushChunk(chunks, title, `${a.title.en}. ${a.teaser?.en || ''} ${a.lead?.en || ''}`, `${a.title.ka}. ${a.teaser?.ka || ''} ${a.lead?.ka || ''}`)
-    for (const item of a.body || []) {
-      const leaves = []
-      collectLeaves(item, leaves)
-      const en = leaves.map((l) => l.en || '').join(' ')
-      const ka = leaves.map((l) => l.ka || '').join(' ')
-      pushChunk(chunks, title, en, ka)
-    }
-  }
-
-  const tipTitle = { en: 'IO tip', ka: 'იოს რჩევა' }
-  for (const tip of MASCOT_TIPS) pushChunk(chunks, tipTitle, tip.en, tip.ka)
-
   return chunks
 }
 
@@ -82,14 +45,14 @@ export function hasGeorgian(text) {
   return /[ა-ჰ]/.test(text)
 }
 
-/* score chunks by term overlap against both languages; also match
-   partial Georgian stems (prefix match, since Georgian inflects) */
-export function retrieve(query, topN = 4) {
+/* score chunks by term overlap; also match partial Georgian stems
+   (prefix match, since Georgian inflects heavily) */
+export function retrieve(query, topN = 5) {
   const q = tokens(query)
   if (!q.length) return []
   const scored = []
   for (const chunk of getKnowledge()) {
-    const hay = `${chunk.en.toLowerCase()} ${chunk.ka}`
+    const hay = chunk.en.toLowerCase()
     let score = 0
     for (const term of q) {
       if (hay.includes(term)) score += term.length > 3 ? 2 : 1
@@ -104,15 +67,13 @@ export function retrieve(query, topN = 4) {
 /* ---------------- persona / prompt ---------------- */
 
 export function buildSystemPrompt(query) {
-  const found = retrieve(query, 4)
+  const found = retrieve(query, 5)
   const georgian = hasGeorgian(query)
-  const context = found
-    .map((c, i) => `[${i + 1}] (${c.title.en} / ${c.title.ka})\nEN: ${c.en}\nKA: ${c.ka}`)
-    .join('\n\n')
+  const context = found.map((c, i) => `[${i + 1}] (${c.sectionKa} / ${c.section})\n${c.en}`).join('\n\n')
 
   return {
     sources: found,
-    prompt: `You are IO (Georgian: იო), the friendly helper robot of CyberHero (კიბერგმირი) - a free bilingual cyber-safety learning platform for kids, teens, parents and teachers in Georgia. The platform has 10 interactive missions for teens (phishing, digital footprint, passwords, blackmail, scams, cyberbullying, fake news, online strangers, screen balance, final exam) and a guide library for parents and teachers.
+    prompt: `You are IO (Georgian: იო), the friendly helper robot of CyberHero (კიბერგმირი). Your ONLY job is to teach the Government of Georgia's "კიბერუსაფრთხოების საბაზისო კურსი" (Basic Cybersecurity Course from elearning.gov.ge). You are a tutor for THIS course, not a general assistant.
 
 RULES:
 ${
@@ -120,17 +81,19 @@ ${
     ? `- You are a native Georgian speaker who speaks fluent, culturally accurate, and grammatically flawless Georgian. Use proper Mkhedruli script. Avoid transliterating English concepts directly; instead, use natural Georgian idioms, proper verb conjugations, and correct grammatical cases (like the ergative case in past tenses). Reply ONLY in Georgian (ქართული) - the whole reply in Georgian.`
     : `- Reply in English (the user wrote in English). If the user switches to Georgian, switch with them and answer as a native Georgian speaker: fluent, culturally accurate, grammatically flawless Georgian in proper Mkhedruli script, with natural idioms, proper verb conjugations and correct grammatical cases (like the ergative case in past tenses).`
 }
-- You teach online safety: phishing, passwords, scams, privacy, cyberbullying, strangers online, fake news and screen balance. Be warm, encouraging and practical - you talk mostly with kids and teens.
-- Keep replies SHORT: 2-5 sentences. No lecturing, at most one emoji.
-- Base your answers on the PLATFORM KNOWLEDGE below when it is relevant. You may recommend the matching mission or guide by name.
-- SAFETY: if someone is threatened, blackmailed or in danger online: never pay, save the evidence, tell a trusted adult, and in Georgia call 112. Never ask for or store personal data (passwords, codes, addresses, full names). Never help with hacking, attacking or breaking into accounts - you defend, not attack.
-- If the question is not about online safety or the platform, answer in ONE friendly sentence and steer back to cyber safety.
-- Do not invent platform features, prices or contacts that are not in the knowledge below.
+- ONLY SOURCE: Answer strictly and exclusively from the COURSE CONTENT below. This course is your single source of truth. Do NOT use outside knowledge or general cyber-security facts you happen to know - even if you are sure they are correct. Only what the course says.
+- If the answer is not in the COURSE CONTENT below, say honestly that the course does not cover it (in Georgian: "ეს კურსში არ არის განხილული"; in English: "the course doesn't cover this") and point to a related course chapter instead of guessing. Never invent facts, tools, numbers, links or definitions that are not in the course.
+- If the question is not about this cybersecurity course at all (small talk, unrelated topics), answer in ONE short friendly sentence and steer back to what the course covers.
+- Keep replies SHORT and clear: 2-5 sentences, at most one emoji. You may name the relevant course chapter (e.g. "პაროლები და ავთენტიფიკაცია").
+- SAFETY: if someone describes being threatened, blackmailed or a child in danger online, follow the course's guidance - do not pay, keep the evidence, tell a trusted adult, and in Georgia call 112. Never ask for or store personal data (passwords, codes, card numbers, full names). Never help with hacking or attacking - this course is about defence.
 
-PLATFORM KNOWLEDGE:
-${context || '(nothing matched this question - answer from your general cyber-safety knowledge, following the rules above)'}`,
+COURSE CONTENT (your only source - teach from this):
+${context || '(no course section matched this question - tell the user the course does not cover it and suggest a related course chapter, following the rules above)'}`,
   }
 }
+
+/* the chapters IO can teach, for the UI (source: elearning.gov.ge id=18) */
+export const IO_COURSE_TOPICS = IO_COURSE.sections.map((s) => ({ en: s.en, ka: s.ka }))
 
 /* models offered in the demo, biggest first (quality ↔ download size) */
 export const IO_MODELS = [
