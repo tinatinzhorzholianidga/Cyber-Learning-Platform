@@ -169,7 +169,7 @@ export default {
     },
     chat: {
       badge: 'AI demo - not public',
-      sub: 'Talk to IO for real. Qwen2.5 runs fully in YOUR browser - nothing you type leaves your device - and IO answers ONLY from the Government of Georgia Basic Cybersecurity Course, in Georgian or English.',
+      sub: 'Talk to IO for real. Qwen2.5 runs fully in YOUR browser - nothing you type leaves your device - and IO answers using the platform’s own missions, guides and tips, in Georgian or English.',
       model: 'Brain (model)',
       load: 'Download & start the brain',
       loading: 'Loading the brain…',
@@ -177,7 +177,7 @@ export default {
       loadError: 'Could not load the model.',
       needsWebgpu: 'This demo needs a browser with WebGPU - use Chrome or Edge on a computer. (Your current browser cannot run the model.)',
       privacy: 'One-time download, cached by the browser. Runs locally - private and free.',
-      hello: 'Hi! I’m IO, your tutor for the Basic Cybersecurity Course. Load my brain on the left, then ask me anything from the course - in Georgian or English. 🤖',
+      hello: 'Hi! I’m IO. Load my brain on the left, then ask me anything about staying safe online - in Georgian or English. 🤖',
       placeholder: 'Ask IO about online safety…',
       placeholderIdle: 'First load the brain on the left…',
       send: 'Send',
