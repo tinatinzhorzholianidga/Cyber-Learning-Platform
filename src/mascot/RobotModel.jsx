@@ -111,6 +111,7 @@ export default function RobotModel({
   const clawParts = useGuardianClawParts(guardian)
   const envMap = useStudioEnv(true) // metal parts on both skins need reflections
   const panelTex = usePanelTexture(guardian)
+  const armorFrame = useArmorFrameGeometry(!guardian)
   const energyMats = useRef([]) // guardian: glowing rings and strips
   const coreMat = useRef() // guardian: bottom engine core
 
@@ -691,14 +692,48 @@ export default function RobotModel({
           {/* metal mechanisms (Star Wars mode) - classic skin only */}
           {!guardian && (
             <group>
-              {/* the dial becomes an embossed mechanical vent, like the
-                  round speaker on the original IO render */}
+              {/* THE ARMOR: a thick beveled steel plate bent around the
+                  face, like the shield on the original IO render - real
+                  geometry with depth, the screen sits recessed inside */}
+              <mesh geometry={armorFrame}>
+                <meshStandardMaterial color="#d6d9e3" metalness={0.88} roughness={0.3} envMap={envMap} envMapIntensity={0.85} />
+              </mesh>
+              {/* chunky hex bolts standing off the armor plate */}
+              {[
+                [1.0, 0.05],
+                [-1.0, 0.05],
+                [0.86, 0.88],
+                [-0.86, 0.88],
+                [0.88, -0.78],
+                [-0.88, -0.78],
+                [0, -0.88],
+              ].map(([a, b], i) => {
+                const r = 1.072
+                const px = r * Math.sin(a) * Math.cos(b)
+                const py = r * Math.sin(b)
+                const pz = r * Math.cos(a) * Math.cos(b)
+                return (
+                  <group key={i} position={[px, py, pz]} onUpdate={(g) => g.lookAt(px * 2, py * 2, pz * 2)}>
+                    <mesh rotation={[Math.PI / 2, 0, 0.4]}>
+                      <cylinderGeometry args={[0.034, 0.038, 0.03, 6]} />
+                      <meshStandardMaterial color="#aab0bf" metalness={0.9} roughness={0.28} envMap={envMap} />
+                    </mesh>
+                  </group>
+                )
+              })}
+
+              {/* the dial becomes an embossed mechanical vent on a raised
+                  mount, like the round speaker on the original IO render */}
               <group position={dial} onUpdate={(g) => g.lookAt(dial.x * 2, dial.y * 2, dial.z * 2)}>
-                <mesh>
+                <mesh position={[0, 0, 0.01]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.115, 0.125, 0.05, 28]} />
+                  <meshStandardMaterial color="#b9becb" metalness={0.85} roughness={0.36} envMap={envMap} />
+                </mesh>
+                <mesh position={[0, 0, 0.035]}>
                   <circleGeometry args={[0.105, 28]} />
                   <meshStandardMaterial color="#ced2dd" metalness={0.85} roughness={0.34} envMap={envMap} envMapIntensity={0.7} />
                 </mesh>
-                <mesh position={[0, 0, 0.006]}>
+                <mesh position={[0, 0, 0.041]}>
                   <torusGeometry args={[0.098, 0.013, 10, 32]} />
                   <meshStandardMaterial color="#e8eaf2" metalness={1} roughness={0.16} envMap={envMap} />
                 </mesh>
@@ -707,17 +742,17 @@ export default function RobotModel({
                   return (
                     <mesh
                       key={i}
-                      position={[Math.cos(ang) * 0.056, Math.sin(ang) * 0.056, 0.008]}
+                      position={[Math.cos(ang) * 0.056, Math.sin(ang) * 0.056, 0.043]}
                       rotation={[0, 0, ang]}
                     >
-                      <boxGeometry args={[0.05, 0.013, 0.008]} />
+                      <boxGeometry args={[0.05, 0.013, 0.01]} />
                       <meshStandardMaterial color="#9aa0af" metalness={0.8} roughness={0.4} envMap={envMap} />
                     </mesh>
                   )
                 })}
                 {/* hex screw in the middle */}
-                <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]}>
-                  <cylinderGeometry args={[0.024, 0.024, 0.014, 6]} />
+                <mesh position={[0, 0, 0.048]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.024, 0.024, 0.016, 6]} />
                   <meshStandardMaterial color="#4a4660" metalness={0.7} roughness={0.35} envMap={envMap} />
                 </mesh>
               </group>
@@ -735,14 +770,14 @@ export default function RobotModel({
               ].map(([px, py, pz], pi) => (
                 <group key={pi} position={[px, py, pz]} onUpdate={(g) => g.lookAt(px * 2, py * 2, pz * 2)}>
                   <mesh rotation={[Math.PI / 2, 0, 0]}>
-                    <cylinderGeometry args={[0.16, 0.16, 0.022, 28]} />
+                    <cylinderGeometry args={[0.155, 0.17, 0.06, 28]} />
                     <meshStandardMaterial color="#d3d6e0" metalness={0.85} roughness={0.32} envMap={envMap} envMapIntensity={0.7} />
                   </mesh>
                   {[
                     [0.105, 0.105], [-0.105, 0.105], [0.105, -0.105], [-0.105, -0.105],
                   ].map(([rx, ry], ri) => (
-                    <mesh key={ri} position={[rx * 0.72, ry * 0.72, 0.014]}>
-                      <sphereGeometry args={[0.014, 10, 8]} />
+                    <mesh key={ri} position={[rx * 0.72, ry * 0.72, 0.032]} rotation={[Math.PI / 2, 0, 0.3]}>
+                      <cylinderGeometry args={[0.018, 0.021, 0.02, 6]} />
                       <meshStandardMaterial color="#8f95a5" metalness={0.9} roughness={0.3} envMap={envMap} />
                     </mesh>
                   ))}
@@ -751,13 +786,13 @@ export default function RobotModel({
 
               {/* ventilation grille, low on the left - droid style */}
               <group position={[-0.86, -0.12, 0.48]} onUpdate={(g) => g.lookAt(-1.72, -0.24, 0.96)}>
-                <mesh position={[0, 0, -0.004]}>
-                  <boxGeometry args={[0.2, 0.13, 0.014]} />
+                <mesh position={[0, 0, 0.004]}>
+                  <boxGeometry args={[0.21, 0.14, 0.05]} />
                   <meshStandardMaterial color="#ced2dd" metalness={0.85} roughness={0.34} envMap={envMap} envMapIntensity={0.7} />
                 </mesh>
-                {[-0.032, 0, 0.032].map((dy) => (
-                  <mesh key={dy} position={[0, dy, 0.006]}>
-                    <boxGeometry args={[0.15, 0.018, 0.01]} />
+                {[-0.034, 0, 0.034].map((dy) => (
+                  <mesh key={dy} position={[0, dy, 0.032]}>
+                    <boxGeometry args={[0.16, 0.02, 0.012]} />
                     <meshStandardMaterial color="#3a3550" metalness={0.5} roughness={0.45} />
                   </mesh>
                 ))}
@@ -950,6 +985,52 @@ function useGuardianClawParts(enabled) {
   }, [enabled])
   useEffect(() => () => parts?.forEach((g) => g.dispose()), [parts])
   return parts
+}
+
+/* The armor plate around the face: a rounded-rectangle ring drawn in
+   angular space (x = horizontal angle, y = vertical angle), extruded
+   with a bevel for real thickness, then every vertex is bent onto the
+   body sphere. The result is a thick curved steel shield that hugs the
+   shell and frames the recessed screen - armor, not a sticker. */
+function useArmorFrameGeometry(enabled) {
+  const geo = useMemo(() => {
+    if (!enabled) return null
+    const rr = (ctx, x, y, w, h, r) => {
+      ctx.moveTo(x, y + r)
+      ctx.lineTo(x, y + h - r)
+      ctx.quadraticCurveTo(x, y + h, x + r, y + h)
+      ctx.lineTo(x + w - r, y + h)
+      ctx.quadraticCurveTo(x + w, y + h, x + w, y + h - r)
+      ctx.lineTo(x + w, y + r)
+      ctx.quadraticCurveTo(x + w, y, x + w - r, y)
+      ctx.lineTo(x + r, y)
+      ctx.quadraticCurveTo(x, y, x, y + r)
+    }
+    const shape = new THREE.Shape()
+    rr(shape, -1.13, -0.98, 2.26, 2.03, 0.42) // outer edge of the shield
+    const hole = new THREE.Path()
+    rr(hole, -0.92, -0.69, 1.84, 1.52, 0.3) // window the screen sits in
+    shape.holes.push(hole)
+    const g = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.055,
+      bevelEnabled: true,
+      bevelThickness: 0.018,
+      bevelSize: 0.025,
+      bevelSegments: 2,
+      curveSegments: 20,
+    })
+    const pos = g.attributes.position
+    const v = new THREE.Vector3()
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i)
+      const rad = 1.012 + v.z
+      pos.setXYZ(i, rad * Math.sin(v.x) * Math.cos(v.y), rad * Math.sin(v.y), rad * Math.cos(v.x) * Math.cos(v.y))
+    }
+    g.computeVertexNormals()
+    return g
+  }, [enabled])
+  useEffect(() => () => geo?.dispose(), [geo])
+  return geo
 }
 
 /* Neutral studio environment so the guardian's ceramic + chrome pick up
