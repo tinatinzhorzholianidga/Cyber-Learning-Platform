@@ -103,7 +103,6 @@ export default function RobotModel({
   const shadow = useRef()
   const stars = useRef()
   const ledMats = useRef([])
-  const beaconMats = useRef([]) // metal: amber lights on the head fins
 
   const anim = useRef({
     lastGestureId: null,
@@ -121,6 +120,7 @@ export default function RobotModel({
   const envMap = useStudioEnv(metal)
   const panelTex = useBrushedPanelTexture(metal)
   const armorFrame = useArmorFrameGeometry(metal)
+  const finGeo = useHelmetFinGeometry(metal)
 
   const helmetLabel = useMemo(() => (variant === 'builder' ? makeHelmetLabel() : null), [variant])
   useEffect(() => () => helmetLabel?.dispose(), [helmetLabel])
@@ -309,11 +309,6 @@ export default function RobotModel({
       if (m) m.emissiveIntensity = 0.6 + 0.4 * Math.sin(t * 2.3 + i * 0.9)
     })
 
-    /* ---- metal: the amber fin beacons blink slowly, out of phase ---- */
-    beaconMats.current.forEach((m, i) => {
-      if (m) m.emissiveIntensity = 0.9 + 0.55 * Math.sin(t * 1.4 + i * 1.7)
-    })
-
     /* ---- the sprout sways gently ---- */
     if (leaves.current) leaves.current.rotation.z = Math.sin(t * 2.1) * 0.07
 
@@ -453,11 +448,10 @@ export default function RobotModel({
               </mesh>
             </group>
           ) : metal ? (
-            /* METAL DROID HEAD, Optimus-style helmet kit: gunmetal crown
-               dome with a chrome edge ring and bolts, a ribbed central
-               crest running front-to-back, a protruding brow ridge over
-               the screen, tall side fins with blinking amber beacons,
-               and mechanical ear discs where the headphones used to sit */
+            /* METAL DROID HEAD, Big Hero 6 style: a clean faceted helmet
+               dome with a chrome edge ring, a raised hex plate on the
+               forehead like Baymax's armor, and two swept angular fins
+               rising from the upper sides of the head */
             <group>
               <mesh>
                 <sphereGeometry args={[1.014, 48, 20, 0, Math.PI * 2, 0, 0.62]} />
@@ -467,75 +461,32 @@ export default function RobotModel({
                 <torusGeometry args={[Math.sin(0.62) * 1.014, 0.02, 10, 56]} />
                 <meshStandardMaterial {...CHROME} envMap={envMap} />
               </mesh>
-              {[0.9, 2.25, 4.05, 5.4].map((ang) => (
-                <Bolt key={ang} at={sph(1.028, 0.48, ang)} envMap={envMap} />
-              ))}
 
-              {/* central crest: two gunmetal side walls with chrome ribs
-                  between them, running over the crown front-to-back */}
-              <group>
-                {[-0.082, 0.082].map((x) => (
-                  <group key={x} position={[x, 0, 0]} rotation={[-0.68, 0, 0]}>
-                    <mesh rotation={[0, -Math.PI / 2, 0]}>
-                      <torusGeometry args={[1.05, 0.034, 10, 26, 1.3]} />
-                      <meshStandardMaterial {...GUNMETAL} envMap={envMap} />
-                    </mesh>
-                  </group>
-                ))}
-                {Array.from({ length: 9 }).map((_, i) => {
-                  const a = -0.52 + (i / 8) * 1.04
-                  return (
-                    <mesh
-                      key={i}
-                      position={[0, Math.cos(a) * 1.078, Math.sin(a) * 1.078]}
-                      rotation={[a, 0, 0]}
-                    >
-                      <boxGeometry args={[0.135, 0.05, 0.06]} />
-                      <meshStandardMaterial
-                        {...(i % 2 === 0 ? STEEL : CHROME)}
-                        envMap={envMap}
-                        envMapIntensity={0.8}
-                      />
-                    </mesh>
-                  )
-                })}
-                {/* crest nose: small angled tip dropping toward the brow */}
-                <mesh position={[0, Math.cos(0.62) * 1.06, Math.sin(0.62) * 1.06]} rotation={[0.62, 0, 0]}>
-                  <boxGeometry args={[0.15, 0.06, 0.1]} />
-                  <meshStandardMaterial {...GUNMETAL} envMap={envMap} />
+              {/* raised hex facet on the forehead, like Baymax's plate */}
+              <group
+                position={[0, Math.cos(0.42) * 1.01, Math.sin(0.42) * 1.01]}
+                onUpdate={(g) => g.lookAt(0, Math.cos(0.42) * 2, Math.sin(0.42) * 2)}
+              >
+                <mesh rotation={[Math.PI / 2, 0, Math.PI / 6]}>
+                  <cylinderGeometry args={[0.21, 0.23, 0.05, 6]} />
+                  <meshStandardMaterial color="#464b5c" metalness={0.9} roughness={0.28} envMap={envMap} />
+                </mesh>
+                <mesh position={[0, 0, 0.034]} rotation={[Math.PI / 2, 0, Math.PI / 6]}>
+                  <cylinderGeometry args={[0.14, 0.155, 0.02, 6]} />
+                  <meshStandardMaterial {...STEEL} envMap={envMap} envMapIntensity={0.8} />
                 </mesh>
               </group>
 
-              {/* brow ridge: a chunky ledge hugging the shell just above
-                  the screen, resting on the armor frame's top band */}
-              <group position={[0, 0.91, 0]} rotation={[0, Math.PI / 2 - 0.6, 0]}>
-                <mesh rotation={[Math.PI / 2, 0, 0]}>
-                  <torusGeometry args={[0.56, 0.05, 10, 26, 1.2]} />
-                  <meshStandardMaterial color="#464b5c" metalness={0.9} roughness={0.3} envMap={envMap} />
-                </mesh>
-              </group>
-
-              {/* tall side fins with amber beacons - the Optimus ears */}
+              {/* swept helmet fins, rising up and out - the Baymax ears */}
               {[-1, 1].map((side) => (
-                <group key={side} position={[side * 0.85, 0.54, -0.08]} rotation={[0.08, 0, side * -0.32]}>
-                  <mesh>
-                    <boxGeometry args={[0.06, 0.42, 0.19]} />
-                    <meshStandardMaterial {...GUNMETAL} envMap={envMap} />
-                  </mesh>
-                  <mesh position={[side * 0.001, 0.02, 0.1]}>
-                    <boxGeometry args={[0.034, 0.3, 0.026]} />
-                    <meshStandardMaterial {...CHROME} envMap={envMap} />
-                  </mesh>
-                  <mesh position={[0, 0.24, 0]}>
-                    <sphereGeometry args={[0.042, 14, 10]} />
-                    <meshStandardMaterial
-                      ref={(m) => (beaconMats.current[side === 1 ? 0 : 1] = m)}
-                      color={M.amber}
-                      emissive={M.amber}
-                      emissiveIntensity={1}
-                      metalness={0.2}
-                      roughness={0.35}
-                    />
+                <group
+                  key={side}
+                  position={[side * 0.54, 0.76, -0.06]}
+                  rotation={[-0.12, 0, side * -0.06]}
+                  scale={[side * 0.92, 0.92, 0.92]}
+                >
+                  <mesh geometry={finGeo}>
+                    <meshStandardMaterial {...GUNMETAL} envMap={envMap} side={THREE.DoubleSide} />
                   </mesh>
                 </group>
               ))}
@@ -902,6 +853,35 @@ function useArmorFrameGeometry(enabled) {
       const rad = 1.012 + v.z
       pos.setXYZ(i, rad * Math.sin(v.x) * Math.cos(v.y), rad * Math.sin(v.y), rad * Math.cos(v.x) * Math.cos(v.y))
     }
+    g.computeVertexNormals()
+    return g
+  }, [enabled])
+  useEffect(() => () => geo?.dispose(), [geo])
+  return geo
+}
+
+/* Swept helmet fin, Big Hero 6 style: a flat angular blade, wide at
+   the base, sweeping up and out to a pointed tip. Drawn in the xy
+   plane (x = outward, y = up) and extruded thin in z. The right fin
+   uses the geometry as-is; the left is mirrored with scale x -1. */
+function useHelmetFinGeometry(enabled) {
+  const geo = useMemo(() => {
+    if (!enabled) return null
+    const s = new THREE.Shape()
+    s.moveTo(0, 0)
+    s.lineTo(0.28, -0.1)
+    s.lineTo(0.44, 0.24)
+    s.lineTo(0.26, 0.58)
+    s.lineTo(0.06, 0.3)
+    s.closePath()
+    const g = new THREE.ExtrudeGeometry(s, {
+      depth: 0.05,
+      bevelEnabled: true,
+      bevelThickness: 0.012,
+      bevelSize: 0.016,
+      bevelSegments: 2,
+    })
+    g.translate(0, 0, -0.025)
     g.computeVertexNormals()
     return g
   }, [enabled])
