@@ -45,7 +45,7 @@ export default function MascotDemoPage() {
   const fps = useFps()
 
   const [character, setCharacter] = useState('robot')
-  const [skin, setSkin] = useState('classic') // 'classic' (headphones) | 'guardian' (cyber armor)
+  const [skin, setSkin] = useState('classic') // 'classic' (headphones + sprout) | 'metal' (droid)
   const [emotion, setEmotion] = useState('happy')
   const [gesture, setGesture] = useState(null)
   const gestureId = useRef(0)
@@ -155,7 +155,7 @@ export default function MascotDemoPage() {
           <p className="mascot-hint">{t('mascot.demo.stageHint')}</p>
           <p className="mascot-fps">
             {t('mascot.demo.fps')}: <strong>{fps}</strong>
-            {' · v3.5-armor'}
+            {' · v4.0-metal-droid'}
             {reduced && ' · prefers-reduced-motion ✓'}
           </p>
         </section>
@@ -197,11 +197,11 @@ export default function MascotDemoPage() {
                 </button>
                 <button
                   type="button"
-                  className={`chip-btn ${skin === 'guardian' ? 'active' : ''}`}
-                  aria-pressed={skin === 'guardian'}
-                  onClick={() => setSkin('guardian')}
+                  className={`chip-btn ${skin === 'metal' ? 'active' : ''}`}
+                  aria-pressed={skin === 'metal'}
+                  onClick={() => setSkin('metal')}
                 >
-                  🛡️ {t('mascot.demo.versionGuardian')}
+                  🤖 {t('mascot.demo.versionMetal')}
                 </button>
               </div>
             </div>
