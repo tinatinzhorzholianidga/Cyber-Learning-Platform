@@ -462,21 +462,6 @@ export default function RobotModel({
                 <meshStandardMaterial {...CHROME} envMap={envMap} />
               </mesh>
 
-              {/* raised hex facet on the forehead, like Baymax's plate */}
-              <group
-                position={[0, Math.cos(0.42) * 1.01, Math.sin(0.42) * 1.01]}
-                onUpdate={(g) => g.lookAt(0, Math.cos(0.42) * 2, Math.sin(0.42) * 2)}
-              >
-                <mesh rotation={[Math.PI / 2, 0, Math.PI / 6]}>
-                  <cylinderGeometry args={[0.21, 0.23, 0.05, 6]} />
-                  <meshStandardMaterial color="#464b5c" metalness={0.9} roughness={0.28} envMap={envMap} />
-                </mesh>
-                <mesh position={[0, 0, 0.034]} rotation={[Math.PI / 2, 0, Math.PI / 6]}>
-                  <cylinderGeometry args={[0.14, 0.155, 0.02, 6]} />
-                  <meshStandardMaterial {...STEEL} envMap={envMap} envMapIntensity={0.8} />
-                </mesh>
-              </group>
-
               {/* swept helmet fins, rising up and out - the Baymax ears */}
               {[-1, 1].map((side) => (
                 <group
