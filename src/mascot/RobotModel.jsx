@@ -62,21 +62,29 @@ function makeHelmetLabel() {
 const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
 const clamp01 = (x) => Math.min(1, Math.max(0, x))
 
-/* points on the body sphere for the chest LEDs and the dials */
+/* points on the body sphere for the chest LEDs and the dials.
+   On the metal skin the LEDs sit on the armor plate's outer face
+   (radius ~1.09) instead of the shell, so the thick shield never
+   covers them. */
 function useSurfacePoints() {
   return useMemo(() => {
     const leds = []
+    const ledsMetal = []
     let i = 0
-    for (const phi of [2.42, 2.56]) {
+    for (const [phi, phiM] of [
+      [2.42, 2.38],
+      [2.56, 2.52],
+    ]) {
       for (const theta of [-0.52, -0.34, -0.16, 0.02, 0.2]) {
-        const p = new THREE.Vector3().setFromSphericalCoords(1.006, phi, theta)
-        leds.push({ pos: p, color: C.leds[i % C.leds.length] })
+        const color = C.leds[i % C.leds.length]
+        leds.push({ pos: new THREE.Vector3().setFromSphericalCoords(1.006, phi, theta), color })
+        ledsMetal.push({ pos: new THREE.Vector3().setFromSphericalCoords(1.088, phiM, theta), color })
         i += 1
       }
     }
     const dial = new THREE.Vector3().setFromSphericalCoords(1.004, 2.08, 1.08) // classic: original spot
     const vent = new THREE.Vector3().setFromSphericalCoords(1.004, 2.08, 0.88) // metal: visible from the front
-    return { leds, dial, vent }
+    return { leds, ledsMetal, dial, vent }
   }, [])
 }
 
@@ -116,7 +124,7 @@ export default function RobotModel({
     drawnKey: '',
   })
 
-  const { leds, dial, vent } = useSurfacePoints()
+  const { leds, ledsMetal, dial, vent } = useSurfacePoints()
   const envMap = useStudioEnv(metal)
   const panelTex = useBrushedPanelTexture(metal)
   const armorFrame = useArmorFrameGeometry(metal)
@@ -558,8 +566,8 @@ export default function RobotModel({
             {holdup ? <Palm mirrored metal={metal} envMap={envMap} /> : <Hand mirrored metal={metal} envMap={envMap} />}
           </group>
 
-          {/* chest LEDs */}
-          {leds.map(({ pos, color }, i) => (
+          {/* chest LEDs (mounted on the armor plate on the metal skin) */}
+          {(metal ? ledsMetal : leds).map(({ pos, color }, i) => (
             <mesh key={i} position={pos} onUpdate={(m) => m.lookAt(pos.x * 2, pos.y * 2, pos.z * 2)}>
               <circleGeometry args={[0.034, 16]} />
               <meshStandardMaterial
@@ -600,7 +608,6 @@ export default function RobotModel({
                 [-0.86, 0.88],
                 [0.88, -0.78],
                 [-0.88, -0.78],
-                [0, -0.88],
               ].map(([aa, bb], i) => {
                 const r = 1.072
                 const px = r * Math.sin(aa) * Math.cos(bb)
@@ -678,16 +685,17 @@ export default function RobotModel({
                 ))}
               </group>
 
-              {/* dark undercarriage plate with chrome rim */}
+              {/* dark undercarriage plate with chrome rim - raised so it
+                  meets the armor shield with no shell gap showing */}
               <mesh>
-                <sphereGeometry args={[1.012, 48, 16, 0, Math.PI * 2, 2.62, Math.PI - 2.62]} />
+                <sphereGeometry args={[1.012, 48, 16, 0, Math.PI * 2, 2.47, Math.PI - 2.47]} />
                 <meshStandardMaterial {...GUNMETAL} envMap={envMap} />
               </mesh>
-              <mesh position={[0, Math.cos(2.62) * 1.012, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[Math.sin(2.62) * 1.012, 0.02, 10, 56]} />
+              <mesh position={[0, Math.cos(2.47) * 1.012, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[Math.sin(2.47) * 1.012, 0.02, 10, 56]} />
                 <meshStandardMaterial {...CHROME} envMap={envMap} />
               </mesh>
-              {[0.3, 1.5, 2.7, 3.9, 5.1].map((ang) => (
+              {[0.9, 2.0, 3.1, 4.2, 5.3].map((ang) => (
                 <Bolt key={ang} at={sph(1.026, 2.78, ang)} envMap={envMap} />
               ))}
 
