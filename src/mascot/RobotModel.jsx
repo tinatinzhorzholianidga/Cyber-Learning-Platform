@@ -63,28 +63,23 @@ const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) 
 const clamp01 = (x) => Math.min(1, Math.max(0, x))
 
 /* points on the body sphere for the chest LEDs and the dials.
-   On the metal skin the LEDs sit on the armor plate's outer face
-   (radius ~1.09) instead of the shell, so the thick shield never
-   covers them. */
+   The LEDs always live on the body shell - on the metal skin the
+   armor shield has a notch cut out of its lower band so they stay
+   fully visible. */
 function useSurfacePoints() {
   return useMemo(() => {
     const leds = []
-    const ledsMetal = []
     let i = 0
-    for (const [phi, phiM] of [
-      [2.42, 2.38],
-      [2.56, 2.52],
-    ]) {
+    for (const phi of [2.42, 2.56]) {
       for (const theta of [-0.52, -0.34, -0.16, 0.02, 0.2]) {
-        const color = C.leds[i % C.leds.length]
-        leds.push({ pos: new THREE.Vector3().setFromSphericalCoords(1.006, phi, theta), color })
-        ledsMetal.push({ pos: new THREE.Vector3().setFromSphericalCoords(1.088, phiM, theta), color })
+        const p = new THREE.Vector3().setFromSphericalCoords(1.006, phi, theta)
+        leds.push({ pos: p, color: C.leds[i % C.leds.length] })
         i += 1
       }
     }
     const dial = new THREE.Vector3().setFromSphericalCoords(1.004, 2.08, 1.08) // classic: original spot
     const vent = new THREE.Vector3().setFromSphericalCoords(1.004, 2.08, 0.88) // metal: visible from the front
-    return { leds, ledsMetal, dial, vent }
+    return { leds, dial, vent }
   }, [])
 }
 
@@ -124,7 +119,7 @@ export default function RobotModel({
     drawnKey: '',
   })
 
-  const { leds, ledsMetal, dial, vent } = useSurfacePoints()
+  const { leds, dial, vent } = useSurfacePoints()
   const envMap = useStudioEnv(metal)
   const panelTex = useBrushedPanelTexture(metal)
   const armorFrame = useArmorFrameGeometry(metal)
@@ -566,8 +561,8 @@ export default function RobotModel({
             {holdup ? <Palm mirrored metal={metal} envMap={envMap} /> : <Hand mirrored metal={metal} envMap={envMap} />}
           </group>
 
-          {/* chest LEDs (mounted on the armor plate on the metal skin) */}
-          {(metal ? ledsMetal : leds).map(({ pos, color }, i) => (
+          {/* chest LEDs - always on the body shell */}
+          {leds.map(({ pos, color }, i) => (
             <mesh key={i} position={pos} onUpdate={(m) => m.lookAt(pos.x * 2, pos.y * 2, pos.z * 2)}>
               <circleGeometry args={[0.034, 16]} />
               <meshStandardMaterial
@@ -685,14 +680,14 @@ export default function RobotModel({
                 ))}
               </group>
 
-              {/* dark undercarriage plate with chrome rim - raised so it
-                  meets the armor shield with no shell gap showing */}
+              {/* dark undercarriage plate with chrome rim, low enough to
+                  keep clear of the chest LEDs */}
               <mesh>
-                <sphereGeometry args={[1.012, 48, 16, 0, Math.PI * 2, 2.47, Math.PI - 2.47]} />
+                <sphereGeometry args={[1.012, 48, 16, 0, Math.PI * 2, 2.66, Math.PI - 2.66]} />
                 <meshStandardMaterial {...GUNMETAL} envMap={envMap} />
               </mesh>
-              <mesh position={[0, Math.cos(2.47) * 1.012, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[Math.sin(2.47) * 1.012, 0.02, 10, 56]} />
+              <mesh position={[0, Math.cos(2.66) * 1.012, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[Math.sin(2.66) * 1.012, 0.02, 10, 56]} />
                 <meshStandardMaterial {...CHROME} envMap={envMap} />
               </mesh>
               {[0.9, 2.0, 3.1, 4.2, 5.3].map((ang) => (
@@ -826,8 +821,35 @@ function useArmorFrameGeometry(enabled) {
       ctx.lineTo(x + r, y)
       ctx.quadraticCurveTo(x, y, x, y + r)
     }
+    /* outer edge of the shield - same rounded rectangle as before, but
+       with a notch cut upward out of the bottom edge where the chest
+       LEDs sit on the body, so the armor never covers them */
+    const L = -1.13
+    const R = 1.13
+    const B = -0.98
+    const T = 1.05
+    const CR = 0.42
+    const NL = -0.66 // notch left
+    const NR = 0.34 // notch right
+    const NT = -0.74 // notch top
+    const NC = 0.07 // notch corner radius
     const shape = new THREE.Shape()
-    rr(shape, -1.13, -0.98, 2.26, 2.03, 0.42) // outer edge of the shield
+    shape.moveTo(L, B + CR)
+    shape.lineTo(L, T - CR)
+    shape.quadraticCurveTo(L, T, L + CR, T)
+    shape.lineTo(R - CR, T)
+    shape.quadraticCurveTo(R, T, R, T - CR)
+    shape.lineTo(R, B + CR)
+    shape.quadraticCurveTo(R, B, R - CR, B)
+    // bottom edge (right to left) with the LED notch
+    shape.lineTo(NR, B)
+    shape.lineTo(NR, NT - NC)
+    shape.quadraticCurveTo(NR, NT, NR - NC, NT)
+    shape.lineTo(NL + NC, NT)
+    shape.quadraticCurveTo(NL, NT, NL, NT - NC)
+    shape.lineTo(NL, B)
+    shape.lineTo(L + CR, B)
+    shape.quadraticCurveTo(L, B, L, B + CR)
     const hole = new THREE.Path()
     rr(hole, -0.92, -0.69, 1.84, 1.52, 0.3) // window the screen sits in
     shape.holes.push(hole)
