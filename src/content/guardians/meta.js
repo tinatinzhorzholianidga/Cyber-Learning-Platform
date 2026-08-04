@@ -23,7 +23,7 @@ export const MISSION_META = [
     name: { en: 'Footprint Detective', ka: 'კვალის დეტექტივი' },
     desc: {
       en: 'Investigate a profile the way a stalker - or a recruiter - would.',
-      ka: 'გამოიკვლიე პროფილი ისე, როგორც სტოკერი - ან რეკრუტერი - გამოიკვლევდა.',
+      ka: 'გამოიკვლიე პროფილი ისე, როგორც სტალკერი - ან რეკრუტერი - გამოიკვლევდა.',
     },
   },
   {

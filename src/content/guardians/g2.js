@@ -4,7 +4,7 @@
 export default {
   brief: {
     en: 'Today you work both sides of the glass. First you investigate a stranger’s public profile the way a stalker - or a recruiter - would: no hacking, just careful reading. Then you turn the same lens on your own. Everything you are about to find is technically public. That is exactly the point.',
-    ka: 'დღეს შუშის ორივე მხარეს იმუშავებ. ჯერ უცნობის საჯარო პროფილს გამოიკვლევ ისე, როგორც სტოკერი - ან რეკრუტერი - გამოიკვლევდა: არანაირი გატეხვა, მხოლოდ ყურადღებით კითხვა. მერე იმავე მზერას საკუთარ პროფილს მიაპყრობ. ყველაფერი, რასაც ახლა იპოვი, ტექნიკურად საჯაროა. საქმეც სწორედ ეს არის.',
+    ka: 'დღეს შუშის ორივე მხარეს იმუშავებ. ჯერ უცნობის საჯარო პროფილს გამოიკვლევ ისე, როგორც სტალკერი - ან რეკრუტერი - გამოიკვლევდა: არანაირი გატეხვა, მხოლოდ ყურადღებით კითხვა. მერე იმავე მზერას საკუთარ პროფილს მიაპყრობ. ყველაფერი, რასაც ახლა იპოვი, ტექნიკურად საჯაროა. საქმეც სწორედ ეს არის.',
   },
   theory: [
     {
@@ -33,7 +33,7 @@ export default {
       type: 'flags',
       prompt: {
         en: 'This is nini_2009’s public profile - anyone can open it, no follow needed. You are the stranger. Tap every item that tells you more than she thinks it does.',
-        ka: 'ეს nini_2009-ის საჯარო პროფილია - მისი გახსნა ნებისმიერს შეუძლია, გამოწერა არ სჭირდება. უცნობი შენ ხარ. მონიშნე ყველა ჩანაწერი, რომელიც მასზე იმაზე მეტს ყვება, ვიდრე თვითონ ჰგონია.',
+        ka: 'ეს nini_2009-ის საჯარო პროფილია - მისი გახსნა ნებისმიერს შეუძლია, გამოწერა არ სჭირდება. უცნობი შენ ხარ. მონიშნე ყველა ჩანაწერი, რომელიც მასზე იმაზე მეტს ჰყვება, ვიდრე თვითონ ჰგონია.',
       },
       items: [
         {

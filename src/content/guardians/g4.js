@@ -122,7 +122,7 @@ export default {
               points: 10,
               feedback: {
                 en: 'This is the strongest move on the board. No reply, evidence saved, and the weight is off your shoulders the moment another person carries it with you.',
-                ka: 'ეს ყველაზე ძლიერი სვლაა. პასუხი - არა, მტკიცებულება - შენახული, და ტვირთი მხრებიდან გეხსნება იმ წამს, როცა მას სხვა ადამიანიც გეზიარება.',
+                ka: 'ეს ყველაზე ძლიერი სვლაა. პასუხი - არა, მტკიცებულება - შენახული, და ტვირთი მხრებიდან გეხსნება იმ წამს, როცა მას სხვა ადამიანიც იზიარებს.',
               },
             },
           ],
@@ -311,7 +311,7 @@ export default {
           end: true,
           scene: {
             en: 'Next day, together, you tell her mother. She doesn’t explode - she hugs her. They call 112, report to the platform, and submit the image to Take It Down. The "boy" turns out to be an account run from another country, blocked and reported. Mariam later says the worst night was the one before she told you.',
-            ka: 'მეორე დღეს, ერთად, დედამისს ეუბნებით. ის არ ფეთქდება - ეხუტება. რეკავენ 112-ზე, არეპორტებენ პლატფორმაზე და ფოტოს Take It Down-ზე აგზავნიან. „ბიჭი“ სხვა ქვეყნიდან მართული ანგარიში აღმოჩნდება - დაბლოკილი და გაცხადებული. მარიამი მოგვიანებით იტყვის: ყველაზე მძიმე ის ღამე იყო, სანამ გეტყოდა.',
+            ka: 'მეორე დღეს, ერთად, დედამისს ეუბნებით. ის არ ფეთქდება - ეხუტება. რეკავენ 112-ზე, არეპორტებენ პლატფორმაზე და ფოტოს Take It Down-ზე აგზავნიან. „ბიჭი“ სხვა ქვეყნიდან მართული ანგარიში აღმოჩნდება - დაბლოკილი და დარეპორტებული. მარიამი მოგვიანებით იტყვის: ყველაზე მძიმე ის ღამე იყო, სანამ გეტყოდა.',
           },
         },
       },

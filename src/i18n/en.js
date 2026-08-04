@@ -94,7 +94,7 @@ export default {
     certProgress: 'Finish all 10 missions to earn the Guardian Certificate.',
     getCert: 'Get your certificate',
     certifies: 'This certifies that',
-    certBody: 'has completed all ten Cyber Guardian missions and can recognize and respond to online threats.',
+    certBody: 'is a certified Cyber Guardian who has completed all ten missions and can recognize and respond to online threats.',
     certNamePlaceholder: 'Type your name',
     certNameLabel: 'Your name (printed on the certificate)',
     print: 'Print certificate',

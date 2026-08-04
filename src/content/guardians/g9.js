@@ -5,7 +5,7 @@
 export default {
   brief: {
     en: 'Top athletes obsess over sleep because it is free, legal performance enhancement. Meanwhile the feed in your hand was engineered by some of the best-paid engineers alive to keep you watching - including at 01:00. This mission is not "screens are bad". It is an audit: who is actually running your evening - you, or the algorithm?',
-    ka: 'საუკეთესო სპორტსმენები ძილზე იმიტომ გიჟდებიან, რომ ეს უფასო და ლეგალური დოპინგია. ამასობაში ლენტა შენს ხელში მსოფლიოს ერთ-ერთი ყველაზე მაღალანაზღაურებადი ინჟინრების აწყობილია იმისთვის, რომ უყურო - 01:00-ზეც. ეს მისია არ არის „ეკრანები ცუდია“. ეს აუდიტია: სინამდვილეში ვინ მართავს შენს საღამოს - შენ თუ ალგორითმი?',
+    ka: 'საუკეთესო სპორტსმენები ძილზე იმიტომ გიჟდებიან, რომ ეს უფასო და ლეგალური დოპინგია. ამასობაში ლენტა შენს ხელში მსოფლიოს ყველაზე მაღალანაზღაურებადი ინჟინრების აწყობილია იმისთვის, რომ უყურო - 01:00-ზეც. ეს მისია არ არის „ეკრანები ცუდია“. ეს აუდიტია: სინამდვილეში ვინ მართავს შენს საღამოს - შენ თუ ალგორითმი?',
   },
   theory: [
     {
@@ -165,7 +165,7 @@ export default {
       ],
       explain: {
         en: 'The APA does not draw the line at an hour count - it draws it at displacement. Two hours of gaming with friends on a free evening costs nothing; use that eats your sleep, replaces in-person friends or crowds out the rest of your life does. Add hidden numbers and mood crashes without the phone, and you have the real checklist. If you just flagged something in yourself, that is data, not a verdict - the next round is the fix.',
-        ka: 'APA ზღვარს საათების რაოდენობაზე კი არ ავლებს, არამედ ჩანაცვლებაზე. თავისუფალ საღამოს მეგობრებთან ორსაათიანი თამაში არაფერს გაკარგვინებს; მოხმარება, რომელიც ძილს გიჭამს, ცოცხალ მეგობრებს გინაცვლებს ან დანარჩენ ცხოვრებას გიმჩნევს ადგილს - გაკარგვინებს. დაუმატე დამალული ციფრები და ტელეფონის გარეშე ჩამოვარდნილი ხასიათი - და გაქვს ნამდვილი ჩეკლისტი. თუ ახლა საკუთარ თავში რამე მონიშნე, ეს მონაცემია და არა განაჩენი - შემდეგი რაუნდი გამოსავალია.',
+        ka: 'APA ზღვარს საათების რაოდენობაზე კი არ ავლებს, არამედ ჩანაცვლებაზე. თავისუფალ საღამოს მეგობრებთან ორსაათიანი თამაში არაფერს გაკარგვინებს; მოხმარება, რომელიც ძილს გიჭამს, ცოცხალ მეგობრებს გინაცვლებს ან დანარჩენ ცხოვრებას ადგილს აღარ უტოვებს - გაკარგვინებს. დაუმატე დამალული ციფრები და ტელეფონის გარეშე ჩამოვარდნილი ხასიათი - და გაქვს ნამდვილი ჩეკლისტი. თუ ახლა საკუთარ თავში რამე მონიშნე, ეს მონაცემია და არა განაჩენი - შემდეგი რაუნდი გამოსავალია.',
       },
     },
     {

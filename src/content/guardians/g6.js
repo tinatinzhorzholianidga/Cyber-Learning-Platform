@@ -224,7 +224,7 @@ export default {
         {
           text: {
             en: '(main chat, third day in a row, after Sandro asked them to stop) "aand here’s Sandro with the museum-piece phone again 😂 does it run Snake?"',
-            ka: '(საერთო ჩატი, ზედიზედ მესამე დღე, მას შემდეგ, რაც სანდრომ სთხოვა, შეეწყვიტათ) „ისევ სანდრო თავისი მუზეუმის ექსპონატი ტელეფონით 😂 „გველი“ თუ ეშვება მაგაზე?“',
+            ka: '(საერთო ჩატი, ზედიზედ მესამე დღე, მას შემდეგ, რაც სანდრომ სთხოვა, შეეწყვიტათ) „ისევ სანდრო თავისი მუზეუმის ექსპონატი ტელეფონით 😂 «გველი» თუ ეშვება მაგაზე?“',
           },
           flag: true,
           explain: {

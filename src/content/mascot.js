@@ -18,7 +18,7 @@ export const MASCOT_TIPS = [
   {
     topics: ['phishing', 'scams'],
     en: "If a message rushes you - 'act now!' - that's a red flag.",
-    ka: 'თუ შეტყობინება გაჩქარებს - „ახლავე გააკეთე!" - ეს საგანგაშო ნიშანია.',
+    ka: 'თუ შეტყობინება გაჩქარებს - „ახლავე გააკეთე!“ - ეს საგანგაშო ნიშანია.',
   },
   {
     topics: ['phishing', 'passwords'],
@@ -48,12 +48,12 @@ export const MASCOT_TIPS = [
   {
     topics: ['phishing'],
     en: 'A real bank never asks for your password in a message.',
-    ka: 'ნამდვილი ბანკი პაროლს შეტყობინებით არასდროს გკითხავს.',
+    ka: 'ნამდვილი ბანკი პაროლს შეტყობინებით არასდროს გთხოვს.',
   },
   {
     topics: ['privacy'],
     en: "Check who can see your profile - 'friends only' is a strong start.",
-    ka: 'შეამოწმე, ვინ ხედავს შენს პროფილს - „მხოლოდ მეგობრები" კარგი დასაწყისია.',
+    ka: 'შეამოწმე, ვინ ხედავს შენს პროფილს - „მხოლოდ მეგობრები“ კარგი დასაწყისია.',
   },
   {
     topics: ['passwords'],
@@ -88,7 +88,7 @@ export const MASCOT_TIPS = [
   {
     topics: ['strangers'],
     en: "Online 'friends' you have never met stay online - never meet up alone.",
-    ka: 'ონლაინ „მეგობრები", რომლებიც არასდროს გინახავს, ონლაინ უნდა დარჩნენ - მარტო არასდროს შეხვდე.',
+    ka: 'ონლაინ „მეგობრები“, რომლებიც არასდროს გინახავს, ონლაინ უნდა დარჩნენ - მარტო არასდროს შეხვდე.',
   },
   {
     topics: ['strangers', 'help'],
