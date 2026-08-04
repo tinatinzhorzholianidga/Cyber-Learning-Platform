@@ -26,7 +26,7 @@ export default {
       type: 'p',
       text: {
         en: 'The uncomfortable truth about grooming is that, from the child’s side, it feels like the best friendship they’ve ever had. Groomers are patient. They compliment, they remember birthdays, they listen for hours, they send small gifts or game currency. Above all, they offer the one thing every young teen craves: someone who says "you’re the only one who understands me - and I’m the only one who understands you." They are not looking for a naive child; they are looking for a normal one, and they work on the completely normal human need for attention.',
-        ka: 'გრუმინგის შესახებ ყველაზე უხერხული სიმართლე ის არის, რომ ბავშვის მხრიდან ის საუკეთესო მეგობრობად აღიქმება. გრუმერები მომთმენები არიან. ისინი კომპლიმენტებს ეუბნებიან, ახსოვთ დაბადების დღეები, საათობით უსმენენ, უგზავნიან პატარა საჩუქრებს ან სათამაშო ვალუტას. მთავარი კი ის არის, რომ სთავაზობენ იმას, რაც ყველა მოზარდს ყველაზე მეტად სწყურია: ადამიანს, რომელიც ეუბნება - „მხოლოდ შენ მიგებ მე და მხოლოდ მე მიგებ შენ“. ისინი გულუბრყვილო ბავშვს კი არ ეძებენ - ჩვეულებრივს ეძებენ, და ყურადღების სრულიად ნორმალურ ადამიანურ მოთხოვნილებაზე მუშაობენ.',
+        ka: 'გრუმინგის შესახებ ყველაზე უხერხული სიმართლე ის არის, რომ ბავშვის მხრიდან ის საუკეთესო მეგობრობად აღიქმება. გრუმერები მომთმენები არიან. ისინი კომპლიმენტებს ეუბნებიან, ახსოვთ დაბადების დღეები, საათობით უსმენენ, უგზავნიან პატარა საჩუქრებს ან სათამაშო ვალუტას. მთავარი კი ის არის, რომ სთავაზობენ იმას, რაც ყველა მოზარდს ყველაზე მეტად სწყურია: ადამიანს, რომელიც ეუბნება - „მხოლოდ შენ მიგებ მე და მხოლოდ მე გიგებ შენ“. ისინი გულუბრყვილო ბავშვს კი არ ეძებენ - ჩვეულებრივს ეძებენ, და ყურადღების სრულიად ნორმალურ ადამიანურ მოთხოვნილებაზე მუშაობენ.',
       },
     },
     {

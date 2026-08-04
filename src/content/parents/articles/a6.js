@@ -85,7 +85,7 @@ export default {
       type: 'p',
       text: {
         en: 'If several of these appear together and persist, that’s a conversation - and possibly a visit to a psychologist. It is a solvable problem, not a moral failure, and neither you nor your teen is to blame for it.',
-        ka: 'თუ რამდენიმე ეს ნიშანი ერთად ჩნდება და დროში გრძელდება, დგება საუბრის დრო - შესაძლოა, ფსიქოლოგთან ვიზიტისაც. ეს მოგვარებადი პრობლემაა და არა ზნეობრივი მარცხი - მასში არც თქვენ ხართ დამნაშავე და არც თქვენი შვილი.',
+        ka: 'თუ ამ ნიშნებიდან რამდენიმე ერთად ჩნდება და დროში გრძელდება, დგება საუბრის დრო - შესაძლოა, ფსიქოლოგთან ვიზიტისაც. ეს მოგვარებადი პრობლემაა და არა ზნეობრივი მარცხი - მასში არც თქვენ ხართ დამნაშავე და არც თქვენი შვილი.',
       },
     },
     { type: 'h2', text: { en: 'Girls and the comparison trap', ka: 'გოგოები და შედარების ხაფანგი' } },

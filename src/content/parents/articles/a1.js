@@ -85,7 +85,7 @@ export default {
       type: 'p',
       text: {
         en: 'That gap - "risky for others, fine for me" - is the most useful fact in this article. It explains why lectures bounce off: your teen genuinely believes the warning is about someone else. Questions and real scenarios work better than warnings, because they let a teen reach the conclusion themselves. The numbers also tell you where to start: sleep. Almost half of teens already feel that cost themselves, so a device-out-of-the-bedroom rule is a conversation you can actually win.',
-        ka: 'ეს სხვაობა - „სხვებისთვის სახიფათოა, ჩემთვის - არა“ - ამ სტატიის ყველაზე სასარგებლო ფაქტია. ის ხსნის, რატომ ასხლტება ლექციები: თქვენს მოზარდს გულწრფელად სჯერა, რომ გაფრთხილება სხვას ეხება. კითხვები და რეალური სცენარები გაფრთხილებებზე უკეთ მუშაობს, რადგან მოზარდს დასკვნამდე თავად მიჰყავს. ეს ციფრები იმასაც გეუბნებათ, საიდან დაიწყოთ: ძილიდან. მოზარდების თითქმის ნახევარი ამ ფასს საკუთარ თავზე უკვე გრძნობს, ამიტომ წესი „ტელეფონი საძინებლის გარეთ“ ის საუბარია, რომლის მოგებაც ნამდვილად შეგიძლიათ.',
+        ka: 'ეს სხვაობა - „სხვებისთვის სახიფათოა, ჩემთვის - არა“ - ამ სტატიის ყველაზე სასარგებლო ფაქტია. ის ხსნის, რატომ ასხლტება ლექციები: თქვენს მოზარდს გულწრფელად სჯერა, რომ გაფრთხილება სხვას ეხება. კითხვები და რეალური სცენარები გაფრთხილებებზე უკეთ მუშაობს, რადგან მოზარდი დასკვნამდე თავად მიჰყავს. ეს ციფრები იმასაც გეუბნებათ, საიდან დაიწყოთ: ძილიდან. მოზარდების თითქმის ნახევარი ამ ფასს საკუთარ თავზე უკვე გრძნობს, ამიტომ წესი „ტელეფონი საძინებლის გარეთ“ ის საუბარია, რომლის მოგებაც ნამდვილად შეგიძლიათ.',
       },
     },
     { type: 'h2', text: { en: 'How the feed hooks attention', ka: 'როგორ იჭერს ლენტა ყურადღებას' } },
