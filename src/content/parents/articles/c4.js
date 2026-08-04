@@ -13,7 +13,7 @@ export default {
   },
   teaser: {
     en: 'The Guardian Certificate as a class goal, the Family Media Agreement for parent evenings, and why a student-made poster beats anything you can buy.',
-    ka: 'დამცველის სერტიფიკატი კლასის მიზნად, ოჯახის მედიაშეთანხმება მშობელთა კრებისთვის, და რატომ სჯობს მოსწავლის გაკეთებული პლაკატი ყველაფერს, რისი ყიდვაც შეიძლება.',
+    ka: 'დამცველის სერტიფიკატი კლასის მიზნად, ოჯახის მედია-შეთანხმება მშობელთა კრებისთვის და რატომ სჯობს მოსწავლის გაკეთებული პლაკატი ყველაფერს, რისი ყიდვაც შეიძლება.',
   },
   lead: {
     en: 'A cyber-safety unit should leave physical traces: something on the wall, something in the student’s bag, something on the family fridge. This site gives you two things to print, and the missions give your students the raw material to make everything else themselves.',
@@ -32,7 +32,7 @@ export default {
       type: 'p',
       text: {
         en: 'The Family Media Agreement is the second printable: a one-page template where a family agrees on screen rules together - device-free hours, what gets shared, what happens when something goes wrong. Do not just send it home in schoolbags; it lands far better handed out at the end of a parent evening, after parents have seen with their own eyes what their teenagers are dealing with.',
-        ka: 'მეორე დასაბეჭდი მასალა ოჯახის მედიაშეთანხმებაა: ერთგვერდიანი შაბლონი, რომლითაც ოჯახი ეკრანის წესებზე ერთად თანხმდება - უმოწყობილობო საათები, რა ზიარდება და რა ხდება, როცა რაღაც არასწორად წავა. ნუ გააყოლებთ მას უბრალოდ სასკოლო ჩანთებს; ის ბევრად უკეთ მუშაობს მშობელთა კრების ბოლოს გადაცემული - მას შემდეგ, რაც მშობლები საკუთარი თვალით ნახავენ, რასთან უწევთ საქმე მათ შვილებს.',
+        ka: 'მეორე დასაბეჭდი მასალა ოჯახის მედია-შეთანხმებაა: ერთგვერდიანი შაბლონი, რომლითაც ოჯახი ეკრანის წესებზე ერთად თანხმდება - უმოწყობილობო საათები, რა ზიარდება და რა ხდება, როცა რაღაც არასწორად წავა. ნუ გააყოლებთ მას უბრალოდ სასკოლო ჩანთებს; ის ბევრად უკეთ მუშაობს მშობელთა კრების ბოლოს გადაცემული - მას შემდეგ, რაც მშობლები საკუთარი თვალით ნახავენ, რასთან უწევთ საქმე მათ შვილებს.',
       },
     },
     { type: 'h2', text: { en: 'Posters your students make themselves', ka: 'პლაკატები, რომლებსაც მოსწავლეები თავად ქმნიან' } },
@@ -86,7 +86,7 @@ export default {
       type: 'p',
       text: {
         en: 'The simplest agenda that works: spend the first fifteen minutes running one mission on the projector, exactly the way you run it with the class - parents vote on each choice with a show of hands. Pick Phishing Hunter or Scam Radar; parents get fooled by the same tricks their children do, and realizing that changes the tone of the room from "my child’s problem" to "our shared problem" in minutes. Then hand out the Family Media Agreement and give them the address of the parents’ section of this site - the shelves written for home cover everything you did not have time for. No slides needed. No lecture, ever.',
-        ka: 'უმარტივესი დღის წესრიგი, რომელიც მუშაობს: პირველი თხუთმეტი წუთი ერთ მისიას დაუთმეთ პროექტორზე - ზუსტად ისე, როგორც კლასთან ატარებთ: მშობლები ყველა არჩევანზე ხელის აწევით ყრიან კენჭს. აირჩიეთ „ფიშინგზე მონადირე“ ან „თაღლითობის რადარი“; მშობლები ზუსტად იმავე ხრიკებზე ტყუვდებიან, რომლებზეც მათი შვილები, და ამის გაცნობიერება ოთახის განწყობას წუთებში ცვლის - „ჩემი შვილის პრობლემიდან“ „ჩვენს საერთო პრობლემამდე“. შემდეგ დაურიგეთ ოჯახის მედიაშეთანხმება და მიეცით ამ საიტის მშობლების განყოფილების მისამართი - სახლისთვის დაწერილი თაროები ყველაფერს ფარავს, რისთვისაც დრო არ გეყოთ. სლაიდები არ არის საჭირო. ლექცია - არასოდეს.',
+        ka: 'უმარტივესი დღის წესრიგი, რომელიც მუშაობს: პირველი თხუთმეტი წუთი ერთ მისიას დაუთმეთ პროექტორზე - ზუსტად ისე, როგორც კლასთან ატარებთ: მშობლები ყველა არჩევანზე ხელის აწევით ყრიან კენჭს. აირჩიეთ „ფიშინგზე მონადირე“ ან „თაღლითობის რადარი“; მშობლები ზუსტად იმავე ხრიკებზე ტყუვდებიან, რომლებზეც მათი შვილები, და ამის გაცნობიერება ოთახის განწყობას წუთებში ცვლის - „ჩემი შვილის პრობლემიდან“ „ჩვენს საერთო პრობლემამდე“. შემდეგ დაურიგეთ ოჯახის მედია-შეთანხმება და მიეცით ამ საიტის მშობლების განყოფილების მისამართი - სახლისთვის დაწერილი თაროები ყველაფერს ფარავს, რისთვისაც დრო არ გეყოთ. სლაიდები არ არის საჭირო. ლექცია - არასოდეს.',
       },
     },
     {
@@ -101,7 +101,7 @@ export default {
       type: 'p',
       text: {
         en: 'One firm rule for everything on your walls: never display real incidents, and never name real students in examples - not even flatteringly, not even disguised. A classroom where a real case ever appeared on the wall is a classroom where no student will ever disclose anything again. Fictional names, fictional screenshots, mission scenarios: those are your only raw material. The missions exist precisely so that the class can discuss the danger without anyone in the room being the example.',
-        ka: 'ერთი მტკიცე წესი ყველაფრისთვის, რაც თქვენს კედლებზეა: არასოდეს გამოფინოთ რეალური შემთხვევები და მაგალითებში არასოდეს დაასახელოთ რეალური მოსწავლეები - ვერც ქების კონტექსტში, ვერც შენიღბულად. საკლასო ოთახში, სადაც კედელზე ერთხელ მაინც გამოჩნდა ნამდვილი შემთხვევა, ვეღარცერთი მოსწავლე ვეღარაფერს განდობს. გამოგონილი სახელები, გამოგონილი სქრინშოტები, მისიების სცენარები - ეს თქვენი ერთადერთი ნედლეულია. მისიები სწორედ იმისთვის არსებობს, რომ კლასმა საფრთხე ისე განიხილოს, რომ ოთახში მაგალითი არავინ იყოს.',
+        ka: 'ერთი მტკიცე წესი ყველაფრისთვის, რაც თქვენს კედლებზეა: არასოდეს გამოფინოთ რეალური შემთხვევები და მაგალითებში არასოდეს დაასახელოთ რეალური მოსწავლეები - არც ქების კონტექსტში, არც შენიღბულად. საკლასო ოთახში, სადაც კედელზე ერთხელ მაინც გამოჩნდა ნამდვილი შემთხვევა, ვეღარცერთი მოსწავლე ვეღარაფერს განდობს. გამოგონილი სახელები, გამოგონილი სქრინშოტები, მისიების სცენარები - ეს თქვენი ერთადერთი ნედლეულია. მისიები სწორედ იმისთვის არსებობს, რომ კლასმა საფრთხე ისე განიხილოს, რომ ოთახში მაგალითი არავინ იყოს.',
       },
     },
   ],

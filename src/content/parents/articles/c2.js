@@ -13,7 +13,7 @@ export default {
   },
   teaser: {
     en: 'One 45-minute skeleton that works for every mission, plus printable worksheets and ways to assess without testing fear.',
-    ka: 'ერთი 45-წუთიანი კარკასი, რომელიც ყველა მისიას ერგება, ამას გარდა - დასაბეჭდი სამუშაო ფურცლები და შეფასების გზები, რომლებიც შიშს არ ამოწმებს.',
+    ka: 'ერთი 45-წუთიანი კარკასი, რომელიც ყველა მისიას ერგება, ამის გარდა - დასაბეჭდი სამუშაო ფურცლები და შეფასების გზები, რომლებიც შიშს არ ამოწმებს.',
   },
   lead: {
     en: 'You do not need a new lesson plan for every cyber-safety topic. You need one good skeleton and ten missions to hang on it. The plan below has been shaped for a normal Georgian classroom: one projector, no student devices required, and a class of mixed confidence levels. Swap the mission, keep the structure.',
@@ -81,7 +81,7 @@ export default {
         },
         {
           en: 'Sensitive - prepare first: The Blackmail Trap, Upstander, and Stranger Signals touch blackmail, bullying, and grooming. Set ground rules before you start (no names, no real cases from this class, anyone may pass) and read the disclosure article in this shelf beforehand - after these lessons, a student may come to you with something real.',
-          ka: 'მგრძნობიარე - ჯერ მოემზადეთ: „შანტაჟის ხაფანგი“, „მხარში მდგომი“ და „უცნობის სიგნალები“ შანტაჟს, ბულინგსა და გრუმინგს ეხება. დაწყებამდე შეთანხმდით ძირითად წესებზე (არავითარი სახელები, არავითარი რეალური შემთხვევები ამ კლასიდან, ნებისმიერს შეუძლია გამოტოვება) და წინასწარ წაიკითხეთ ამავე თაროზე განდობის სტატია - ამ გაკვეთილების შემდეგ შესაძლოა მოსწავლე ნამდვილი პრობლემით მოგმართოთ.',
+          ka: 'მგრძნობიარე - ჯერ მოემზადეთ: „შანტაჟის ხაფანგი“, „მხარში მდგომი“ და „უცნობის სიგნალები“ შანტაჟს, ბულინგსა და გრუმინგს ეხება. დაწყებამდე შეთანხმდით ძირითად წესებზე (არავითარი სახელები, არავითარი რეალური შემთხვევები ამ კლასიდან, ნებისმიერს შეუძლია გამოტოვება) და წინასწარ წაიკითხეთ ამავე თაროზე განდობის სტატია - ამ გაკვეთილების შემდეგ შესაძლოა მოსწავლემ ნამდვილი პრობლემით მოგმართოთ.',
         },
         {
           en: 'Save Guardian Exam for the end: it mixes every topic and works best as a unit finale - and as the class goal, since finishing it earns the printable certificate.',

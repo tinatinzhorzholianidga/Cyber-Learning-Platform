@@ -17,7 +17,7 @@ export default {
   },
   lead: {
     en: 'This is the most important article on this shelf. A good online-safety lesson does its job: it tells students that what happened to them has a name and that adults can help. So after Upstander, The Blackmail Trap, or Stranger Signals, expect disclosures - bullying, blackmail, an adult who has been messaging them. You do not need to be a psychologist or an investigator. You need to be the first calm adult in the chain, and this article shows you how.',
-    ka: 'ეს ამ თაროს ყველაზე მნიშვნელოვანი სტატიაა. კარგი გაკვეთილი ონლაინ უსაფრთხოებაზე თავის საქმეს აკეთებს: მოსწავლეებს ეუბნება, რომ იმას, რაც მათ გადახდათ, სახელი აქვს და რომ უფროსებს დახმარება შეუძლიათ. ამიტომ „მხარში მდგომის“, „შანტაჟის ხაფანგის“ ან „უცნობის სიგნალების“ შემდეგ ელოდეთ განდობებს - ბულინგი, შანტაჟი, უფროსი, რომელიც მოსწავლეს მიწერს. თქვენ არც ფსიქოლოგობა გჭირდებათ და არც გამომძიებლობა. გჭირდებათ, იყოთ პირველი მშვიდი უფროსი ამ ჯაჭვში - და ეს სტატია გაჩვენებთ, როგორ.',
+    ka: 'ეს ამ თაროს ყველაზე მნიშვნელოვანი სტატიაა. კარგი გაკვეთილი ონლაინ უსაფრთხოებაზე თავის საქმეს აკეთებს: მოსწავლეებს ეუბნება, რომ იმას, რაც მათ გადახდათ, სახელი აქვს და რომ უფროსებს დახმარება შეუძლიათ. ამიტომ „მხარში მდგომის“, „შანტაჟის ხაფანგის“ ან „უცნობის სიგნალების“ შემდეგ ელოდეთ განდობებს - ბულინგი, შანტაჟი, უფროსი, რომელიც მოსწავლეს სწერს. თქვენ არც ფსიქოლოგობა გჭირდებათ და არც გამომძიებლობა. გჭირდებათ, იყოთ პირველი მშვიდი უფროსი ამ ჯაჭვში - და ეს სტატია გაჩვენებთ, როგორ.',
   },
   body: [
     { type: 'h2', text: { en: 'The first sixty seconds', ka: 'პირველი სამოცი წამი' } },
@@ -91,7 +91,7 @@ export default {
         },
         {
           en: 'Inform the school psychologist and the administration the same day, following your school’s child-protection procedure. This is a duty, not an option - and it is also what protects you.',
-          ka: 'იმავე დღეს შეატყობინეთ სკოლის ფსიქოლოგსა და ადმინისტრაციას, თქვენი სკოლის ბავშვთა დაცვის პროცედურის შესაბამისად. ეს მოვალეობაა და არა არჩევანი - და ესვე იცავს თქვენც.',
+          ka: 'იმავე დღეს შეატყობინეთ სკოლის ფსიქოლოგსა და ადმინისტრაციას, თქვენი სკოლის ბავშვთა დაცვის პროცედურის შესაბამისად. ეს მოვალეობაა და არა არჩევანი - და ესვე გიცავთ თქვენც.',
         },
         {
           en: 'If it is a crime - blackmail or sextortion, grooming, threats of violence - it goes to the police: call 112 or contact the cyber-crime division of the Ministry of Internal Affairs of Georgia. If an intimate image of a person under 18 is involved, NCMEC’s free Take It Down service (takeitdown.ncmec.org) can block it on major platforms.',

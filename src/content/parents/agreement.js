@@ -4,7 +4,7 @@ export default {
   title: { en: 'Our Family Media Agreement', ka: 'ჩვენი ოჯახური მედია-შეთანხმება' },
   sub: {
     en: 'Fill this in together. Rules agreed with you beat rules imposed on you.',
-    ka: 'შეავსეთ ერთად. შენთან ერთად შეთანხმებული წესები ჯობია თავს მოხვეულ წესებს.',
+    ka: 'შეავსეთ ერთად. შენთან ერთად შეთანხმებული წესები ჯობია თავსმოხვეულ წესებს.',
   },
   sections: [
     {
