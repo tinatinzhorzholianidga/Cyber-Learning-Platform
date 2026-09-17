@@ -158,8 +158,29 @@ function decorations(ctx) {
  * state = { emotion, blink 0..1 (1 = closed), pupilX -1..1, pupilY -1..1,
  *           mouthOpen 0..1 }
  */
+/* soft recessed shadow at the screen edge - the screen sits deep
+   inside the 3D armor plate, so it darkens toward the rim */
+function metalFrame(ctx, S) {
+  ctx.strokeStyle = 'rgba(43,35,80,0.32)'
+  ctx.lineWidth = 6
+  roundRect(ctx, 25, 25, S - 50, S - 50, 105)
+  ctx.stroke()
+  ctx.strokeStyle = 'rgba(43,35,80,0.14)'
+  ctx.lineWidth = 20
+  roundRect(ctx, 38, 38, S - 76, S - 76, 94)
+  ctx.stroke()
+}
+
 export function drawFace(ctx, state) {
-  const { emotion = 'happy', blink = 0, pupilX = 0, pupilY = 0, mouthOpen = 0 } = state
+  const {
+    emotion = 'happy',
+    blink = 0,
+    pupilX = 0,
+    pupilY = 0,
+    mouthOpen = 0,
+    noPlate = false,
+    metal = false,
+  } = state
   const S = FACE_SIZE
   ctx.clearRect(0, 0, S, S)
 
@@ -167,21 +188,27 @@ export function drawFace(ctx, state) {
   ctx.fillStyle = SCREEN
   roundRect(ctx, 22, 22, S - 44, S - 44, 108)
   ctx.fill()
-  ctx.strokeStyle = VIOLET
-  ctx.lineWidth = 16
-  roundRect(ctx, 30, 30, S - 60, S - 60, 100)
-  ctx.stroke()
-  ctx.strokeStyle = VIOLET_SOFT
-  ctx.lineWidth = 4
-  roundRect(ctx, 48, 48, S - 96, S - 96, 86)
-  ctx.stroke()
+  if (metal) {
+    metalFrame(ctx, S)
+  } else {
+    ctx.strokeStyle = VIOLET
+    ctx.lineWidth = 16
+    roundRect(ctx, 30, 30, S - 60, S - 60, 100)
+    ctx.stroke()
+    ctx.strokeStyle = VIOLET_SOFT
+    ctx.lineWidth = 4
+    roundRect(ctx, 48, 48, S - 96, S - 96, 86)
+    ctx.stroke()
+  }
 
-  // DGA plate on the forehead
-  ctx.fillStyle = INK
-  ctx.font = '800 46px "Noto Sans Georgian Variable", "Arial Black", sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('D G A', S / 2, 122)
+  // DGA plate on the forehead (hidden when the hard hat carries the decal)
+  if (!noPlate) {
+    ctx.fillStyle = INK
+    ctx.font = '800 46px "Noto Sans Georgian Variable", "Arial Black", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('D G A', S / 2, 122)
+  }
 
   decorations(ctx)
 
@@ -293,5 +320,5 @@ function cy_(y) {
    actually changed (texture uploads are the expensive part). */
 export function faceKey(state) {
   const q = (v) => Math.round(v * 24)
-  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}`
+  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}|${state.metal ? 1 : 0}`
 }
