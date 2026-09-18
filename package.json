@@ -1,0 +1,23 @@
+{
+  "name": "io-for-main-page",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "IO — the welcome host for the elearning.gov.ge main page (bilingual KA/EN 3D guide).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "node scripts/check-hints.mjs"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^8.18.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
+  }
+}
