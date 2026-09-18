@@ -152,6 +152,13 @@ publishes it to **GitHub Pages** on every push to `main`. One-time setup in the 
 `https://<owner>.github.io/IO-for-main-page/` (`base` in `vite.config.js` must
 match the repository name).
 
+The workflow only publishes from a repository **named `IO-for-main-page`**. If
+this code lives as a branch inside another repository (for example the
+CyberHero repository), the workflow is skipped there on purpose — a repository
+can serve only one GitHub Pages site, and that one belongs to CyberHero. To put
+IO's welcome page online, create a repository called `IO-for-main-page` and push
+this branch to its `main`.
+
 ---
 
 ## Privacy

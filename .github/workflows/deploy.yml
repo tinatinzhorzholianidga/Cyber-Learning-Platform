@@ -16,6 +16,12 @@ concurrency:
 
 jobs:
   build:
+    # This site is built for https://<owner>.github.io/IO-for-main-page/
+    # (see `base` in vite.config.js), so it only publishes from a
+    # repository of that name. Anywhere else (e.g. a branch inside another
+    # project's repository) the workflow is skipped and never touches that
+    # repository's GitHub Pages site.
+    if: github.event.repository.name == 'IO-for-main-page'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
