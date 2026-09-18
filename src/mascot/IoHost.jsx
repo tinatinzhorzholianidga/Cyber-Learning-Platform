@@ -18,7 +18,8 @@ const IoHost = forwardRef(function IoHost({ lang = 'ka', size = 340, skin = 'cla
   const [gesture, setGesture] = useState(null)
   const gestureId = useRef(0)
   const timers = useRef([])
-  const hovering = useRef(null)
+  const hovering = useRef(null) // the card IO is reacting to right now
+  const hoverSources = useRef(new Map()) // 'mouse' | 'focus' -> the card that input is on
   const lastCycled = useRef(null)
 
   const later = (fn, ms) => {
@@ -51,11 +52,12 @@ const IoHost = forwardRef(function IoHost({ lang = 'ka', size = 340, skin = 'cla
   useEffect(() => {
     later(() => say(host.greet(), { gestureType: 'wave' }), reduced ? 0 : 500)
     later(() => {
-      if (!hovering.current) {
-        const intro = host.intro()
-        lastCycled.current = intro
-        say(intro)
-      }
+      // skip if a card is being hovered, or IO already moved on (a click
+      // or an early drift-back has set his current line)
+      if (hovering.current || lastCycled.current) return
+      const intro = host.intro()
+      lastCycled.current = intro
+      say(intro)
     }, 6500)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -63,15 +65,32 @@ const IoHost = forwardRef(function IoHost({ lang = 'ka', size = 340, skin = 'cla
   const onTap = () => {
     const pick = host.next()
     lastCycled.current = pick
-    say(pick) // the model already waves on tap
+    // a pointer tap already waves inside the model; firing the same wave
+    // here gives keyboard taps (Enter / Space) the reaction too
+    say(pick, { gestureType: 'wave' })
+  }
+
+  const reactTo = (card) => {
+    if (hovering.current === card) return // already on it via the other input - keep the line
+    hovering.current = card
+    say(host.hover(card), { gestureType: card === 'kids' ? 'bounce' : null })
   }
 
   useImperativeHandle(ref, () => ({
-    hover(card) {
-      hovering.current = card
-      say(host.hover(card), { gestureType: card === 'kids' ? 'bounce' : null })
+    /* `source` is 'mouse' or 'focus' - both can rest on a card at once
+       (a click focuses the link first), so IO only reacts to a change of
+       card, not to every input event */
+    hover(card, source = 'mouse') {
+      hoverSources.current.set(source, card)
+      reactTo(card)
     },
-    unhover() {
+    unhover(source = 'mouse') {
+      hoverSources.current.delete(source)
+      const still = [...hoverSources.current.values()][0]
+      if (still) {
+        reactTo(still) // the other input is still on a card
+        return
+      }
       hovering.current = null
       // drift back to what he was saying before the visitor peeked; if
       // the peek came before his intro, introduce himself now
@@ -82,7 +101,9 @@ const IoHost = forwardRef(function IoHost({ lang = 'ka', size = 340, skin = 'cla
       }, 1400)
     },
     farewell() {
-      say(host.farewell(), { gestureType: 'bounce' })
+      const bye = host.farewell()
+      lastCycled.current = bye // so a later drift-back keeps the goodbye
+      say(bye, { gestureType: 'bounce' })
     },
   }))
 
@@ -99,11 +120,12 @@ const IoHost = forwardRef(function IoHost({ lang = 'ka', size = 340, skin = 'cla
       return undefined
     }
     setShown('')
+    const chars = Array.from(text) // code points, so an emoji is never cut in half
     let i = 0
     const iv = setInterval(() => {
       i += 2
-      setShown(text.slice(0, i))
-      if (i >= text.length) clearInterval(iv)
+      setShown(chars.slice(0, i).join(''))
+      if (i >= chars.length) clearInterval(iv)
     }, 22)
     return () => clearInterval(iv)
   }, [text, reduced])
@@ -112,8 +134,13 @@ const IoHost = forwardRef(function IoHost({ lang = 'ka', size = 340, skin = 'cla
 
   return (
     <div className="io-host">
-      <div className="io-bubble" role="status" aria-live="polite" aria-atomic="true" data-empty={!text || undefined}>
-        <p>{shown || ' '}</p>
+      <div className="io-bubble" data-empty={!text || undefined}>
+        {/* the typed text is for the eyes; screen readers get the whole
+            line once, from the hidden live region */}
+        <p aria-hidden="true">{shown || ' '}</p>
+        <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {text}
+        </span>
       </div>
       <RobotCanvas
         size={size}

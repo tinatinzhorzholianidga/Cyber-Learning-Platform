@@ -63,7 +63,7 @@ export function createHost({ seed = 0, date = new Date() } = {}) {
     cursor[key] = i + 1
     return { key, line: pool[i], mood: MOOD[key] || 'happy' }
   }
-  let step = seed % CYCLE.length
+  let step = 0 // the cycle always starts with orientation; seed only rotates lines inside a pool
 
   return {
     /* first thing he says: a time-of-day greeting */

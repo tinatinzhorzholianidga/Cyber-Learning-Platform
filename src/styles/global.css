@@ -18,6 +18,7 @@
   --muted: #5b6b82;
   --line: #dfe6ef;
   --kids: #6c5ce7; /* CyberHero's violet, for the kids door */
+  --kids-ink: #5546c8; /* darker violet for small text on --kids-soft (AA contrast) */
   --kids-soft: #efecff;
   --radius: 22px;
   --radius-sm: 16px;
@@ -83,6 +84,19 @@ a {
 }
 .skip-link:focus {
   top: 12px;
+}
+
+/* visually hidden, still read by assistive technology */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ---- top bar (agency) ------------------------------------------------- */
@@ -408,7 +422,7 @@ h1 {
   color: var(--blue);
 }
 .path-kids .path-badge {
-  color: var(--kids);
+  color: var(--kids-ink);
 }
 .path-title {
   font-size: 1.35rem;
@@ -435,7 +449,7 @@ h1 {
 }
 .path-kids .chip {
   background: var(--kids-soft);
-  color: var(--kids);
+  color: var(--kids-ink);
 }
 .path-cta {
   margin-top: 8px;
@@ -454,7 +468,7 @@ h1 {
   background: var(--blue-2);
 }
 .path-kids:hover .path-cta {
-  background: #5546c8;
+  background: var(--kids-ink);
 }
 
 /* ---- footer ---------------------------------------------------------- */
@@ -474,6 +488,7 @@ h1 {
 /* ---- embed mode (iframe inside the real page) ------------------------ */
 body.is-embed {
   background: transparent;
+  overflow: hidden; /* an embedding iframe must never grow a scrollbar */
 }
 .embed-stage {
   min-height: 100vh;

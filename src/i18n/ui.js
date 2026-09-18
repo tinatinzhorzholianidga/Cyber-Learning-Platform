@@ -3,17 +3,21 @@
 export const UI = {
   ka: {
     htmlLang: 'ka',
+    pageTitle: 'იო - კიბერუსაფრთხოების გზამკვლევი · elearning.gov.ge',
+    metaDescription:
+      'იო - კიბერუსაფრთხოების გზამკვლევი. ციფრული მმართველობისა და კიბერუსაფრთხოების სასწავლო პლატფორმის მისასალმებელი გვერდი.',
     agency: 'ციფრული მმართველობის სააგენტო',
     platform: 'ციფრული მმართველობისა და კიბერუსაფრთხოების სასწავლო პლატფორმა',
     login: 'შესვლა',
     langLabel: 'ენა',
-    skipToContent: 'გადადი შინაარსზე',
+    skipToContent: 'მთავარ შინაარსზე გადასვლა',
     heroKicker: 'მოგესალმებით',
     heroTitle: 'გამარჯობა! მე იო ვარ -',
     heroTitleGrad: 'თქვენი კიბერუსაფრთხოების გზამკვლევი',
     heroSub: 'აირჩიეთ, საიდან დაიწყებთ: საბაზისო კურსით უფროსებისთვის თუ კიბერგმირით - ბავშვებისა და მოზარდებისთვის.',
-    ioLabel: 'იო - კიბერუსაფრთხოების გზამკვლევი რობოტი',
+    ioLabel: 'იო, კიბერუსაფრთხოების გზამკვლევი რობოტი - დააწკაპუნეთ, რომ კიდევ რამე გითხრათ',
     ioHint: 'დააწკაპუნეთ იოზე - კიდევ ბევრი აქვს სათქმელი',
+    newTab: 'იხსნება ახალ ჩანართში',
     pathsTitle: 'საიდან დავიწყოთ?',
     basic: {
       badge: 'უფროსებისთვის · თანამშრომლებისთვის',
@@ -36,6 +40,9 @@ export const UI = {
   },
   en: {
     htmlLang: 'en',
+    pageTitle: 'IO - your cybersecurity guide · elearning.gov.ge',
+    metaDescription:
+      'IO, the cybersecurity guide. The welcome page of the Digital Governance & Cybersecurity Learning Platform.',
     agency: 'Digital Governance Agency',
     platform: 'Digital Governance & Cybersecurity Learning Platform',
     login: 'Log in',
@@ -45,8 +52,9 @@ export const UI = {
     heroTitle: "Hi! I'm IO -",
     heroTitleGrad: 'your cybersecurity guide',
     heroSub: 'Pick where to start: the basic course for adults, or CyberHero for kids and teens.',
-    ioLabel: 'IO, the cybersecurity guide robot',
+    ioLabel: 'IO, the cybersecurity guide robot - press to hear more',
     ioHint: 'Click IO - he has more to say',
+    newTab: 'opens in a new tab',
     pathsTitle: 'Where shall we start?',
     basic: {
       badge: 'For adults · employees',

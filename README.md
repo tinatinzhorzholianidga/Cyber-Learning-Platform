@@ -35,17 +35,20 @@ reuses IO's 3D character code by copy.
 - Georgian is the default language; the choice is remembered (`localStorage`)
   and can be forced with `?lang=ka|en`.
 
-Accessibility: the bubble is an `aria-live` region, the canvas has an `aria-label`,
-cards are real links (keyboard + screen-reader friendly), there's a skip link,
-and `prefers-reduced-motion` switches IO to a still, on-demand render.
+Accessibility: every line IO says is announced once through a hidden
+`aria-live` region (the visible typewriter is hidden from screen readers), IO
+himself is a keyboard-operable button (Enter / Space makes him talk), cards
+are real links named by their title + call to action with a "opens in a new
+tab" note where relevant, there's a skip link, colours meet AA contrast, and
+`prefers-reduced-motion` switches IO to a still, on-demand render.
 
 ---
 
 ## Files
 
 ```
-index.html                 page shell, Georgian + Inter web fonts
-src/main.jsx               React entry
+index.html                 page shell
+src/main.jsx               React entry + self-hosted web fonts (Noto Sans Georgian, Inter)
 src/App.jsx                the welcome page (top bar, hero, path cards, footer, embed mode)
 src/styles/global.css      DGA palette + layout, responsive, embed styles
 src/i18n/ui.js             UI strings (KA/EN): titles, card texts, buttons
@@ -126,22 +129,25 @@ The simplest, theme-independent way is an **iframe** in the Moodle front page
 <iframe
   src="https://tinatinzhorzholianidga.github.io/IO-for-main-page/?embed=1&lang=ka&size=260"
   title="იო - კიბერუსაფრთხოების გზამკვლევი"
-  width="340" height="400"
+  width="340" height="460"
   style="border:0;background:transparent"
   loading="lazy"
   allowtransparency="true"></iframe>
 ```
 
-Use `lang=en` for the English page. The whole welcome page can also simply be
-linked, or the redesigned front page can be built on this project directly
-(`App.jsx` is the page; `IoHost` is the reusable piece).
+Use `lang=en` for the English page. Keep the height at 460 or more so IO's
+longest lines never produce a scrollbar (the embed page hides overflow
+anyway). Inside an iframe IO's eyes follow the cursor only while it is over
+the iframe. The whole welcome page can also simply be linked, or the
+redesigned front page can be built on this project directly (`App.jsx` is the
+page; `IoHost` is the reusable piece).
 
 ---
 
 ## Deploying
 
-The included GitHub Actions workflow builds the site and publishes it to
-**GitHub Pages** on every push to `main`. One-time setup in the repository:
+The included GitHub Actions workflow runs `npm run check`, builds the site and
+publishes it to **GitHub Pages** on every push to `main`. One-time setup in the repository:
 **Settings → Pages → Source: GitHub Actions.** The site then lives at
 `https://<owner>.github.io/IO-for-main-page/` (`base` in `vite.config.js` must
 match the repository name).
@@ -150,5 +156,6 @@ match the repository name).
 
 ## Privacy
 
-Static site, no backend, no cookies, no analytics. The only thing stored is the
-chosen language, in the visitor's own browser.
+Static site, no backend, no cookies, no analytics, no third-party requests
+(the web fonts are bundled with the site, not loaded from Google). The only
+thing stored is the chosen language, in the visitor's own browser.

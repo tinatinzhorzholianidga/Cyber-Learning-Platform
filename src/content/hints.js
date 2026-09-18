@@ -46,7 +46,7 @@ export const HINTS = {
   pickPath: [
     { ka: "ორი გზა გაქვთ: საბაზისო კურსი უფროსებისთვის, კიბერგმირი - ბავშვებისა და მოზარდებისთვის.", en: "Two paths: the Basic Course for adults, or CyberHero for kids and teens." },
     { ka: "საკუთარი თავისთვის ან სამსახურისთვის - საბაზისო კურსი. შვილისთვის ან კლასისთვის - კიბერგმირი.", en: "For yourself or your workplace, the Basic Course. For a child or a classroom, CyberHero." },
-    { ka: "ვერ წყვეტთ? უფროსებისთვის საბაზისო კურსია, 18 წლამდე მოზარდებისთვის კი - კიბერგმირი.", en: "Can't decide? Adults start with the Basic Course; anyone under 18 starts with CyberHero." },
+    { ka: "ვერ წყვეტთ? უფროსებისთვის საბაზისო კურსია, 13-18 წლის მოზარდებისთვის კი - კიბერგმირი.", en: "Can't decide? Adults start with the Basic Course; teens aged 13 to 18 start with CyberHero." },
   ],
 
   // click cycle: the Basic Cybersecurity Course (adults)

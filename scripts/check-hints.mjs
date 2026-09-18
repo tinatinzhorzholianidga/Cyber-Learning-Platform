@@ -9,7 +9,7 @@ const REQUIRED = {
   language: 1, aboutDga: 1, encouragement: 1, hoverBasic: 1, hoverKids: 1, morning: 1, afternoon: 1,
   evening: 1, farewell: 1,
 }
-const MAX_LEN = 120
+const MAX_LEN = 110
 const TIP_WORDS = /(პაროლ|ფიშინგ|ანტივირუს|password|phishing|antivirus|two-factor|2fa|update your|განაახლ)/i
 const EMOJI = /\p{Extended_Pictographic}/gu
 

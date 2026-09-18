@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { UI, LANGS, initialLang } from './i18n/ui.js'
 import IoHost from './mascot/IoHost.jsx'
 
@@ -18,12 +18,14 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = t.htmlLang
+    document.title = t.pageTitle
+    document.querySelector('meta[name="description"]')?.setAttribute('content', t.metaDescription)
     try {
       window.localStorage.setItem('io.lang', lang)
     } catch {
       /* ignore */
     }
-  }, [lang, t.htmlLang])
+  }, [lang, t])
 
   useEffect(() => {
     document.body.classList.toggle('is-embed', embed)
@@ -93,7 +95,7 @@ export default function App() {
             <h2 className="paths-title">{t.pathsTitle}</h2>
             <div className="paths">
               <PathCard kind="basic" data={t.basic} io={io} />
-              <PathCard kind="kids" data={t.kids} io={io} external />
+              <PathCard kind="kids" data={t.kids} io={io} external newTab={t.newTab} />
             </div>
           </div>
         </section>
@@ -108,24 +110,27 @@ export default function App() {
 }
 
 /* One of the two doors. Hover / focus makes IO react; choosing it makes
-   him wave goodbye (the link itself navigates normally). */
-function PathCard({ kind, data, io, external = false }) {
-  const enter = () => io.current?.hover(kind)
-  const leave = () => io.current?.unhover()
+   him wave goodbye (the link itself navigates normally). The card's
+   accessible name is title + call to action, not the whole card text. */
+function PathCard({ kind, data, io, external = false, newTab = '' }) {
+  const id = useId()
   return (
     <a
       className={`path-card path-${kind}`}
       href={data.url}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
-      onMouseEnter={enter}
-      onMouseLeave={leave}
-      onFocus={enter}
-      onBlur={leave}
+      aria-labelledby={`${id}-title ${id}-cta`}
+      onMouseEnter={() => io.current?.hover(kind, 'mouse')}
+      onMouseLeave={() => io.current?.unhover('mouse')}
+      onFocus={() => io.current?.hover(kind, 'focus')}
+      onBlur={() => io.current?.unhover('focus')}
       onClick={() => io.current?.farewell()}
     >
       <span className="path-badge">{data.badge}</span>
-      <span className="path-title">{data.title}</span>
+      <span className="path-title" id={`${id}-title`}>
+        {data.title}
+      </span>
       <span className="path-desc">{data.desc}</span>
       <span className="path-chips">
         {data.chips.map((c) => (
@@ -134,8 +139,9 @@ function PathCard({ kind, data, io, external = false }) {
           </span>
         ))}
       </span>
-      <span className="path-cta">
+      <span className="path-cta" id={`${id}-cta`}>
         {data.cta} <span aria-hidden="true">→</span>
+        {external && newTab ? <span className="sr-only"> ({newTab})</span> : null}
       </span>
     </a>
   )
