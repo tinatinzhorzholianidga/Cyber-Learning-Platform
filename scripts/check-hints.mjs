@@ -1,7 +1,8 @@
 /* Sanity checks for IO's main-page lines (src/content/hints.js):
    every key present, en/ka parity, bubble-friendly length, at most one
-   emoji per line, and a soft warning when a line looks like a
-   cyber-security tip (which belongs inside the courses, not here). */
+   emoji per line, dash/quote typography, and a soft warning when a line
+   looks like a cyber-security tip (which belongs inside the courses,
+   not here). */
 import { HINTS } from '../src/content/hints.js'
 
 const REQUIRED = {
@@ -46,6 +47,14 @@ for (const [key, min] of Object.entries(REQUIRED)) {
     // translation (brand names like CyberHero / English are allowed)
     const stripped = line.ka.replace(/English|CyberHero|IO|DGA|elearning\.gov\.ge/g, '')
     if (/[a-z]/i.test(stripped)) warn(`${key}[${i}].ka: contains Latin letters - "${line.ka}"`)
+    // typography (Georgian orthography, §6.9): a hyphen never stands in
+    // for a dash - use the spaced em dash " — "; quotes are „…“
+    for (const l of ['en', 'ka']) {
+      if (/ - /.test(line[l])) err(`${key}[${i}].${l}: hyphen used as a dash - write " — "`)
+    }
+    const open = (line.ka.match(/„/g) || []).length
+    const close = (line.ka.match(/“/g) || []).length
+    if (/["”]/.test(line.ka) || open !== close) err(`${key}[${i}].ka: use Georgian quotes „…“ - "${line.ka}"`)
   })
 }
 

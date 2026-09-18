@@ -3,26 +3,26 @@
 export const UI = {
   ka: {
     htmlLang: 'ka',
-    pageTitle: 'იო - კიბერუსაფრთხოების გზამკვლევი · elearning.gov.ge',
+    pageTitle: 'იო — კიბერუსაფრთხოების გზამკვლევი · elearning.gov.ge',
     metaDescription:
-      'იო - კიბერუსაფრთხოების გზამკვლევი. ციფრული მმართველობისა და კიბერუსაფრთხოების სასწავლო პლატფორმის მისასალმებელი გვერდი.',
+      'იო — კიბერუსაფრთხოების გზამკვლევი. ციფრული მმართველობისა და კიბერუსაფრთხოების სასწავლო პლატფორმის მისასალმებელი გვერდი.',
     agency: 'ციფრული მმართველობის სააგენტო',
     platform: 'ციფრული მმართველობისა და კიბერუსაფრთხოების სასწავლო პლატფორმა',
     login: 'შესვლა',
     langLabel: 'ენა',
     skipToContent: 'მთავარ შინაარსზე გადასვლა',
     heroKicker: 'მოგესალმებით',
-    heroTitle: 'გამარჯობა! მე იო ვარ -',
+    heroTitle: 'გამარჯობა! მე იო ვარ —',
     heroTitleGrad: 'თქვენი კიბერუსაფრთხოების გზამკვლევი',
-    heroSub: 'აირჩიეთ, საიდან დაიწყებთ: საბაზისო კურსით უფროსებისთვის თუ კიბერგმირით - ბავშვებისა და მოზარდებისთვის.',
-    ioLabel: 'იო, კიბერუსაფრთხოების გზამკვლევი რობოტი - დააწკაპუნეთ, რომ კიდევ რამე გითხრათ',
-    ioHint: 'დააწკაპუნეთ იოზე - კიდევ ბევრი აქვს სათქმელი',
+    heroSub: 'აირჩიეთ, საიდან დაიწყებთ: საბაზისო კურსით უფროსებისთვის თუ კიბერგმირით — ბავშვებისა და მოზარდებისთვის.',
+    ioLabel: 'იო, კიბერუსაფრთხოების გზამკვლევი რობოტი — დააწკაპუნეთ, რომ კიდევ რამე გითხრათ',
+    ioHint: 'დააწკაპუნეთ იოზე — კიდევ ბევრი აქვს სათქმელი',
     newTab: 'იხსნება ახალ ჩანართში',
     pathsTitle: 'საიდან დავიწყოთ?',
     basic: {
       badge: 'უფროსებისთვის · თანამშრომლებისთვის',
       title: 'კიბერუსაფრთხოების საბაზისო კურსი',
-      desc: 'ცხრა თემა, დაახლოებით 3 საათი და სერტიფიკატი ბოლოს. ყველასთვის, ვინც ყოველდღიურად იყენებს კომპიუტერსა და ინტერნეტს.',
+      desc: '9 თემა, დაახლოებით 3 საათი, ბოლოს კი სერტიფიკატი. ყველასთვის, ვინც ყოველდღიურად იყენებს კომპიუტერსა და ინტერნეტს.',
       chips: ['~3 საათი', '9 თემა', 'ტესტი + სერტიფიკატი'],
       cta: 'კურსის დაწყება',
       url: 'https://elearning.gov.ge/course/view.php?id=18',
@@ -30,7 +30,7 @@ export const UI = {
     kids: {
       badge: 'ბავშვებისთვის · მოზარდებისთვის · მშობლებისთვის',
       title: 'კიბერგმირი',
-      desc: 'სცენარული მისიები 13-18 წლის მოზარდებისთვის, გზამკვლევები მშობლებისა და მასწავლებლებისთვის - და მე, იო, ყოველ ნაბიჯზე გვერდით.',
+      desc: 'სცენარული მისიები 13-18 წლის მოზარდებისთვის, გზამკვლევები მშობლებისა და მასწავლებლებისთვის — და მე, იო, ყოველ ნაბიჯზე თქვენ გვერდით.',
       chips: ['10 მისია', 'ქართული / English', 'უფასო'],
       cta: 'კიბერგმირზე გადასვლა',
       url: 'https://tinatinzhorzholianidga.github.io/Cyber-Learning-Platform/',
@@ -40,7 +40,7 @@ export const UI = {
   },
   en: {
     htmlLang: 'en',
-    pageTitle: 'IO - your cybersecurity guide · elearning.gov.ge',
+    pageTitle: 'IO — your cybersecurity guide · elearning.gov.ge',
     metaDescription:
       'IO, the cybersecurity guide. The welcome page of the Digital Governance & Cybersecurity Learning Platform.',
     agency: 'Digital Governance Agency',
@@ -52,8 +52,8 @@ export const UI = {
     heroTitle: "Hi! I'm IO -",
     heroTitleGrad: 'your cybersecurity guide',
     heroSub: 'Pick where to start: the basic course for adults, or CyberHero for kids and teens.',
-    ioLabel: 'IO, the cybersecurity guide robot - press to hear more',
-    ioHint: 'Click IO - he has more to say',
+    ioLabel: 'IO, the cybersecurity guide robot — press to hear more',
+    ioHint: 'Click IO — he has more to say',
     newTab: 'opens in a new tab',
     pathsTitle: 'Where shall we start?',
     basic: {
@@ -67,7 +67,7 @@ export const UI = {
     kids: {
       badge: 'For kids · teens · parents',
       title: 'CyberHero',
-      desc: 'Scenario missions for ages 13-18, guides for parents and teachers - and me, IO, by your side at every step.',
+      desc: 'Scenario missions for ages 13-18, guides for parents and teachers — and me, IO, by your side at every step.',
       chips: ['10 missions', 'Georgian / English', 'Free'],
       cta: 'Go to CyberHero',
       url: 'https://tinatinzhorzholianidga.github.io/Cyber-Learning-Platform/',
