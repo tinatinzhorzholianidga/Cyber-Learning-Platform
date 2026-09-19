@@ -95,6 +95,11 @@ export default function RobotModel({
   skin = 'classic', // 'classic' (headphones + sprout) | 'metal' (droid armor, no headgear)
   holdup = false, // raise an open palm: "hold up, under construction"
   onTap,
+  /* talk mode (docs/io-voice-plan.md §5.2) - all three are no-ops at
+     their defaults, so the host page renders exactly as before */
+  mouthLevel = null, // { current: 0..1 | null } ref (or a number): drives the mouth from audio instead of the sine wave
+  listening = false, // the listening cue: eyes a touch wider, LEDs pulse faster
+  tapReaction = true, // false: a tap still calls onTap but plays no wave / excited overlay
 }) {
   const metal = skin === 'metal' && variant !== 'builder'
   const invalidate = useThree((s) => s.invalidate)
@@ -116,6 +121,8 @@ export default function RobotModel({
     spring: { s: 1, v: 0 }, // squash & stretch
     overlay: null, // { emotion, until }
     holdBlend: 0, // 0 = arm resting, 1 = palm raised in "hold up"
+    mouth: 0, // smoothed audio-driven mouth opening (talk mode)
+    listen: 0, // 0 = not listening, 1 = listening cue fully on
     drawnKey: '',
   })
 
@@ -307,9 +314,11 @@ export default function RobotModel({
       }
     }
 
-    /* ---- chest LEDs pulse ---- */
+    /* ---- chest LEDs pulse (faster while listening; identical at l = 0) ---- */
+    a.listen += ((listening ? 1 : 0) - a.listen) * Math.min(1, dt * 4)
+    const l = a.listen
     ledMats.current.forEach((m, i) => {
-      if (m) m.emissiveIntensity = 0.6 + 0.4 * Math.sin(t * 2.3 + i * 0.9)
+      if (m) m.emissiveIntensity = (0.6 + 0.4 * Math.sin(t * 2.3 + i * 0.9)) * (1 - l) + (0.85 + 0.45 * Math.sin(t * 5)) * l
     })
 
     /* ---- the sprout sways gently ---- */
@@ -337,19 +346,31 @@ export default function RobotModel({
     }
 
     /* ---- face ---- */
-    const mouthOpen = talking ? 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 11)) : 0
+    // talk mode: an audio level (a ref, read every frame) opens the mouth;
+    // otherwise the original sine wave while the typewriter runs
+    const lvl = typeof mouthLevel === 'number' ? mouthLevel : mouthLevel?.current
+    let mouthOpen
+    if (lvl != null) {
+      const target = 0.15 + 0.6 * clamp01(lvl)
+      a.mouth += (target - a.mouth) * Math.min(1, dt * (target > a.mouth ? 22 : 12))
+      mouthOpen = a.mouth
+    } else {
+      a.mouth = 0
+      mouthOpen = talking ? 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 11)) : 0
+    }
     paintFace({
       emotion: effEmotion,
       blink: a.blink,
       pupilX: a.pupil.x,
       pupilY: a.pupil.y,
       mouthOpen,
+      eyesWide: l,
     })
   })
 
   const handleTap = (e) => {
     e.stopPropagation()
-    anim.current.pendingTap = true
+    if (tapReaction) anim.current.pendingTap = true
     onTap?.()
     invalidate()
   }

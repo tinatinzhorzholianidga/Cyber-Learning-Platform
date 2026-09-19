@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { UI, LANGS, initialLang } from './i18n/ui.js'
 import IoHost from './mascot/IoHost.jsx'
 
@@ -8,12 +8,34 @@ import IoHost from './mascot/IoHost.jsx'
 const DEV_SERVE = typeof __IO_DEV_SERVE__ !== 'undefined' && __IO_DEV_SERVE__ === true
 const BakeoffPanel = DEV_SERVE ? lazy(() => import('./voice/dev/BakeoffPanel.jsx')) : null
 
+/* Talk mode (docs/io-voice-plan.md §5.3). The voice layer is one lazy
+   chunk: nothing of it loads until the visitor presses the button or T. */
+const VOICE_KINDS = ['browser', 'live', 'turn', 'stub']
+const loadVoice = () => import('./voice/index.js')
+
+/* Can this browser listen or speak in `lang`? Decides the entry button's
+   label (A8): "Talk to IO", or "Type a question" when it has neither
+   speech recognition nor a voice for the page language. */
+function speechAvailable(lang) {
+  try {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) return true
+    const voices = window.speechSynthesis?.getVoices?.() || []
+    return voices.some((v) => String(v.lang || '').toLowerCase().startsWith(lang))
+  } catch {
+    return false
+  }
+}
+const isEditable = (el) => Boolean(el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)))
+
 /* The welcome page for elearning.gov.ge with IO as the host.
 
    ?lang=ka|en   pick the language (also remembered)
    ?embed=1      render only IO + his bubble, transparent - for an
                  <iframe> inside the real Moodle page
    ?skin=metal   the metal-droid IO instead of the original
+   ?voice=…      talk mode: browser | live | turn | stub picks the voice
+                 session (stub = the audio test harness); in embed mode
+                 any value (e.g. voice=1) shows the Talk button at all
    ?bakeoff=1    dev server only: the browser-voice bake-off page
                  (docs/io-voice-plan.md §6.2) */
 export default function App() {
@@ -21,9 +43,21 @@ export default function App() {
   const embed = params.get('embed') === '1'
   const bakeoff = DEV_SERVE && params.get('bakeoff') === '1'
   const skin = params.get('skin') === 'metal' ? 'metal' : 'classic'
+  const voiceParam = params.get('voice')
+  const voiceKind = VOICE_KINDS.includes(voiceParam) ? voiceParam : null
+  const voiceEnabled = !embed || Boolean(voiceParam)
   const [lang, setLang] = useState(initialLang)
   const t = UI[lang]
   const io = useRef(null)
+
+  // talk mode: 'host' until the visitor asks for IO's voice
+  const [mode, setMode] = useState('host')
+  const modeRef = useRef(mode)
+  modeRef.current = mode
+  const [Voice, setVoice] = useState(null) // the lazy layer's component, once loaded
+  const [talk, setTalk] = useState(null) // what the voice layer wants IO to do
+  const audioCtx = useRef(null)
+  const [speechOk, setSpeechOk] = useState(() => speechAvailable(lang))
 
   useEffect(() => {
     document.documentElement.lang = t.htmlLang
@@ -40,6 +74,85 @@ export default function App() {
     document.body.classList.toggle('is-embed', embed)
   }, [embed])
 
+  // voices arrive asynchronously in Chromium - re-check the entry label
+  useEffect(() => {
+    if (!voiceEnabled) return undefined
+    setSpeechOk(speechAvailable(lang))
+    const synth = window.speechSynthesis
+    if (!synth?.addEventListener) return undefined
+    const onVoices = () => setSpeechOk(speechAvailable(lang))
+    synth.addEventListener('voiceschanged', onVoices)
+    return () => synth.removeEventListener('voiceschanged', onVoices)
+  }, [lang, voiceEnabled])
+
+  const openTalk = useCallback(async () => {
+    if (modeRef.current === 'talk') return
+    // both unlocks happen inside the user's gesture, before any await
+    // (iOS Safari): one AudioContext for the whole visit, and an empty
+    // utterance so browser voices may speak later
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext
+      if (AC && !audioCtx.current) audioCtx.current = new AC()
+      audioCtx.current?.resume?.()
+    } catch {
+      /* no Web Audio: captions still work */
+    }
+    try {
+      window.speechSynthesis?.speak(new SpeechSynthesisUtterance(''))
+    } catch {
+      /* ignore */
+    }
+    const mod = await loadVoice()
+    setVoice(() => mod.IoVoice)
+    setMode('talk')
+  }, [])
+
+  const exitTalk = useCallback(() => {
+    setTalk(null)
+    setMode('host')
+  }, [])
+
+  // T opens talk mode from host mode (e.code: a Georgian layout reports ტ)
+  useEffect(() => {
+    if (!voiceEnabled) return undefined
+    const onKey = (e) => {
+      if (e.code !== 'KeyT' || e.altKey || e.ctrlKey || e.metaKey || e.isComposing || e.repeat) return
+      if (modeRef.current !== 'host' || isEditable(e.target)) return
+      e.preventDefault()
+      openTalk()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [voiceEnabled, openTalk])
+
+  const entryButton =
+    voiceEnabled && mode === 'host' ? (
+      <button type="button" className="io-talk" onClick={openTalk} onPointerEnter={loadVoice} onFocus={loadVoice}>
+        {speechOk ? t.voice.talk : t.voice.typeInstead}
+      </button>
+    ) : null
+
+  // what the tutor may point to (D5); one object per language, so the
+  // voice layer never restarts its session on a page re-render
+  const page = useMemo(
+    () => ({ paths: { basic: { url: t.basic.url }, kids: { url: t.kids.url, newTab: true } }, loginUrl: t.loginUrl }),
+    [t],
+  )
+
+  const voiceLayer =
+    mode === 'talk' && Voice ? (
+      <Voice
+        lang={lang}
+        kind={voiceKind}
+        audioContext={audioCtx.current}
+        embed={embed}
+        typedOnly={!speechOk}
+        page={page}
+        onTalk={setTalk}
+        onExit={exitTalk}
+      />
+    ) : null
+
   if (bakeoff && BakeoffPanel) {
     return (
       <Suspense fallback={null}>
@@ -51,7 +164,9 @@ export default function App() {
   if (embed) {
     return (
       <main className="embed-stage">
-        <IoHost ref={io} lang={lang} size={Number(params.get('size')) || 260} skin={skin} hintLabel={t.ioLabel} />
+        <IoHost ref={io} lang={lang} size={Number(params.get('size')) || 260} skin={skin} hintLabel={t.ioLabel} mode={mode} talk={talk} />
+        {entryButton}
+        {voiceLayer}
       </main>
     )
   }
@@ -98,8 +213,10 @@ export default function App() {
       <main id="main" className="page">
         <section className="hero">
           <div className="hero-io">
-            <IoHost ref={io} lang={lang} size={360} skin={skin} hintLabel={t.ioLabel} />
-            <p className="io-hint">{t.ioHint}</p>
+            <IoHost ref={io} lang={lang} size={360} skin={skin} hintLabel={t.ioLabel} mode={mode} talk={talk} />
+            {mode === 'talk' ? null : <p className="io-hint">{t.ioHint}</p>}
+            {entryButton}
+            {voiceLayer}
           </div>
 
           <div className="hero-copy">

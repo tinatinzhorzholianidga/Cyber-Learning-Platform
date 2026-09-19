@@ -18,6 +18,11 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: '/IO-for-main-page/',
     plugins: [react()],
+    build: {
+      // the microphone worklet must stay a real file: audioWorklet.addModule()
+      // is not reliable with an inlined data: URL
+      assetsInlineLimit: (file) => (file.endsWith('mic-worklet.js') ? false : undefined),
+    },
     define: {
       __IO_DEV_SERVE__: JSON.stringify(serve),
       __IO_DEV_GEMINI_KEY__: JSON.stringify(serve ? env.IO_GEMINI_KEY ?? '' : ''),

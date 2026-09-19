@@ -108,7 +108,7 @@ added to the CyberHero workflow's branch list (its `sync-main` job force-pushes 
 
 The brief says: when the Gemini docs contradict it, follow the docs and note the difference. Every
 deviation is listed here, including the ones the team's decisions introduce. Deviations are
-numbered V1–V21; the demo phases are D1–D6 (§7.1).
+numbered V1–V24; the demo phases are D1–D6 (§7.1).
 
 | # | Brief says | Plan does | Why | Where |
 |---|---|---|---|---|
@@ -134,6 +134,8 @@ numbered V1–V21; the demo phases are D1–D6 (§7.1).
 | V20 | `/chat` receives "the same persona + tool list" from the client | Track D: the browser builds the Gemini request itself (the brief's wording). Track P: the Worker builds it from the same bundled tutor modules | a leaked Worker URL must not be a general Gemini proxy | §5.4, §5.9 |
 | V21 | `VITE_IO_VOICE_DEFAULT=live | turn` | `browser | live | turn`, optionally per language (`ka=browser,en=live`) | a third session and Gate G1's "Live only for English" outcome | §5.4 |
 | V22 | Phase 4 acceptance "works end-to-end in Chrome and Safari"; definition of done "Safari (desktop + iOS)" | Track D: Safari uses `webkitSpeechRecognition` where its locale is served (English; `ka-GE` assumed unsupported → typed mode), Firefox typed mode; no `/stt` upload without a Worker | a Worker is what makes uploads possible; Track P's `stt/upload.js` restores the brief's coverage | §5.5, §7.1 |
+| V23 | `VoiceSession` = `start`, `sendText`, `interrupt`, `end`, `on`; states without `idle` | plus optional `listen()`, `stopListening()`, `setMuted()`, `micLevel()` and a `pushToTalk` flag; an `idle` state between push-to-talk turns; events `mouth` (`level` / `pulse` / `sine`), `boundary`, `mic` next to the brief's five | the browser, turn and stub sessions are push-to-talk (V15) and browser voices move the mouth by word events, not amplitude (V18); the ring needs the mic level and the mic-open indicator needs the track state | `session/VoiceSession.js` |
+| V24 | Phase 2 acceptance "a stub session that plays a local WAV" | the stub synthesises a speech-like signal (syllable bursts) by default and plays a WAV with `?voice=stub&wav=<url>` (e.g. a bake-off file served by the dev server); `&mouth=pulse` / `&mouth=sine` exercise the browser-voice mouth paths | no audio file in the repository, the harness works before Gate G1 produces any WAV, and all three mouth paths are tested | `session/StubVoiceSession.js` |
 
 ---
 
@@ -453,8 +455,11 @@ src/voice/
   BoardPanel.jsx               steps / checklist / diagram / link cards and the quiz card
   diagrams/{phishing_email,password_strength,two_factor_flow}.jsx   inline SVG, KA/EN labels
   voice.css                    every new rule, scoped (.io-host[data-mode="talk"], .voice-*)
+  index.js                     the lazy chunk's entry (App.jsx imports nothing else from src/voice)
+  IoVoice.jsx                  the layer's root: runs the state machine, renders the dock, lifts IO's props to App through onTalk
+  store.js  transcript.js      a tiny external store (useSyncExternalStore) and the transcript as pure data
   i18n.js                      the voice.* strings (KA/EN) in the lazy chunk; ui.js keeps only the two entry strings
-  useIoVoice.js                state machine: one VoiceSession, events → IoHost props, Esc handling, thinking timeout
+  useIoVoice.js                state machine: one VoiceSession, events → IoHost props, Esc / T handling, thinking timeout, the mouth loop
   session/VoiceSession.js      the interface (JSDoc typedefs) + shared helpers
   session/select.js            ?voice= → VITE_IO_VOICE_DEFAULT (per-language allowed) → capability fallback; exposes the reason for the badge
   session/BrowserVoiceSession.js   webSpeech + geminiDirect|openaiCompatible + speechSynthesis (A3)
@@ -470,11 +475,14 @@ src/voice/
   audio/mic.js  audio/mic-worklet.js  audio/player.js   (as in the brief; player.level() 60 ms attack / 120 ms release)
   tutor/persona.js  tutor/skills.js  tutor/memory.js  tutor/tools.js  tutor/strings.js  tutor/lookup.js
   tutor/local/                 gitignored; optional dev-only Basic Course index (A6)
+  audio/pcm.js                 pure PCM helpers (int16 ↔ float, resampling, WAV parsing, the stub's test signal)
+  dev/bakeoffLines.js          the seven bake-off lines, shared by the page and the script
   dev/BakeoffPanel.jsx         dev-only page (?bakeoff=1 on localhost): speaks the six lines with every ka/en voice, logs boundary events
 src/content/safety.js          KA/EN resources with placeholders the DGA team fills in
 public/io-index.json           generated from the CyberHero content by scripts/build-io-index.mjs and committed
 scripts/
   lib/lint.mjs  check-voice.mjs  check-dist.mjs  voice-smoke.mjs  voice-bakeoff.mjs  build-io-index.mjs
+  e2e/talk.mjs  e2e/host-diff.mjs   headless-Chromium acceptance (talk mode with the stub; host mode pixel diff), not run in CI
 bakeoff/README.md              rating sheet + decision block (audio files gitignored)
 docs/
   io-voice-build-prompt.md  io-voice-plan.md (this file)  io-voice-test-script.md (D5)  io-voice-demo.md (D6: run sheet for the presentation)
@@ -953,6 +961,29 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
   against real quota (which Flash model has a usable free tier, whether the key has Live quota), the
   Gemini and Live WAVs, Giorgi's and Eka's Georgian and whether they raise word-boundary events. The
   bake-off page's own UI is English (a dev tool, never built); the `voice.*` strings arrive in D2.
+- **D2 — built and verified in headless Chromium (2026-09-19).** The three mascot files gained their
+  additive props (`mouthLevel` / `listening` / `tapReaction`, `eyesWide`, `mode` + `talk`); App got
+  the entry button, the `T` key, the in-gesture unlocks and the lazy layer; `src/voice/` gained the
+  audio primitives (`mic.js` + worklet, `player.js`, `pcm.js`), the session interface, `select.js`,
+  the stub harness, the store, the transcript model, `useIoVoice`, `IoVoice`, `VoiceDock`,
+  `TranscriptPanel`, `voice.css`, the `voice.*` strings and `tutor/strings.js`; 19 more unit tests;
+  two acceptance scripts under `scripts/e2e/` (`playwright-core` devDependency, no browser in CI).
+  Measured with the stub on the dev server: the amplitude mouth moves between ≈ 0.1 and ≈ 0.75 while
+  IO speaks, the word-pulse path between 0.05 and ≈ 0.9, the sine path sets `talking`; Esc reaches
+  `interrupted` in ≈ 1 ms and a click on IO in ≈ 8 ms (in-page timing), both with the level cleared;
+  the ring follows the fake microphone; typed questions, mute, *Delete my data*, *End* (host line
+  resumes, click cycle intact), reduced motion (still face, caption at once, no gesture), embeds
+  (button only with `?voice`) and the ≤ 900 px sheet (one live region) all pass with no console
+  error. Host mode: pixel diff of both skins against the untouched build under reduced motion shows
+  differences only inside the Talk button's box, the hint unmoved; the initial JS chunk grew by
+  ≈ 2.1 KB gzipped, the CSS by 48 B. Two fixes found by the acceptance run: a fresh `page` object per
+  App render restarted the session in a loop (now memoised and read through a ref), and the worklet
+  file had to be excluded from Vite's asset inlining. Without a key the default selection reports
+  „ხმოვანი რეჟიმი ამ ბრაუზერში მიუწვდომელია“ with the key field, because `browser` / `turn` arrive
+  in D3.
+- **Not verified in D2:** a real microphone and a real browser voice (headless Chromium has a fake
+  device and no voices) — the pulse/sine paths ran on synthetic boundary events; Edge on the
+  presenter's machine confirms them in D3 with `BrowserVoiceSession`.
 - **Deferred:** `build:index` (D5); Track P entirely.
 
 ---
@@ -1097,6 +1128,7 @@ limits, the public index and the Azure region are closed by A4–A7.
 | B16 | The dev key reaches the browser only through `vite.config.js`'s `define` in `serve`; builds always define it empty | §5.4 |
 | B17 | Browser-voice mouth = word-boundary pulses; no boundary within 400 ms → the sine mouth | §5.2 |
 | B18 | Ollama backend: tools via a text-tag convention; grounding injected into the prompt | §5.4 |
+| B19 | The voice layer lifts only discrete IO props (emotion, gesture, listening, talking, label, the mouth ref, the transcript element) to App through `onTalk`; captions live in an external store and re-render the transcript alone | §5.1, `store.js` |
 
 ---
 
@@ -1142,3 +1174,6 @@ limits, the public index and the Azure region are closed by A4–A7.
   scripts, the rating sheet, unit tests and `voice-ci.yml`. Corrections from D1: §9's gzip figures
   were `gzip -9` numbers (the check uses zlib's default level, as Vite does); §5.4 names `/@vite/env`
   as the dev-define carrier; §2.4 confirms the `connect()` hang on a rejected key.
+- 2026-09-19 — D2 built (§7.3): the mouth, the listening cue and talk mode in the mascot; the entry
+  button and `T`; the lazy voice layer with the audio primitives, the state machine, the dock, the
+  transcript and the stub harness; V23–V24 and B19 recorded; headless acceptance scripts added.

@@ -156,7 +156,8 @@ function decorations(ctx) {
 /**
  * Draw the whole face.
  * state = { emotion, blink 0..1 (1 = closed), pupilX -1..1, pupilY -1..1,
- *           mouthOpen 0..1 }
+ *           mouthOpen 0..1, eyesWide 0..1 (talk mode's listening cue: the
+ *           eyes open up to 12 % taller; 0 leaves the face untouched) }
  */
 /* soft recessed shadow at the screen edge - the screen sits deep
    inside the 3D armor plate, so it darkens toward the rim */
@@ -178,6 +179,7 @@ export function drawFace(ctx, state) {
     pupilX = 0,
     pupilY = 0,
     mouthOpen = 0,
+    eyesWide = 0,
     noPlate = false,
     metal = false,
   } = state
@@ -215,7 +217,7 @@ export function drawFace(ctx, state) {
   const eyeY = 248
   const eyeL = 188
   const eyeR = 324
-  const open = 1 - blink
+  const open = (1 - blink) * (1 + 0.12 * eyesWide)
   const mouthY = 386
 
   switch (emotion) {
@@ -320,5 +322,5 @@ function cy_(y) {
    actually changed (texture uploads are the expensive part). */
 export function faceKey(state) {
   const q = (v) => Math.round(v * 24)
-  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}|${state.metal ? 1 : 0}`
+  return `${state.emotion}|${q(state.blink)}|${q(state.pupilX)}|${q(state.pupilY)}|${q(state.mouthOpen)}|${state.noPlate ? 1 : 0}|${state.metal ? 1 : 0}|${q(state.eyesWide || 0)}`
 }

@@ -37,6 +37,13 @@ export const UI = {
     },
     footer: 'ციფრული მმართველობის სააგენტო · elearning.gov.ge',
     footerNote: 'უფასო საგანმანათლებლო რესურსი.',
+    loginUrl: 'https://elearning.gov.ge/login/index.php',
+    // the talk-mode entry button (A8); every other voice string lives in
+    // src/voice/i18n.js, the lazy chunk
+    voice: {
+      talk: 'ესაუბრეთ იოს',
+      typeInstead: 'დაწერეთ კითხვა',
+    },
   },
   en: {
     htmlLang: 'en',
@@ -74,6 +81,11 @@ export const UI = {
     },
     footer: 'Digital Governance Agency · elearning.gov.ge',
     footerNote: 'A free educational resource.',
+    loginUrl: 'https://elearning.gov.ge/login/index.php',
+    voice: {
+      talk: 'Talk to IO',
+      typeInstead: 'Type a question',
+    },
   },
 }
 
