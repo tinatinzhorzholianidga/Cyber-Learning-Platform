@@ -46,7 +46,7 @@ the library IO's 3D model is built with.
 | # | Decision | Where it lands |
 |---|---|---|
 | A1 | Base = `IO-for-main-page`, work on `io-voice`. Confirmed. | §1.3 |
-| A2 | Test target = localhost (`npm run dev`). No second Pages repository now. For a shareable preview later: a personal repository named `IO-for-main-page` (its workflow and `base` already match), `io-voice` pushed to its `main`. A deployed preview never contains a key: the runtime-key field pattern from `io-chat-gemini`'s `llmClient.js` (key pasted at runtime, stored only in the presenter's browser). | §5.4, §7 |
+| A2 | Test target = localhost (`npm run dev`). No second Pages repository now. For a shareable preview later: a personal repository named `IO-for-main-page` (its workflow and `base` already match), `io-voice` pushed to its `main`. A deployed preview never contains a key: the runtime-key field pattern from `io-chat-gemini`'s `llmClient.js` (key pasted at runtime, stored only in the presenter's browser). | §4.1 (`deploy.yml`), §5.3 (runtime-key field), §5.4 |
 | A3 | No billing for now. A third session, **`BrowserVoiceSession`**: Web Speech recognition (`ka-GE` / `en-US`, Chrome + Edge), `speechSynthesis` voices (Edge: "Microsoft Giorgi Online (Natural)" male, "Microsoft Eka Online (Natural)" female; any `en` voice for English), voices loaded asynchronously, emoji/markdown stripped, sentence-chunked utterances, `cancel()` on interruption; mouth driven by word-boundary events with the `talking` sine as fallback; LLM = Gemini Flash free tier first (fresh AI Studio key in `.env.local`, smoke-tested by the team), else a local OpenAI-compatible endpoint (Ollama, gemma3) behind the same streaming client, Georgian quality noted in this plan. If the fresh key has Live quota, `LiveVoiceSession` is wired directly with the key (localhost only, guarded so it can never be bundled) as the barge-in showcase; `BrowserVoiceSession` is the safety net. Selection: `VITE_IO_VOICE_DEFAULT=browser|live|turn`; the dock shows the active session in dev mode. | §3, §5.4–§5.7 |
 | A4 | Cloudflare not needed for Track D. Track P: Cloudflare Free plan, Workers free tier, `io-voice.<account>.workers.dev` on a personal account, moved to the agency account if adopted. | §5.9 |
 | A5 | No limits in Track D. Track P: per-session cap (10 min via the token's `expireTime`), max 3 concurrent sessions per IP, a high per-IP daily ceiling (≈ 300 sessions) so a school behind one shared address works, and a **global daily minutes budget** in KV that switches the dock to text-only mode when exhausted. | §5.9 |
@@ -95,7 +95,9 @@ exhausted (A5). The Worker design, with A4/A5 applied, is in §5.9; its phases a
 `io-voice` starts from `IO-for-main-page` (`dc8a296`); this was done in Phase 0 (commit `541d2aa`).
 The two code bases share no history: `IO-for-main-page` is the standalone welcome host the brief
 describes; `claude/mascot-robot-demo-9oclw8` (`c71fa53`, the old `io-voice` head, kept there and as
-the local tag `io-voice-platform-base`) is the CyberHero platform. `RobotModel.jsx` and
+the local tag `io-voice-platform-base`) is the CyberHero platform; to undo the re-point:
+`git push --force-with-lease=refs/heads/io-voice:<current sha> origin c71fa53b981cd5bf5504c2d130d577b348045af6:io-voice`.
+`RobotModel.jsx` and
 `faceTexture.js` are byte-identical on both; `RobotCanvas.jsx` on `IO-for-main-page` is the newer
 one (keyboard tap, Safari < 14 fallback, `.io-canvas` class). Content from the other branches is
 copied file by file with `git show <ref>:<path>` (§4.2), never merged. `io-voice` must never be
@@ -105,31 +107,33 @@ added to the CyberHero workflow's branch list (its `sync-main` job force-pushes 
 ### 1.4 Where the plan deviates from the brief
 
 The brief says: when the Gemini docs contradict it, follow the docs and note the difference. Every
-deviation is listed here, including the ones the team's decisions introduce.
+deviation is listed here, including the ones the team's decisions introduce. Deviations are
+numbered V1–V21; the demo phases are D1–D6 (§7.1).
 
 | # | Brief says | Plan does | Why | Where |
 |---|---|---|---|---|
-| D1 | Live fallback `gemini-2.5-flash-native-audio-preview-12-2025` | fallback `gemini-3.1-flash-live-preview`; the 2.5 preview third | Google names 3.1 Flash Live as that model's replacement and lists it under "legacy"; close-code 1008 failures reported on it | §2.1 |
-| D2 | `speechConfig.languageCode` `ka-GE` / `en-US` on Live | no `languageCode`; the system instruction steers the language, plus a transcription language hint | native-audio Live models pick the language themselves and reject explicit codes; `ka-GE` is not a valid value | §2.3 |
-| D3 | token `expireTime = now + 10 min` | **kept at 10 min** as the per-session cap (A5); `newSessionExpireTime = now + 60 s` | `expireTime` ends the whole session; A5 makes that the intended session length, so no reconnect is needed within a session | §5.9 |
-| D4 | SDK `httpOptions: { apiVersion: 'v1beta' }` | one config value, default `v1beta`; with a plain key (Track D) the SDK does not warn; with a token (Track P) it warns unless `v1alpha`; the smoke script tests both | both versions serve `auth_tokens`; Google's browser example and the SDK's unit test use `v1beta`, the SDK's docs say `v1alpha` | §2.2 |
-| D5 | `/chat` "ports the parser from `llmClient.js`" into the Worker | the parser runs in the browser on every track; the Worker (Track P) forwards Gemini's SSE bytes untouched | Track D has no Worker; Workers Free allows 10 ms CPU per request; function-call parts must reach the client anyway | §5.6 |
-| D6 | per-IP daily counts 20 / 200 / 300 | Track D: none. Track P: per-session cap, 3 concurrent sessions per IP, ≈ 300 sessions per IP per day, a global daily minutes budget (A5) | schools share one address; a global budget is the real cost cap; KV's free tier allows 1,000 writes per day | §5.9 |
-| D7 | `/stt` receives `audio/webm;codecs=opus` or `audio/mp4` | Track D: Web Speech recognition, no upload. Track P: a WAV built from the mic worklet's 16 kHz PCM16 | one format on every browser; Gemini's list has `audio/wav` but not `audio/mp4` | §5.6, §5.9 |
-| D8 | `mouthLevel (0..1)` prop | a ref (or a plain number for tests) read inside the render loop | a 60 Hz React prop would re-render the whole r3f tree every frame | §5.2 |
-| D9 | "Only add: amplitude-driven mouth, a listening cue" to the model | plus one boolean `tapReaction` prop and an `eyesWide` field in `faceTexture.js` | the model plays its own wave + 1.8 s `excited` overlay on every pointer tap, hiding the 400 ms `surprised` cue; wider eyes need one parameter | §5.2 |
-| D10 | grounding on "~330 bilingual chunks from the platform's content" and `lookup_course_material` over the course | grounding on the CyberHero chunks and the `hints.js` / `ui.js` facts only; **no Basic Course text in the repository or any build** (A6); the index is a committed static JSON fetched on first use | the course text belongs to its owners and sits behind the Moodle login | §4.4, §5.8 |
-| D11 | "Host mode is pixel-identical" | one static *Talk to IO* button under the "click IO" hint (A8), ≈ 10 lines appended to `global.css`; everything above it and every embed without `?voice=1` stays identical | talk mode needs an entry point that exists before the voice code loads | §5.3 |
-| D12 | talk mode starts on the button "or types a question" | the button, the `T` key and (when speech is unavailable) a *Type a question* button work from host mode; the text input itself appears once the dock has loaded | one static control instead of two | §5.3 |
-| D13 | "No API keys in the client bundle, ever. Everything secret lives in a Cloudflare Worker" | **Track D only:** the key lives in `.env.local` and is injected by `vite.config.js` into dev serves only (structurally absent from builds), or pasted at runtime into the presenter's browser (A2); Track P restores the brief's rule | a demo without billing has no Worker; the key is still never in a bundle | §5.4, §8 |
-| D14 | `end()` "asks IO for a 2-line summary" | the summary comes from the `end_session` tool call | Live no longer supports text output | §2.3 |
-| D15 | push-to-talk: "hold the button or press once to start/stop" | press to start, press again to stop; holding also works | one label can describe one gesture | §5.5 |
-| D16 | the literal `voice.*` strings | the entry button keeps the brief's `ესაუბრეთ იოს` (A8); dock controls use the nominal form the page's buttons use; the privacy line names the services that process the voice; all strings go to one native review | see §6.1 | §6.1 |
-| D17 | bake-off "with the `ka` hint" | the language is named in the prompt text (with and without); `languageCode` is not sent | the API has no valid Georgian `languageCode` | §6.2 |
-| D18 | two sessions (`Live`, `Turn`) | three: `BrowserVoiceSession` added (A3); its mouth is driven by word-boundary events, not audio amplitude, because browser voices expose no audio stream | zero-cost path with no key at all; safety net for the presentation | §5.5 |
-| D19 | bake-off candidates: 5–6 Gemini voices, Azure Giorgi, Azure Eka, the Live voice | Edge's Giorgi and Eka (the same Microsoft voices, free), 4–5 Gemini voices if the key works, the Live voice; Azure and ElevenLabs skipped (A7) | no accounts, no cost | §6.2 |
-| D20 | `/chat` receives "the same persona + tool list" from the client | Track D: the browser builds the Gemini request itself (the brief's wording). Track P: the Worker builds it from the same bundled tutor modules | a leaked Worker URL must not be a general Gemini proxy | §5.6, §5.9 |
-| D21 | `VITE_IO_VOICE_DEFAULT=live | turn` | `browser | live | turn`, optionally per language (`ka=browser,en=live`) | a third session and Gate G1's "Live only for English" outcome | §5.4 |
+| V1 | Live fallback `gemini-2.5-flash-native-audio-preview-12-2025` | fallback `gemini-3.1-flash-live-preview`; the 2.5 preview third | Google names 3.1 Flash Live as that model's replacement and lists it under "legacy"; close-code 1008 failures reported on it | §2.1 |
+| V2 | `speechConfig.languageCode` `ka-GE` / `en-US` on Live | no `languageCode`; the system instruction steers the language, plus a transcription language hint | native-audio Live models pick the language themselves and reject explicit codes; `ka-GE` is not a valid value | §2.3 |
+| V3 | Phase 3: "reconnect with the resumption handle on socket close before `expireTime`", with a 10-min token | kept: the token stays at 10 min and becomes the per-session cap (A5); reconnects happen only before `expireTime`, which is never extended, so a Track P session ends at 10 min by design | `expireTime` ends the whole session; A5 makes that the intended length | §5.9 |
+| V4 | SDK `httpOptions: { apiVersion: 'v1beta' }` | one config value, default `v1beta`; with a plain key (Track D) the SDK does not warn; with a token (Track P) it warns unless `v1alpha`; the smoke script tests both | both versions serve `auth_tokens`; Google's browser example and the SDK's unit test use `v1beta`, the SDK's docs say `v1alpha` | §2.2 |
+| V5 | `/chat` "ports the parser from `llmClient.js`" into the Worker | the parser runs in the browser on every track; the Worker (Track P) forwards Gemini's SSE bytes untouched | Track D has no Worker; Workers Free allows 10 ms CPU per request; function-call parts must reach the client anyway | §4.2, §5.9 |
+| V6 | per-IP daily counts 20 / 200 / 300 | Track D: none. Track P: per-session cap, 3 concurrent sessions per IP, ≈ 300 sessions per IP per day, a global daily minutes budget (A5) | schools share one address; a global budget is the real cost cap; KV's free tier allows 1,000 writes per day | §5.9 |
+| V7 | `/stt` receives `audio/webm;codecs=opus` or `audio/mp4` | Track D: Web Speech recognition, no upload. Track P: a WAV built from the mic worklet's 16 kHz PCM16 | one format on every browser; Gemini's list has `audio/wav` but not `audio/mp4` | §5.6, §5.9 |
+| V8 | `mouthLevel (0..1)` prop | a ref (or a plain number for tests) read inside the render loop | a 60 Hz React prop would re-render the whole r3f tree every frame | §5.2 |
+| V9 | "Only add: amplitude-driven mouth, a listening cue" to the model | plus one boolean `tapReaction` prop and an `eyesWide` field in `faceTexture.js` | the model plays its own wave + 1.8 s `excited` overlay on every pointer tap, hiding the 400 ms `surprised` cue; wider eyes need one parameter | §5.2 |
+| V10 | grounding on "~330 bilingual chunks from the platform's content" and `lookup_course_material` over the course | grounding on the CyberHero chunks and the `hints.js` / `ui.js` facts only; **no Basic Course text in the repository or any build** (A6); the index is a committed static JSON fetched on first use | the course text belongs to its owners and sits behind the Moodle login | §4.4, §5.8 |
+| V11 | "Host mode is pixel-identical" | one static *Talk to IO* button under the "click IO" hint (A8), ≈ 10 lines appended to `global.css`; everything above it and every embed without `?voice=1` stays identical | talk mode needs an entry point that exists before the voice code loads | §5.3 |
+| V12 | talk mode starts on the button "or types a question" | the button, the `T` key and (when speech is unavailable) a *Type a question* button work from host mode; the text input itself appears once the dock has loaded | one static control instead of two | §5.3 |
+| V13 | "No API keys in the client bundle, ever. Everything secret lives in a Cloudflare Worker" | **Track D only:** the key lives in `.env.local` and is injected by `vite.config.js` into dev serves only (structurally absent from builds), or pasted at runtime into the presenter's browser (A2); Track P restores the brief's rule | a demo without billing has no Worker; the key is still never in a bundle | §5.4, §8 |
+| V14 | `end()` "asks IO for a 2-line summary" | the summary comes from the `end_session` tool call | Live no longer supports text output | §2.3 |
+| V15 | push-to-talk: "hold the button or press once to start/stop" | press to start; recognition stops by itself at end of speech (`continuous: false`), a second press stops early; holding also works | one label can describe one gesture: „დააწკაპუნეთ და ისაუბრეთ“ | §5.5, §6.1 |
+| V16 | the literal `voice.*` strings | the entry button keeps the brief's `ესაუბრეთ იოს` (A8); dock controls use the nominal form the page's buttons use; the privacy line names the services that process the voice; all strings go to one native review | see §6.1 | §6.1 |
+| V17 | bake-off "with the `ka` hint" | the language is named in the prompt text (with and without); `languageCode` is not sent | the API has no valid Georgian `languageCode` | §6.2 |
+| V18 | two sessions (`Live`, `Turn`) | three: `BrowserVoiceSession` added (A3); its mouth is driven by word-boundary events, not audio amplitude, because browser voices expose no audio stream | zero-cost path with no key at all; safety net for the presentation | §5.5 |
+| V19 | bake-off candidates: 5–6 Gemini voices, Azure Giorgi, Azure Eka, the Live voice | Edge's Giorgi and Eka (the same Microsoft voices, free), 4–5 Gemini voices if the key works, the Live voice; Azure and ElevenLabs skipped (A7); Track P's `/tts` ships the Gemini adapter only and `VITE_IO_TTS` is dropped | no accounts, no cost | §6.2 |
+| V20 | `/chat` receives "the same persona + tool list" from the client | Track D: the browser builds the Gemini request itself (the brief's wording). Track P: the Worker builds it from the same bundled tutor modules | a leaked Worker URL must not be a general Gemini proxy | §5.4, §5.9 |
+| V21 | `VITE_IO_VOICE_DEFAULT=live | turn` | `browser | live | turn`, optionally per language (`ka=browser,en=live`) | a third session and Gate G1's "Live only for English" outcome | §5.4 |
+| V22 | Phase 4 acceptance "works end-to-end in Chrome and Safari"; definition of done "Safari (desktop + iOS)" | Track D: Safari uses `webkitSpeechRecognition` where its locale is served (English; `ka-GE` assumed unsupported → typed mode), Firefox typed mode; no `/stt` upload without a Worker | a Worker is what makes uploads possible; Track P's `stt/upload.js` restores the brief's coverage | §5.5, §7.1 |
 
 ---
 
@@ -140,7 +144,7 @@ deviation is listed here, including the ones the team's decisions introduce.
 | Purpose | Brief said | Verified today | Use | Source |
 |---|---|---|---|---|
 | Live voice, primary | `gemini-3.8-live` | exists; GA since 2026-09-15; "the default option for most low-latency voice agent experiences"; audio-only output; `thinkingConfig` must not be sent; function calls default to non-blocking | `gemini-3.8-live` ✅ | cookbook `Get_started_LiveAPI.ipynb`, `gemini-skills` Live skill, Google's ephemeral-token example; model page *(snippet)* |
-| Live voice, fallback | `gemini-2.5-flash-native-audio-preview-12-2025` | still served, but listed under "legacy" with `gemini-3.1-flash-live-preview` as replacement; the Gemini 2.5 line shuts down in October 2026 and whether previews are covered is unclear *(snippet)* | `gemini-3.1-flash-live-preview`, then the 2.5 preview — D1 | `gemini-skills` `migration.md`; model page and changelog *(snippets)* |
+| Live voice, fallback | `gemini-2.5-flash-native-audio-preview-12-2025` | still served, but listed under "legacy" with `gemini-3.1-flash-live-preview` as replacement; the Gemini 2.5 line shuts down in October 2026 and whether previews are covered is unclear *(snippet)* | `gemini-3.1-flash-live-preview`, then the 2.5 preview — V1 | `gemini-skills` `migration.md`; model page and changelog *(snippets)* |
 | Text / grounding | `gemini-3.8-flash` | exists, GA; accepts inline audio parts; the `generateContent` family is labelled "legacy" but remains supported; 1M context *(snippet)*; free-tier quota reported at ≈ 20 requests per day *(forum)* — the smoke test also tries `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash-lite` and reports each model's free quota | `gemini-3.8-flash` first; the model with a usable free quota for the demo | cookbook `Get_started.ipynb` (model list), `Audio.ipynb`, `gemini-skills` |
 | STT | Flash with an inline audio part | Flash works; `gemini-3.5-transcribe` exists (non-streaming, auto language ID; Georgian membership unverified). Track D uses the browser's recogniser instead. | Track P: `gemini-3.8-flash`, `gemini-3.5-transcribe` tried | `Models.ipynb`, `gemini-skills` |
 | TTS | `gemini-3.1-flash-tts-preview` | exists (preview); streaming over `streamGenerateContent` (changelog *(snippet)*); 24 kHz 16-bit mono PCM; 30 prebuilt voices; language auto-detected; free tier "free of charge" *(snippet)* | `gemini-3.1-flash-tts-preview` (Track D `turn` and bake-off; Track P `/tts`) | `Models.ipynb`, cookbook `Get_started_TTS.ipynb`, Cloud notebooks |
@@ -173,7 +177,7 @@ Source: Discovery `v1beta` rev 20260919 (`generativelanguage.auth_tokens.create`
   then opens `…/BidiGenerateContentConstrained?access_token=<token>`.
 - **API version:** Google's browser example mints on `v1beta` and connects to the `v1beta`
   constrained endpoint; the SDK's unit test builds the same URL; the SDK's docs say `v1alpha` and it
-  warns on anything else. D4.
+  warns on anything else. V4.
 - **Scope:** tokens work **only** for the Live API (the SDK throws for REST calls).
 - **Caveat:** forum reports say minting fails with `INVALID_ARGUMENT` for `AQ.`-prefixed keys while
   `AIza…` keys work.
@@ -189,7 +193,7 @@ Source: Discovery (`BidiGenerateContentSetup`, `RealtimeInputConfig`, `Automatic
 |---|---|---|
 | **Input audio** | raw 16-bit PCM, 16 kHz, mono, little-endian; `sendRealtimeInput({ audio: { data: <base64>, mimeType: 'audio/pcm;rate=16000' } })`; other rates resampled server-side; docs say 100 ms chunks *(snippet)*, Google's browser example sends 32 ms chunks | worklet emits 100 ms chunks (1600 samples); shorter tried if latency needs it |
 | **Output audio** | raw 16-bit PCM, 24 kHz, mono, LE, base64 in `serverContent.modelTurn.parts[].inlineData` | player queues 24 kHz Int16 ✅ |
-| **Output modality** | `['AUDIO']` only; **text output is no longer supported on Live** | D14 |
+| **Output modality** | `['AUDIO']` only; **text output is no longer supported on Live** | V14 |
 | **VAD** | on by default; `disabled`, `startOfSpeechSensitivity` / `endOfSpeechSensitivity` (both default HIGH on the Gemini API), `prefixPaddingMs`, `silenceDurationMs` (server default ≈ 800 ms *(snippet)*; the two sources define `prefixPaddingMs` differently); `activityHandling` defaults to `START_OF_ACTIVITY_INTERRUPTS`; with VAD disabled the client must send `activityStart` / `activityEnd`; `turnCoverage` default changed on 3.8 | automatic VAD on; `turnCoverage: TURN_INCLUDES_ONLY_ACTIVITY` explicit; tuned on Georgian speech in D4 |
 | **Interruption (server)** | on barge-in the server sends `serverContent.interrupted` and skips `generationComplete`; pending tool calls arrive as `toolCallCancellation.ids`; only audio already sent stays in history *(snippet)* | `player.flush()`, cancel tools, state `interrupted` |
 | **Interruption (manual)** | no interrupt message exists; `activityStart` is illegal with automatic VAD; a `clientContent` turn "unconditionally interrupts active generation" on 3.8; realtime text counts as activity. Flushing locally tells the server nothing | `player.flush()` + discard audio until `turnComplete`; sending a short realtime text as well is a D4 experiment (B7) |
@@ -197,7 +201,7 @@ Source: Discovery (`BidiGenerateContentSetup`, `RealtimeInputConfig`, `Automatic
 | **Session resumption** | `sessionResumption: { handle }`; `sessionResumptionUpdate` (`newHandle`, `resumable`); handles valid 2 h *(snippet)* or "up to 24 hours" (cookbook) — assume 2 h; `goAway.timeLeft` precedes a close (a report of it being skipped could not be read) | store the handle; reconnect on `goAway` **and** on an unexpected close |
 | **Lifetimes** | connection ≈ 10 min; audio-only session 15 min unless compression is on *(snippet, also Google's skill)* | compression on; Track P sessions end at 10 min by design (A5) |
 | **Context compression** | `{ slidingWindow: { targetTokens? }, triggerTokens? }`; `targetTokens` defaults to half of `triggerTokens`; both are int64 strings in the TypeScript types; cut at a user-turn boundary; never removes the system instruction; 128k in / 64k out | `{ slidingWindow: {}, triggerTokens: '25600' }` |
-| **Language** | native-audio models "automatically choose the appropriate language and don't support explicitly setting the language code" *(snippet)*; Discovery's `speechConfig.languageCode` list has **no `ka-GE`**; Georgian appears as `ka` on the Live language table *(snippet)* | D2 |
+| **Language** | native-audio models "automatically choose the appropriate language and don't support explicitly setting the language code" *(snippet)*; Discovery's `speechConfig.languageCode` list has **no `ka-GE`**; Georgian appears as `ka` on the Live language table *(snippet)* | V2 |
 | **Voices** | any of the 30 TTS prebuilt voices *(snippet)* | from config; bake-off picks |
 | **Proactive audio, affective dialog, thinking** | on `gemini-3.8-live` proactive audio is **permanently on** (the model may stay silent on speech it judges not addressed to it); affective dialog removed; `thinkingConfig` must be omitted; `waitingForInput` and `interactionStatus` exist | none sent; `thinking` has a timeout; `waitingForInput` honoured |
 | **Text turns** | `sendRealtimeInput({ text })` for real-time user input; `sendClientContent({ turns, turnComplete: true })` for context injection (also interrupts generation on 3.8) | typed questions → realtime text; the hidden `session_started` nudge → `sendClientContent` |
@@ -245,7 +249,7 @@ issues; a local esbuild measurement; Google's two browser samples.
   `inlineData` with mimeType **`audio/l16; rate=24000; channels=1`** (parse the rate with
   `/rate=(\d+)/`), raw PCM16 LE mono. Output watermarked with SynthID.
 - **Language:** auto-detected from the text; `speechConfig.languageCode` has no `ka-GE` — not sent
-  (D17). Georgian (`ka-ge`) is on the Gemini-TTS locale list in Google's Cloud notebook; quality
+  (V17). Georgian (`ka-ge`) is on the Gemini-TTS locale list in Google's Cloud notebook; quality
   untested → Gate G1. Style via an English prefix and English audio tags (stripped from captions).
 - **Voices (30):** Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe,
   Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Rasalgethi, Laomedeia, Achernar,
@@ -256,7 +260,7 @@ issues; a local esbuild measurement; Google's two browser samples.
 - **Prices:** Cloud list $1.00 / 1M text tokens in, $20.00 / 1M audio tokens out; the Gemini API
   pricing page *(snippet)* $0.50 / $10.00 with a free tier; 25 audio tokens per second.
 - **STT via `generateContent`** (Track P): accepted MIME types `audio/wav`, `mp3`, `aiff`, `aac`,
-  `ogg`, `flac`, `mpeg`, `m4a`, `l16`, `opus`, `alaw`, `mulaw`, `webm` — no `audio/mp4` (D7); inline
+  `ogg`, `flac`, `mpeg`, `m4a`, `l16`, `opus`, `alaw`, `mulaw`, `webm` — no `audio/mp4` (V7); inline
   limit 20 MB *(snippet)* or 100 MB (cookbook); prompt "Generate a transcript of the speech.";
   `generationConfig.audioTranscriptionConfig: { mode: 'VERBATIM', languageCodes: ['ka'] }` documented
   in `v1beta` (model support untested); 32 audio tokens per second.
@@ -410,11 +414,11 @@ Line numbers refer to `IO-for-main-page` (`dc8a296`) and are for the implementer
 | File | Today | How it is touched | Phase |
 |---|---|---|---|
 | `README.md` | Rules: "host, not a teacher … no cyber-security tips" (13–16); embed contract and iframe snippet without `allow=` (128–143); query params (112–119); deploy gate (155–160); privacy paragraph "Static site, no backend, no cookies, no analytics, no third-party requests …" (164–168). | A **"Talk to IO (demo build)"** section and an honest privacy paragraph for Track D (§5.10); the Track P text is drafted but marked "not deployed". Iframe snippet: `allow="microphone; autoplay"`, a `voice=1` variant, its height, and the spaced em dash in `title`. `surprised` noted as a talk-mode face. `index.html:10` reworded. | D6 |
-| `src/App.jsx` | `params` memo (12); `embed` / `skin` (13–14); embed branch (34–40); hero mounts `IoHost` + `.io-hint` (83–86); `PathCard` drives the ref (115–148); language buttons (58–68); login URL hard-coded (70). | Parse `?voice` (`browser` / `live` / `turn` / `stub`; `1` enables the dock in embed). Render the static **ესაუბრეთ იოს / Talk to IO** `<button>` under `.io-hint` (D11) — or a *Type a question* button when the browser has neither `SpeechRecognition` nor a voice for the page language (A8; voices are re-checked on `voiceschanged`) — and a `keydown` listener for `KeyT` (`e.code`, since a Georgian layout reports `ტ`). The handler **synchronously** creates and resumes one `AudioContext` (iOS unlock inside the gesture), then `await import('./voice/VoiceDock.jsx')` (prefetched on `pointerenter`), then sets `mode='talk'`. Pass `mode`, the AudioContext, `lang`, the ref, `{ paths: { basic: { url }, kids: { url, newTab: true } }, loginUrl }` to the voice layer as props; hide `.io-hint` in talk mode; restart the session when `lang` changes. Host-mode tree otherwise unchanged. | D2, D3, D5 |
+| `src/App.jsx` | `params` memo (12); `embed` / `skin` (13–14); embed branch (34–40); hero mounts `IoHost` + `.io-hint` (83–86); `PathCard` drives the ref (115–148); language buttons (58–68); login URL hard-coded (70). | Parse `?voice` (`browser` / `live` / `turn` / `stub`; `1` enables the dock in embed). Render the static **ესაუბრეთ იოს / Talk to IO** `<button>` under `.io-hint` (V11) — or a *Type a question* button when the browser has neither `SpeechRecognition` nor a voice for the page language (A8; voices are re-checked on `voiceschanged`) — and a `keydown` listener for `KeyT` (`e.code`, since a Georgian layout reports `ტ`; ignored when the target is editable or `altKey` / `ctrlKey` / `metaKey` / `isComposing` is set). The handler **synchronously** creates and resumes one `AudioContext` and speaks an empty `SpeechSynthesisUtterance` (both unlocks inside the gesture), then `await import('./voice/VoiceDock.jsx')` (prefetched on `pointerenter`), then sets `mode='talk'`. Pass `mode`, the AudioContext, `lang`, the ref, `{ paths: { basic: { url }, kids: { url, newTab: true } }, loginUrl }` to the voice layer as props; hide `.io-hint` in talk mode; restart the session when `lang` changes. Host-mode tree otherwise unchanged. | D2, D3, D5 |
 | `src/main.jsx`, `index.html` | fonts; shell. | `main.jsx` untouched. `index.html`: reword line 10; `viewport-fit=cover` (B8). | D6 |
-| `vite.config.js` | `base: '/IO-for-main-page/'`, `plugins: [react()]`, no `rollupOptions`. | `defineConfig(({ command, mode }) => …)` with `loadEnv` reading `.env.local`; `define: { __IO_DEV_GEMINI_KEY__: JSON.stringify(command === 'serve' ? env.IO_GEMINI_KEY ?? '' : '') }` — the key is injected into dev serves only and is **structurally absent from every build** whatever `.env.local` contains (D13). `base` unchanged. | D1 |
+| `vite.config.js` | `base: '/IO-for-main-page/'`, `plugins: [react()]`, no `rollupOptions`. | `defineConfig(({ command, mode }) => …)` with `loadEnv` reading `.env.local`; `define: { __IO_DEV_GEMINI_KEY__: JSON.stringify(command === 'serve' ? env.IO_GEMINI_KEY ?? '' : '') }` — the key is injected into dev serves only and is **structurally absent from every build** whatever `.env.local` contains (V13). `base` unchanged. | D1 |
 | `package.json` / lockfile | react 18.3.1, three 0.169.0, r3f 8.18.0, vite 5.4.21; scripts `dev build preview check`. | Add `@google/genai` 2.x (lazy chunk only); scripts `check:voice`, `check:dist`, `smoke:voice`, `bakeoff`, `build:index`; `check` becomes `check-hints && check-voice`; `postbuild` runs `check:dist`. No npm workspaces; `worker/` (Track P) has its own `package.json`. | D1 |
-| `.github/workflows/deploy.yml` | push to `main` + gate `repository.name == 'IO-for-main-page'`, Node 20, `npm ci && npm run check && npm run build`. | Gate unchanged (it publishes the preview from the personal repository, A2). Add `env:` `VITE_IO_VOICE_DEFAULT` from a repository variable and `VITE_IO_SAFETY_REQUIRED: '1'`; `check:dist` runs via `postbuild`. A separate `voice-ci.yml` on `io-voice` builds and checks, deploys nothing. Track P adds `VITE_IO_API_BASE` and a Worker type-check job. | D1 |
+| `.github/workflows/deploy.yml` | push to `main` + gate `repository.name == 'IO-for-main-page'`, Node 20, `npm ci && npm run check && npm run build`. | Gate unchanged (it publishes the preview from the personal repository, A2). Add `env:` `VITE_IO_VOICE_DEFAULT` from a repository variable; `check:dist` runs via `postbuild`. `VITE_IO_SAFETY_REQUIRED: '1'` belongs to the Track P workflow (P3): the demo builds with `0`, and while `safety.js` holds placeholders the persona says "tell a trusted adult now" without reading the file (`check-voice.mjs` warns). A separate `voice-ci.yml` on `io-voice` builds and checks, deploys nothing. Track P adds `VITE_IO_API_BASE` and a Worker type-check job. | D1 |
 | `.gitignore` | `node_modules/ dist/ *.local .env .env.* .DS_Store npm-debug.log*` — `.env.*` also hides `.env.example`. | Add `!.env.example`, `bakeoff/*` + `!bakeoff/README.md`, `src/voice/tutor/local/` (the optional Basic Course index, A6), `worker/.dev.vars`, `worker/.dev.vars.*`, `!worker/.dev.vars.example`, `worker/.wrangler/`. | D1 |
 | `src/mascot/IoHost.jsx` | Timers: greet + wave at 500 ms (0 in reduced motion), intro at 6500 ms (52–63), sleepy wake-up 2600 ms (48), unhover drift-back 1400 ms (97–101); typewriter 2 code points / 22 ms (113–131); `talking = shown < text` (133); `onTap → host.next()` (65–71); ref API `hover/unhover/farewell` (79–108); DOM `.io-bubble > p[aria-hidden] + span.sr-only[role=status][aria-live=polite][aria-atomic]` (137–144); props to `RobotCanvas` (145–155). | Add `mode = 'host'` and a `talk` prop bundle `{ emotion, gesture, mouthLevel, talking, listening, label, panel, onInterrupt }`. Host mode unchanged. Entering talk: `clearLater()`, `hover/unhover` return early, `onTap` → `talk.onInterrupt()` before `host.next()`, the bubble's content becomes `talk.panel` (a slot from App), `emotion/gesture/talking/label` come from `talk`, `mouthLevel/listening/tapReaction={false}` forwarded. Leaving talk: `setGesture(null)`, clear hover bookkeeping, then verbatim `if (!lastCycled.current) lastCycled.current = host.intro(); say(lastCycled.current)`. `farewell()` keeps host semantics. §5.1. | D2 |
 | `src/mascot/hostBrain.js` | `MOOD`, `CYCLE`, `createHost`. | **Untouched.** | — |
@@ -422,8 +426,8 @@ Line numbers refer to `IO-for-main-page` (`dc8a296`) and are for the implementer
 | `src/mascot/RobotModel.jsx` | props (86–98); `anim` ref (110–120); tap reaction 1.8 s (179–186); gesture overlay 1.9 s (189–196); reduced-motion return (200–203); LED pulse (311–313); **mouth line 340**; `handleTap` (350–355). | Three additive props: `mouthLevel` (ref or number), `listening`, `tapReaction = true`; §5.2. | D2 |
 | `src/mascot/faceTexture.js` | `drawFace` (174–312); `open = 1 - blink` (218); `faceKey` (321–324); `surprised` (263). | Optional `eyesWide = 0`: `open = (1 - blink) * (1 + 0.12 * eyesWide)` and `|q(eyesWide)` in `faceKey`; byte-identical output at 0. | D2 |
 | `src/content/hints.js` | host lines. | **Untouched**; imported for facts and the bake-off lines. | — |
-| `src/i18n/ui.js` | `UI.ka/en`, `LANGS`, `initialLang()`. | Add `voice.*` (§6.1) and `loginUrl`; `initialLang()` untouched. | D2 |
-| `src/styles/global.css` | tokens; `.io-host`, `.io-bubble`, `.io-hint`, `.hero-io`, embed, reduced motion. | One appended block of ≈ 10 lines for `.io-talk` (D11); everything else in `src/voice/voice.css`. | D2 |
+| `src/i18n/ui.js` | `UI.ka/en`, `LANGS`, `initialLang()`. | Add `voice.talk`, `voice.typeInstead` and `loginUrl` only (the entry button needs them in the initial chunk); every other `voice.*` string lives in `src/voice/i18n.js`, the lazy chunk (§6.1); `initialLang()` untouched. | D2 |
+| `src/styles/global.css` | tokens; `.io-host`, `.io-bubble`, `.io-hint`, `.hero-io`, embed, reduced motion. | One appended block of ≈ 10 lines for `.io-talk` (V11); everything else in `src/voice/voice.css`. | D2 |
 | `scripts/check-hints.mjs` | checks `HINTS` only; exports nothing, exits at top level. | **Refactored, behaviour identical:** regexes move to `scripts/lib/lint.mjs` (`lintPair()`), imported by `check-hints.mjs` and the new `check-voice.mjs` (§6.3). | D1 |
 
 ### 4.2 Files taken from other branches
@@ -434,7 +438,7 @@ Line numbers refer to `IO-for-main-page` (`dc8a296`) and are for the implementer
 | `origin/io-chat-gemini:src/chat/useIoChat.js` | the turn pipeline shared by `BrowserVoiceSession` and `TurnVoiceSession`: message shape, `history.slice(-8)`, the generation counter, `AbortController` | As a plain class. A new utterance interrupts first instead of being dropped. History normalised to start with `user` and alternate. |
 | `origin/io-chat-gemini:src/mascot/ioBrain.js` | `scripts/build-io-index.mjs` (the CyberHero chunk builder: missions, guides, tips → 330 bilingual chunks) and `tutor/lookup.js` (retrieval) | Retrieval ported with BM25-style weighting, a title boost and a synonym map (`ორმაგი ავთენტიფიკაცია ↔ ორფაქტორიანი ↔ მრავალფაქტორიანი ↔ 2FA`, `ფიშინგი ↔ phishing`, `დეზინფორმაცია ↔ ყალბი ამბები`, `დიპფეიკი ↔ deepfake`). |
 | `origin/main:src/content/guardians/*`, `parents/*`, `mascot.js` (≈ 690 KB, proofread) | the public CyberHero corpus for the index | Read by the build script only. |
-| `origin/claude/mascot-robot-demo-9oclw8:src/content/ioCourse.js` | **not copied into the repository** (A6). If the presenter wants course answers in the demo, `npm run build:index -- --local-course <path>` writes a gitignored `src/voice/tutor/local/basic.json` that is imported only in dev builds (`if (import.meta.env.DEV)`) and never reaches `dist/` (`check:dist` greps for a course sentence). | The course's term for two-factor is „ორმაგი ავთენტიფიკაცია“; the persona uses it. |
+| `origin/claude/mascot-robot-demo-9oclw8:src/content/ioCourse.js` | **not copied into the repository** (A6). If the presenter wants course answers in the demo, `npm run build:index -- --local-course <path>` writes a gitignored `src/voice/tutor/local/basic.json`; `tutor/lookup.js` loads it through `import.meta.glob('./local/*.json')` (an absent folder yields `{}`, so machines without the file still build) and only while `__IO_DEV_SERVE__` is true — a second `define` set exactly like the key (`command === 'serve'`); `check:dist` greps every build for a course sentence as the backstop. | The course's term for two-factor is „ორმაგი ავთენტიფიკაცია“; the persona uses it. |
 | `origin/io-chat-gemini:docs/io-chatbot.md` and the demo branch's `ioBrain.js` persona | agreed persona rules (language mirroring; ground on platform content; never ask for personal data; refuse hacking; do not invent features; honest refusal „ეს კურსში არ არის განხილული“; the native-Georgian quality clause) | Folded into `tutor/persona.js` — **except** the "call 112" line: no number or organisation name is typed into the persona (§5.8). The chat strings are in the შენ register with hyphen dashes — rewritten. |
 
 ### 4.3 New files (Track D; Track P additions marked)
@@ -447,7 +451,7 @@ src/voice/
   BoardPanel.jsx               steps / checklist / diagram / link cards and the quiz card
   diagrams/{phishing_email,password_strength,two_factor_flow}.jsx   inline SVG, KA/EN labels
   voice.css                    every new rule, scoped (.io-host[data-mode="talk"], .voice-*)
-  i18n.js                      re-exports ui.js voice.*
+  i18n.js                      the voice.* strings (KA/EN) in the lazy chunk; ui.js keeps only the two entry strings
   useIoVoice.js                state machine: one VoiceSession, events → IoHost props, Esc handling, thinking timeout
   session/VoiceSession.js      the interface (JSDoc typedefs) + shared helpers
   session/select.js            ?voice= → VITE_IO_VOICE_DEFAULT (per-language allowed) → capability fallback; exposes the reason for the badge
@@ -477,7 +481,7 @@ worker/ (Track P)              package.json  tsconfig.json  wrangler.jsonc  .dev
                                src/index.ts  config.ts  limits.ts  text.ts  tutor.ts  routes/{token,chat,tts,stt}.ts  tts/{types,gemini}.ts
 ```
 
-### 4.4 Grounding content (A6, D10)
+### 4.4 Grounding content (A6, V10)
 
 `scripts/build-io-index.mjs` reads the CyberHero content straight from git
 (`origin/main:src/content/{guardians,parents,mascot}`), builds the 330 bilingual chunks with the
@@ -531,8 +535,9 @@ Three sources feed that ref: the player's smoothed RMS (`turn`, `live`: ≈ 60 m
 release as the brief specifies), the **word-boundary pulse** of `tts/speechSynthesis.js` (`browser`:
 each `onboundary` word event sets the level to 0.9, which decays to 0.05 over ≈ 180 ms, so the mouth
 opens once per word), or `null` outside `speaking` so the mouth closes fully. When a browser voice
-fires no boundary event within 400 ms of `onstart`, `useIoVoice` sets `talking = true` instead and the
-original sine mouth plays (A3's fallback). Cost: the 512 px face already repaints ≈ 30 times/s during
+fires no boundary event within 400 ms of `onstart`, `useIoVoice` sets the level ref to `null` for
+that utterance and `talking = true`, so the original sine branch plays (A3's fallback; the
+`lvl != null` branch would otherwise win). Cost: the 512 px face already repaints ≈ 30 times/s during
 the typewriter; the level path is similar and may be quantised to 1/16 without touching host mode.
 
 Listening cue: `anim.listen` blends toward `listening ? 1 : 0` at `dt·4`; LEDs (`ledMats`, both
@@ -544,13 +549,15 @@ none of this runs (the early return at 200–203 precedes it and `paintFace` is 
 
 ### 5.3 Layout, the entry button and CSS (D2, D5, D6)
 
-- **Entry (A8, D11, D12):** a small `<button class="io-talk">` under `.io-hint` in `.hero-io` (a
+- **Entry (A8, V11, V12):** a small `<button class="io-talk">` under `.io-hint` in `.hero-io` (a
   centred flex column: nothing above it moves), DGA palette (`--blue` on white, 7.25:1; the
   `.path-cta` recipe at a smaller size), label `ესაუბრეთ იოს` / `Talk to IO`. When the browser has
   neither `SpeechRecognition` nor a `speechSynthesis` voice for the page language (checked at mount
   and again on `voiceschanged`), the same slot shows `დაწერეთ კითხვა` / `Type a question`, which opens
-  the dock in typed mode. `T` (`e.code === 'KeyT'`) does what the button does. In `.embed-stage` the
-  button appears only with `?voice=1`. Its ≈ 10 lines of CSS are appended to `global.css`.
+  the dock in typed mode. `T` (`e.code === 'KeyT'`, never inside an editable field or with a modifier)
+  opens talk mode from host mode and starts/stops listening inside it; `Esc` interrupts. In
+  `.embed-stage` the button appears only with `?voice=1`. Its ≈ 10 lines of CSS are appended to
+  `global.css`.
 - **Desktop talk mode:** transcript in the bubble slot (fixed height); `VoiceDock` and `BoardPanel`
   **after** the canvas inside `.io-host` (a top-aligned flex column — additions below never move IO);
   everything `max-width: 360px`; the sticky `.hero-io` simply scrolls on short viewports.
@@ -567,8 +574,8 @@ none of this runs (the early return at 200–203 precedes it and `paintFace` is 
   speaking) and a **microphone-open indicator** (coral dot + `role="status"` text `voice.micOn`)
   bound to the recogniser / `MediaStreamTrack` state, because on the Live path the mic stays open
   through `thinking` and `speaking`. Both static under reduced motion.
-- **Dev badge (A3):** in dev builds (and on any build with an explicit `?voice=`), a small label in
-  the dock shows the active session and the reason (`browser · live: no key`).
+- **Dev badge (A3):** in dev builds only, a small label in the dock shows the active session and the
+  reason (`browser · live: no key`).
 - **Runtime-key field (A2):** shown in the dock only when the chosen session needs a key and no dev
   key is injected; the value goes to `localStorage['io.gemini.key']` and nowhere else; a *Forget key*
   button clears it. Never rendered when a dev key exists.
@@ -586,22 +593,29 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: '/IO-for-main-page/',
     plugins: [react()],
-    define: { __IO_DEV_GEMINI_KEY__: JSON.stringify(command === 'serve' ? (env.IO_GEMINI_KEY ?? '') : '') },
+    define: {
+      __IO_DEV_SERVE__: JSON.stringify(command === 'serve'),
+      __IO_DEV_GEMINI_KEY__: JSON.stringify(command === 'serve' ? (env.IO_GEMINI_KEY ?? '') : ''),
+    },
   }
 })
 ```
 
 - `.env.local` holds `IO_GEMINI_KEY=…` — **no `VITE_` prefix**, so Vite itself never inlines it; the
   `define` above injects it into `npm run dev` only. `npm run build` always defines it as `''`, so a
-  deployed preview cannot contain the key whatever the machine's `.env.local` says (D13).
-  `check:dist` (`postbuild`) additionally greps `dist/` for `AIza` / `AQ.` key patterns and for a
-  Basic Course sentence, and fails the build on a hit.
-- `auth/devKey.js`: `devKey()` returns `__IO_DEV_GEMINI_KEY__` only when `import.meta.env.DEV` and
-  `location.hostname` is `localhost` / `127.0.0.1`; `runtimeKey()` returns the pasted key;
+  deployed preview cannot contain the key whatever the machine's `.env.local` says (V13).
+  `check:dist` (`postbuild`) additionally scans the `.js`, `.css`, `.html` and `.json` files in
+  `dist/` for full key shapes (`AIza[0-9A-Za-z_-]{35}`, `AQ\.[A-Za-z0-9_-]{20,}`) and for a Basic
+  Course sentence, and fails the build on a hit.
+- In a dev serve the `define` values are page globals set by `/@vite/client`, readable by anyone who
+  can load the dev server: **never run `vite --host` (a LAN-exposed dev server) with a key in
+  `.env.local`**; phones are tested against the deployed preview with a pasted key.
+- `auth/devKey.js`: `devKey()` returns `__IO_DEV_GEMINI_KEY__` only when `__IO_DEV_SERVE__` is true
+  and `location.hostname` is `localhost` / `127.0.0.1`; `runtimeKey()` returns the pasted key;
   `resolveKey()` = dev key, else runtime key. **Live uses `devKey()` only** (A3: localhost); `turn`
   and the Gemini-backed `browser` session use `resolveKey()`.
 - `session/select.js`: `?voice=` → `VITE_IO_VOICE_DEFAULT` (`browser | live | turn`, or per language
-  `ka=browser,en=live`, D21) → capability fallback: `live` needs `devKey()` and `VITE_IO_LIVE_OK=1`
+  `ka=browser,en=live`, V21) → capability fallback: `live` needs `devKey()` and `VITE_IO_LIVE_OK=1`
   (set after the smoke test); `turn` needs `resolveKey()`; `browser` needs a chat backend (a key or a
   reachable local endpoint) and either `SpeechRecognition` or typed mode. The dock badge shows the
   result and why. `?voice=stub` (dev) plays a bundled WAV for the D2 acceptance test.
@@ -610,9 +624,11 @@ export default defineConfig(({ command, mode }) => {
   `POST <VITE_IO_LLM_BASE>/chat/completions` with `stream: true`, `data:` lines,
   `choices[0].delta.content`; default base `http://localhost:11434/v1`, model `gemma3`). Ollama's
   native tool calling is not reliable for `gemma3`, so on that backend tools use a text convention
-  (a line `@@tool <name> <json>` parsed out of the stream and never spoken); `lookup_course_material`
-  grounding is injected into the prompt instead. Georgian quality of `gemma3` is expected to be
-  noticeably below Gemini's and is recorded after the first test (§12).
+  (a line `@@tool <name> <json>`; the pipeline holds back any line starting with `@@` until its
+  newline and strips it from captions and TTS); `lookup_course_material` grounding is injected into
+  the prompt instead. Ollama accepts `localhost` origins by default; a github.io preview would need
+  `OLLAMA_ORIGINS`. Georgian quality of `gemma3` is expected to be noticeably below Gemini's and is
+  recorded after the first test (§12).
 
 ### 5.5 `BrowserVoiceSession` (A3, D3)
 
@@ -621,7 +637,7 @@ export default defineConfig(({ command, mode }) => {
   `onresult` → interim captions and the final transcript; `onerror`: `not-allowed` → `voice.noMic`,
   `language-not-supported` / `service-not-allowed` / `network` → typed mode with a message,
   `no-speech` → back to idle; `onend` → state. Push-to-talk: press to start, press again to stop;
-  holding also works (D15). Recognition itself is cloud-based (Google in Chrome, Microsoft in Edge).
+  holding also works (V15). Recognition itself is cloud-based (Google in Chrome, Microsoft in Edge).
 - **LLM:** the shared turn pipeline (`history.slice(-8)`, generation counter, `AbortController`,
   grounding from `lookup()`), backend per §5.4.
 - **TTS** (`tts/speechSynthesis.js`): voices from `speechSynthesis.getVoices()` refreshed on
@@ -631,10 +647,12 @@ export default defineConfig(({ command, mode }) => {
   One `SpeechSynthesisUtterance` per sentence (emoji, markdown and audio tags stripped; `rate` and
   `pitch` from config), queued in order so the first sentence starts while the reply is still
   streaming; `onboundary` word events → the mouth pulse (§5.2); no boundary within 400 ms → sine
-  mouth; `onend` of the last sentence → `listening`; `speechSynthesis.cancel()` on interruption, on
-  `end()` and on `pagehide`; errors `interrupted` / `canceled` ignored. Chrome's ≈ 15 s cut-off is
-  avoided by the sentence chunks; the first `speak()` happens after the *Talk* click, which satisfies
-  the user-gesture rule.
+  mouth; `onend` of the last sentence → `idle` with the ring label `voice.pushToTalk` (recognition
+  ends by itself at end of speech because `continuous = false`; a second press only stops early);
+  `speechSynthesis.cancel()` on interruption, on `end()` and on `pagehide`; errors `interrupted` /
+  `canceled` ignored. Chrome's ≈ 15 s cut-off is avoided by the sentence chunks; the entry handler
+  also calls `speechSynthesis.speak(new SpeechSynthesisUtterance(''))` synchronously next to
+  `AudioContext.resume()`, so iOS Safari's user-gesture rule is satisfied before any `await`.
 - **Captions:** the learner's interim and final transcripts and IO's text (per sentence, as spoken)
   in the transcript panel; `aria-live` on completed sentences.
 - **Interrupt:** `cancel()` + abort the chat stream + clear the sentence queue; the last IO turn is
@@ -653,7 +671,7 @@ a function-call part ends the sentence stream, the handler runs, and a second ch
 `set_mood` / `show_card` do not pause TTS. Sentence split on `. ! ? …`; time-to-first-audio printed
 in the dev console (the brief's ≤ 3 s target). Interrupt = abort fetches + `player.flush()`, keeping
 the transcript. Track P swaps in `llm/workerProxy.js`, `tts/worker.js` and, for Safari/Firefox,
-`stt/upload.js` (WAV from the mic worklet, D7).
+`stt/upload.js` (WAV from the mic worklet, V7).
 
 ### 5.7 `LiveVoiceSession` (D4 with the dev key; P2 with tokens)
 
@@ -669,7 +687,8 @@ turn. Then, per §2.3: mic chunks → `sendRealtimeInput({ audio })`; typed ques
 `sendRealtimeInput({ text })`; audio parts → player; `interrupted` → flush; transcriptions →
 captions; `toolCall` → handlers → `sendToolResponse` immediately; `toolCallCancellation` → cancel;
 `sessionResumptionUpdate` → store the handle; `goAway` or an unexpected `onclose` → reconnect with
-the handle (Track D; Track P sessions simply end at 10 min); `thinking` timeout (proactive audio);
+the handle (both tracks; in Track P only before `expireTime`, which is never extended); `thinking`
+timeout (proactive audio);
 90 s of silence → a nudge asking IO to say goodbye and call `end_session`; tab hidden > 30 s →
 `audioStreamEnd: true` and a visible paused state; a provisional session record on `pagehide`. Tool
 behaviours: `set_mood`, `show_card`, `record_skill` NON_BLOCKING + `SILENT`; `lookup_course_material`
@@ -686,8 +705,10 @@ speakers; `echoCancellation: true` is on).
   `UI[lang].basic.url`, `.kids.url`, `.kids.chips[0]` ("10 missions" lives only there) and
   `UI.loginUrl`; for Basic Course specifics IO says what the course covers and points to it (A6); the
   safety block (never ask for personal data; bullying / blackmail / strangers → calm, not their fault,
-  tell a trusted adult now, **read the resources from `safety.js[lang]`**; never role-play; refuse
-  hacking and pivot to defence); memory etiquette; "offer practice on the two weakest skills first".
+  tell a trusted adult now, **read the resources from `safety.js[lang]`** — while that file still
+  holds placeholders IO does not read it and says only to tell a trusted adult now; never role-play;
+  refuse hacking and pivot to defence); memory etiquette; "offer practice on the two weakest skills
+  first".
   **No telephone number, hotline or organisation name is typed into `persona.js`**; `check-voice.mjs`
   fails on three or more consecutive digits there. (112 is already published in the CyberHero
   missions; the DGA team may enter it in `safety.js`.) Two-factor is „ორმაგი ავთენტიფიკაცია“.
@@ -712,15 +733,18 @@ speakers; `echoCancellation: true` is on).
 - `wrangler.jsonc`: `vars` for `GEMINI_API_VERSION`, `LIVE_MODEL`, `LIVE_MODEL_FALLBACK`,
   `CHAT_MODEL`, `TTS_MODEL`, `STT_MODEL`, `VOICE_NAME`, `ALLOWED_ORIGINS`, `SESSION_MINUTES` (10),
   `MAX_CONCURRENT_PER_IP` (3), `MAX_SESSIONS_PER_IP_PER_DAY` (300), `DAILY_MINUTES_BUDGET`;
-  `ratelimits` bindings for bursts (`RL_TOKEN` 5/60 s, `RL_CHAT` 30/60 s, `RL_TTS` 60/60 s, `RL_STT`
-  30/60 s); one KV namespace `IO_RL`. Secrets: `GEMINI_API_KEY`, `TURNSTILE_SECRET` (optional).
-- **A5 limits, all applied at `/token` (one KV read-modify-write per session start):**
+  `ratelimits` bindings for bursts (`RL_TOKEN` 30/60 s so a class can start together, `RL_CHAT`
+  30/60 s, `RL_TTS` 60/60 s, `RL_STT` 30/60 s); one KV namespace `IO_RL`. Secrets: `GEMINI_API_KEY`,
+  `TURNSTILE_SECRET` (optional).
+- **A5 limits, all applied at `/token` (three KV key writes per session start):**
   `sess:<ip>:<day>` counts session starts (cap 300, expires at midnight + 120 s);
   `live:<ip>` holds up to 3 start timestamps within the last 10 min (approximate concurrency; a
-  Durable Object if exactness matters); `budget:<day>` starts at `DAILY_MINUTES_BUDGET` and is
-  decremented by `SESSION_MINUTES` per mint — when it reaches 0, `/token` answers 503
+  Durable Object if exactness matters); the global budget lives in a Durable Object (exact, and no
+  write-rate limit — KV's one write per key per second would reject a class starting together) or,
+  without one, in ten sharded `budget:<day>:<0-9>` keys summed on read; it starts at
+  `DAILY_MINUTES_BUDGET` and loses `SESSION_MINUTES` per mint — when it reaches 0, `/token` answers 503
   `budget_exhausted` and the dock switches to **text-only mode** (`BrowserVoiceSession` with typed
-  input and browser voices, `voice.textOnly`). Sessions end at `expireTime` (10 min, D3); the dock
+  input and browser voices, `voice.textOnly`). Sessions end at `expireTime` (10 min, V3); the dock
   says so and offers a new session.
 - Order per request: `Origin` allowlist (403 before any budget is spent) → `OPTIONS` 204 → burst
   limit → the A5 counters → route. Errors are JSON `{ error: { code, ka, en } }` with the text
@@ -729,10 +753,10 @@ speakers; `echoCancellation: true` is on).
 - `/token`: body `{ lang, page }` (the learner summary travels only in the hidden `session_started`
   turn, browser → Google); mints as in §2.2 with the locked setup from the bundled tutor modules;
   returns `{ token, expiresAt, model, apiVersion, voice }`.
-- `/chat` (D20): body `{ lang, learner, history[≤ 8], grounding[≤ 3] }`; the Worker builds the Gemini
+- `/chat` (V20): body `{ lang, learner, history[≤ 8], grounding[≤ 3] }`; the Worker builds the Gemini
   request (persona with the learner summary, tools, `generationConfig { temperature: 0.6, maxOutputTokens: 400 }`,
   explicit `safetySettings`), calls `models/<CHAT_MODEL>:streamGenerateContent?alt=sse` with
-  `x-goog-api-key`, returns `upstream.body` untouched as `text/event-stream` (D5); the 30 s abort
+  `x-goog-api-key`, returns `upstream.body` untouched as `text/event-stream` (V5); the 30 s abort
   covers connect + headers only.
 - `/tts`: `{ text, lang, voice }` → Gemini TTS stream → PCM16 24 kHz; emoji, markdown and audio tags
   stripped first. `/stt`: WAV (≤ 60 s, ≤ 2 MB) + `lang` → Flash inline audio → `{ text }`.
@@ -775,7 +799,7 @@ VITE_IO_LIVE_MODEL=gemini-3.8-live
 VITE_IO_TTS_MODEL=gemini-3.1-flash-tts-preview
 VITE_IO_VOICE_NAME=Microsoft Giorgi Online (Natural)   # speechSynthesis preference (browser session)
 VITE_IO_GEMINI_VOICE=Charon          # Gemini voice (turn, live, bake-off) — set after Gate G1
-VITE_IO_SAFETY_REQUIRED=0            # CI sets 1: the build fails while safety.js still has placeholders
+VITE_IO_SAFETY_REQUIRED=0            # Track P's workflow sets 1 (build fails while safety.js has placeholders); the demo builds with 0
 # Track P adds: VITE_IO_API_BASE=https://io-voice.<account>.workers.dev  (the Worker then supplies models and voice)
 ```
 
@@ -786,8 +810,8 @@ VITE_IO_SAFETY_REQUIRED=0            # CI sets 1: the build fails while safety.j
 Rules every new UI string follows (from `hints.js` and `check-hints.mjs`): თქვენ register, ≤ 110
 characters per language, no emoji in UI strings, spaced em dash " — " (never " - "), ranges with a
 hyphen (`13-18`), Georgian quotes „…“ (U+201E / U+201C), ellipsis as `…` never `...`, no Latin letters
-in Georgian beyond the allow-listed brand words (the list gains `Google`, `Microsoft`, `Esc`, `Chrome`,
-`Edge` where a string needs them — B13), no cyber tips in host-mode strings. IO's spoken answers
+in Georgian beyond the allow-listed brand words (the list gains `Google`, `Microsoft`, `Gemini`, `Esc`,
+`Chrome`, `Edge` where a string needs them — B13), no cyber tips in host-mode strings. IO's spoken answers
 (≤ 2 sentences, ≈ 35 words) are exempt from the 110-character limit and scroll in the transcript.
 All strings get one native review before D6 (Q5).
 
@@ -803,15 +827,15 @@ All strings get one native review before D6 (Q5).
 | `voice.speaking` | `იო საუბრობს` | IO is speaking | |
 | `voice.micOn` | `მიკროფონი ჩართულია` | Microphone on | the mic-open indicator |
 | `voice.mute` / `voice.unmute` | `მიკროფონის გამორთვა` / `მიკროფონის ჩართვა` | Mute / Unmute | |
-| `voice.pushToTalk` | `დააწკაპუნეთ და ისაუბრეთ` | Click, speak, click again | D15 |
+| `voice.pushToTalk` | `დააწკაპუნეთ და ისაუბრეთ` | Click and speak | V15 |
 | `voice.end` | `საუბრის დასრულება` | End the conversation | |
 | `voice.deleteData` | `ჩემი მონაცემების წაშლა` | Delete my data | nominal, like the page's buttons (B9) |
 | `voice.deleteConfirm` | `წავშალოთ იოს მეხსიერება თქვენს შესახებ?` | Delete what IO remembers about you? | |
 | `voice.noMic` | `მიკროფონზე წვდომა არ არის. შეგიძლიათ კითხვა დაწეროთ.` | No microphone access. You can type your question instead. | |
-| `voice.privacy` | `იო ხმის ჩანაწერებს არ ინახავს — ხმას Google ან Microsoft ამუშავებს.` | IO keeps no recordings — your voice is processed by Google or Microsoft. | the browser's speech service; the brief's line was silent about it |
-| `voice.privacyText` | `საუბრის ტექსტი მხოლოდ თქვენს ბრაუზერში ინახება.` | The chat text is stored only in your browser. | |
+| `voice.privacy` | `იო ხმის ჩანაწერებს არ ინახავს — ხმას Google ან Microsoft ამუშავებს.` | IO keeps no recordings — your voice is processed by Google or Microsoft. | changed after A3 (Edge → Microsoft) — re-review; the brief's line was silent about who processes the voice |
+| `voice.privacyText` | `საუბრის ტექსტი მხოლოდ თქვენს ბრაუზერში ინახება.` | The chat text is stored only in your browser. | split from the earlier single line — re-review |
 | `voice.errSocket` | `ხმოვანი კავშირი ვერ დამყარდა. შეგიძლიათ კითხვა დაწეროთ.` | Voice connection failed. You can type your question instead. | |
-| `voice.errRateLimit` | `დღეისთვის საუბრის ლიმიტი ამოიწურა. ხვალ ისევ შევხვდებით.` | Today's conversation limit is used up. See you again tomorrow. | free-tier 429 (Track D), Worker 429 (Track P) |
+| `voice.errRateLimit` | `დღეისთვის საუბრის ლიმიტი ამოიწურა. ხვალ ისევ შევხვდებით.` | Today's conversation limit is used up. See you again tomorrow. | Track D: only when a 429 names a daily quota (per-minute 429s wait `retryDelay` and retry); Track P: the Worker's 429 |
 | `voice.textOnly` | `ხმოვანი რეჟიმი დღეს ამოწურულია — შეგიძლიათ კითხვა დაწეროთ.` | Voice mode is used up for today — you can type your question. | Track P budget exhausted |
 | `voice.keyLabel` / `voice.keyForget` | `Gemini-ის გასაღები (რჩება მხოლოდ ამ ბრაუზერში)` / `გასაღების დავიწყება` | Gemini key (stays only in this browser) / Forget key | the runtime-key field (A2) |
 | `voice.errOrigin`, `voice.errTimeout`, `voice.errSafety`, `voice.errEmpty` | drafted in D2 (rewritten from the chat branch in თქვენ) | | |
@@ -852,22 +876,23 @@ in IO's own output is expanded to the agency's Georgian name, „ციფრუ
 2. **Gemini TTS** (if the key works) — 4–5 male-coded voices first: Charon, Puck, Orus, Achird,
    Iapetus (Umbriel, Fenrir as extras): `scripts/voice-bakeoff.mjs` (Node, `IO_GEMINI_KEY` from
    `.env.local`) synthesises each line twice — with the language named in the prompt and without
-   (D17) — and writes `bakeoff/gemini-<voice>-<n>[-hint].wav`, 24 kHz 16-bit mono.
+   (V17) — and writes `bakeoff/gemini-<voice>-<n>[-hint].wav`, 24 kHz 16-bit mono.
 3. **The Live model's own voice** — the same script opens a short Live session per candidate voice
    with `@google/genai` in Node, sends "read this line verbatim" as a text turn, captures the audio
    to `bakeoff/live-<voice>-<n>.wav` and checks the output transcription matched the line. This
-   decides G1(b): is Georgian barge-in possible.
+   decides G1(c) and G1(d): is there Live quota on the key, and is Georgian barge-in good enough.
 
 `bakeoff/README.md` has one row per voice and line with columns naturalness, pronunciation of
 ქ/ყ/წ/ჭ/ღ, pace, warmth (1–5 each) and comments, and a **Decision** block: G1(a) the browser voice,
-G1(b) the Gemini voice (if any), G1(c) "Live's Georgian is good enough and the key has Live quota:
-yes / no" → `VITE_IO_VOICE_DEFAULT`, `VITE_IO_VOICE_NAME`, `VITE_IO_GEMINI_VOICE`, `VITE_IO_LIVE_OK`.
+G1(b) the Gemini voice (if any), G1(c) "the key has Live quota: yes / no", G1(d) "Live's Georgian is
+good enough for the Georgian default: yes / no" → `VITE_IO_VOICE_DEFAULT` (per language, e.g.
+`ka=browser,en=live` when G1(d) is no), `VITE_IO_VOICE_NAME`, `VITE_IO_GEMINI_VOICE`, `VITE_IO_LIVE_OK`.
 Azure and ElevenLabs are skipped (A7).
 
 ### 6.3 What the checks add (D1 scaffold, complete in D6)
 
 `scripts/lib/lint.mjs` holds the regexes moved out of `check-hints.mjs` (behaviour identical).
-`check-voice.mjs`: walks `UI.ka`/`UI.en` for key and array-length parity (absent today); applies the
+`check-voice.mjs`: walks `UI.ka`/`UI.en` and `src/voice/i18n.js` for key and array-length parity (absent today); applies the
 110-character limit and the Latin rule to `voice.*` and `tutor/strings.js` only; scopes `TIP_WORDS`
 to `HINTS`; skips the emoji rule over the synonym map (its `↔` arrows match the emoji class);
 forbids `...`; checks `safety.js` placeholders (fail when `VITE_IO_SAFETY_REQUIRED=1`), `persona.js`
@@ -890,10 +915,10 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
 
 | Phase | Builds | Acceptance | Gate |
 |---|---|---|---|
-| D1 | `.env.example`, `.gitignore`, `vite.config.js` dev-key injection, `scripts/lib/lint.mjs`, `check-voice.mjs` scaffold, `check-dist.mjs`, `llm/geminiSse.js` + `llm/geminiDirect.js` + `llm/openaiCompatible.js` + `auth/devKey.js` with the runtime-key field, `scripts/voice-smoke.mjs`, `scripts/voice-bakeoff.mjs`, the `?bakeoff=1` page, `bakeoff/README.md`, `voice-ci.yml` | `npm run check` green; a production build contains no key even with a key in `.env.local`; `npm run smoke:voice` with the team's key prints, per candidate model, whether `generateContent`, `streamGenerateContent`, TTS and a Live connect succeed and the quota text of any 429; `npm run bakeoff` writes the WAVs when the key works; `?bakeoff=1` speaks the six lines in Edge with Giorgi and Eka and logs boundary events | **G1 (human):** browser voice, Gemini voice, Live good enough + quota → the defaults in `.env.local` |
-| D2 | mic, worklet, player, `mouthLevel` / `listening` / `tapReaction`, `eyesWide`, IoHost talk mode, the static button + `T` + AudioContext unlock, `VoiceDock`, `TranscriptPanel`, `voice.css`, `useIoVoice`, `tts/speechSynthesis.js` with the boundary mouth, `StubVoiceSession`, `voice.*` strings | with `?voice=stub` the mouth follows a local WAV; with a browser voice the mouth pulses per word (Edge) or the sine plays (no boundary events); the ring follows the mic; click/Esc cut audio instantly; reduced motion OK; host click cycle untouched; `global.css` diff is the button block only; before/after screenshots of host mode on both skins | go-ahead |
-| D3 | `BrowserVoiceSession` end-to-end (Web Speech → Gemini or Ollama → browser voices), typed mode, `TurnVoiceSession` with the direct transport (Gemini TTS through the player) when the key works | in Edge and Chrome a Georgian question gets a Georgian spoken answer with captions; push-to-talk; typed mode in Firefox/Safari; `?voice=turn` plays real audio with the amplitude mouth; first audio ≤ 3 s measured and printed; the dev badge shows the active session | go-ahead |
-| D4 | `LiveVoiceSession` with the dev key (localhost, dev builds only), `session_started`, resumption, idle/hidden handling, failure paths → fallback to `browser` | brief Phase 3 acceptance: fresh load → Talk → wave + Georgian greeting; KA question → KA spoken answer with captions; barge-in ≤ 300 ms; EN session; returning-learner greeting — **conditional on G1(c)**; otherwise D4 records why and is skipped | go-ahead |
+| D1 | `.env.example`, `.gitignore`, `vite.config.js` dev-key injection, `scripts/lib/lint.mjs`, `check-voice.mjs` scaffold, `check-dist.mjs`, `llm/geminiSse.js` + `llm/geminiDirect.js` + `llm/openaiCompatible.js` + `auth/devKey.js`, `tts/speechSynthesis.js` (voice selection and boundary logging; the mouth pulse follows in D2), the `?bakeoff=1` route, `scripts/voice-smoke.mjs`, `scripts/voice-bakeoff.mjs`, the `?bakeoff=1` page, `bakeoff/README.md`, `voice-ci.yml` | `npm run check` green; a production build contains no key even with a key in `.env.local`; `npm run smoke:voice` with the team's key prints, per candidate model, whether `generateContent`, `streamGenerateContent`, TTS and a Live connect succeed and the quota text of any 429; `npm run bakeoff` writes the WAVs when the key works; `?bakeoff=1` speaks the six lines in Edge with Giorgi and Eka and logs boundary events | **G1 (human):** browser voice, Gemini voice, Live quota, Live's Georgian → the defaults in `.env.local` |
+| D2 | mic, worklet, player, `mouthLevel` / `listening` / `tapReaction`, `eyesWide`, IoHost talk mode, the static button + `T` + AudioContext unlock, `VoiceDock` (with the runtime-key field), `TranscriptPanel`, `voice.css`, `useIoVoice`, the boundary mouth in `tts/speechSynthesis.js`, `StubVoiceSession`, `voice.*` strings | with `?voice=stub` the mouth follows a local WAV; with a browser voice the mouth pulses per word (Edge) or the sine plays (no boundary events); the ring follows the mic; click/Esc cut audio instantly; reduced motion OK; host click cycle untouched; `global.css` diff is the button block only; before/after screenshots of host mode on both skins | go-ahead |
+| D3 | `BrowserVoiceSession` end-to-end (Web Speech → Gemini or Ollama → browser voices), typed mode, `TurnVoiceSession` with the direct transport (Gemini TTS through the player) when the key works | in Edge and Chrome a Georgian question gets a Georgian spoken answer with captions; push-to-talk; typed mode in Firefox; Safari: English by voice if `webkitSpeechRecognition` accepts `en-US`, Georgian typed; `?voice=turn` plays real audio with the amplitude mouth; first audio ≤ 3 s measured and printed; the dev badge shows the active session | go-ahead |
+| D4 | `LiveVoiceSession` with the dev key (localhost, dev builds only), `session_started`, resumption, idle/hidden handling, failure paths → fallback to `browser` | brief Phase 3 acceptance: fresh load → Talk → wave + Georgian greeting; KA question → KA spoken answer with captions; barge-in ≤ 300 ms; EN session; returning-learner greeting — **conditional on G1(c) (quota) only**; when G1(d) is no, Live is still built and the default becomes `ka=browser,en=live` | go-ahead |
 | D5 | persona, skills, memory, tools, board cards, quiz, diagrams, `safety.js`, `build-io-index.mjs` (CyberHero only), test script | 6-turn script passes on `browser` (and on `live` if wired); reload greeting; delete resets; off-topic and "hack my friend" refused; a Basic Course question is answered from `hints.js` facts and routed, not quoted | go-ahead |
 | D6 | accessibility and mobile passes (Android Chrome: Web Speech works; iOS Safari: typed + voices), embed in a local test iframe with `allow="microphone; autoplay"`, `check-dist.mjs` complete, demo README + privacy text, `docs/io-voice-demo.md` (run sheet: what to click, what to say, what to do if the network or the free tier fails), latency numbers | definition of done for the demo; the run sheet rehearsed once end-to-end on the presenter's machine | demo |
 
@@ -903,7 +928,7 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
 |---|---|---|
 | P1 | `worker/` (§5.9) with the A5 limits and the global budget, `worker/README.md`, the Worker part of the smoke script, Cloudflare account on the personal plan (A4) | `wrangler dev` serves the routes; 403 on a bad origin; 429/503 with KA/EN bodies; token mint on both API versions; the `fieldMask` and reconnect questions answered |
 | P2 | `auth/workerToken.js`, `llm/workerProxy.js`, `tts/worker.js`, `stt/upload.js`, text-only mode on budget exhaustion, `VITE_IO_API_BASE` in the workflow | the same conversations run with no key in the browser; sessions end at 10 min; the dock switches to text-only when the budget is exhausted |
-| P3 | Moodle embed with the admins (Q8), deployment on the agency account, production README and privacy text, `check:dist` in the Pages workflow | brief's definition of done on the live page |
+| P3 | Moodle embed with the admins (Q8), deployment on the agency account, production README and privacy text, `VITE_IO_SAFETY_REQUIRED=1` in the Pages workflow | brief's definition of done on the live page |
 
 ---
 
@@ -911,15 +936,15 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
 
 | Rule | Track D (demo) | Track P (production) |
 |---|---|---|
-| No API keys in the client bundle | the dev key is injected into `npm run dev` only (`vite.config.js`, D13); `check:dist` scans every build; a preview uses a key pasted at runtime (A2) — the key is in the presenter's browser, never in a file that ships | keys only in `wrangler secret`; ephemeral tokens single-use, 10 min, locked |
-| IO's look unchanged | `RobotModel.jsx` diff limited to the three props; `faceTexture.js` identical at `eyesWide = 0`; one static button (D11); before/after screenshots | same |
+| No API keys in the client bundle | the dev key is injected into `npm run dev` only (`vite.config.js`, V13); `check:dist` scans every build; a preview uses a key pasted at runtime (A2) — the key is in the presenter's browser, never in a file that ships | keys only in `wrangler secret`; ephemeral tokens single-use, 10 min, locked |
+| IO's look unchanged | `RobotModel.jsx` diff limited to the three props; `faceTexture.js` identical at `eyesWide = 0`; one static button (V11); before/after screenshots | same |
 | Every existing behaviour kept | host-mode code paths untouched (§4.1); `npm run check` kept and extended; query params unchanged; embeds without `?voice=1` unchanged; talk mode works on the WebGL fallback | same |
 | Georgian first | `initialLang()` untouched; every new string KA + EN; `check-voice.mjs` applies the `hints.js` rules | same |
 | Privacy | no recordings stored; transcript + profile in `localStorage` only, *Delete my data* → `forget()`; mic only from a click; the mic-open indicator; the README names the browser speech services and Gemini's free-tier terms; test content only | the Worker keeps no bodies, the IP for one day; paid-tier terms; the README says what goes to Google |
-| Performance | `src/voice/**`, `@google/genai`, worklet and `voice.css` behind one `import()`; the initial chunk grows by the button, the `T` listener and the AudioContext helper only; `check-dist.mjs` enforces §9 | same |
+| Performance | `src/voice/**`, `@google/genai`, worklet and `voice.css` behind one `import()`; the initial chunk grows by the entry button, the `T` listener, the AudioContext helper, the two entry strings and the additive branches in `IoHost`, `RobotModel` and `faceTexture`; `check-dist.mjs` enforces the §9 budget | same |
 | Accessibility | real `<button>` with state label; own `aria-live="polite"` transcript; `T` / `Esc`; reduced motion → still face, captions only; AA pairs in §5.3 | same |
 | Embed mode | `?embed=1&voice=1` in a local test iframe; README documents `allow="microphone; autoplay"` and 520 px | the Moodle page (P3) |
-| `src/voice/` self-contained | no imports from `App.jsx` or `worker/`; only `../content/hints.js`, `../i18n/ui.js` and props | the Worker imports from `src/voice`, not the reverse |
+| `src/voice/` self-contained | no imports from `App.jsx` or `worker/`; only `../content/hints.js`, `../content/safety.js`, `../i18n/ui.js` and props | the Worker imports from `src/voice`, not the reverse |
 
 ---
 
@@ -936,18 +961,20 @@ Vite 5.4.21); CI uses Node 20.
 | `dist/` total | 2.5 MB (fonts included) |
 | Build time | ≈ 4 s |
 
-`check-dist.mjs` fails a build if the initial JS chunk grows by more than 3 KB gzipped or the CSS by
-more than 1 KB, or if the voice chunk is referenced by `index.html`.
+`check-dist.mjs` fails a build if the initial JS chunk grows by more than 4 KB gzipped (the budget
+is fixed from the D2 measurement) or the CSS by more than 1 KB, or if the voice chunk is referenced
+by `index.html`.
 
-Latency (D6, Track D):
+Latency (D6, Track D). Laptop rows on localhost in Edge; phone rows on the deployed preview with a
+pasted key (`live` on a phone waits for Track P, or for Q3 = yes):
 
-| Session | Lang | Laptop (Edge): time to first audio | Phone (Android Chrome) |
+| Session | Lang | Laptop (Edge): time to first audio | Phone (Android Chrome, preview) |
 |---|---|---|---|
 | `browser` | KA | | |
 | `browser` | EN | | |
 | `turn` (Gemini TTS) | KA | | |
-| `live` | KA | | |
-| `live` | EN | | |
+| `live` | KA | | — |
+| `live` | EN | | — |
 
 ---
 
@@ -966,7 +993,7 @@ Latency (D6, Track D):
 ### 10.2 Production (Track P): per 10-minute conversation, Gemini paid tier
 
 Assumptions: audio = 25 tokens per second; a 10-minute conversation has ≈ 10 minutes of microphone
-input and ≈ 4 minutes of IO speaking; 20 exchanges; Flash at the introductory price until
+input and ≈ 4 minutes of IO speaking (≈ 300 audio tokens per reply over 20 exchanges); Flash at the introductory price until
 2026-12-31 ($0.75 / $3.75 per 1M tokens in / out), then $1.50 / $7.50; Live audio $3.00 / 1M tokens
 in, $12.00 / 1M out; Gemini TTS $0.50 / 1M text in, $10.00 / 1M audio out (Gemini API pricing page,
 *snippets* — re-read before the budget is filed); Cloud list TTS price $20 / 1M used for the upper
@@ -975,20 +1002,24 @@ bound.
 | Path | What is billed | ≈ cost per 10-minute conversation |
 |---|---|---|
 | **Live** (barge-in, the brief's primary path) | 15,000 audio tokens in ≈ $0.045; 6,000 audio tokens out ≈ $0.072; instruction and tool text ≈ $0.01 | **≈ $0.13** |
-| **Turn** with the browser's free recogniser + Flash + Gemini TTS | 20 × (chat ≈ 3,000 tokens in / 100 out ≈ $0.003; TTS ≈ 200 audio tokens ≈ $0.002–0.004) | **≈ $0.10–0.14** |
-| Turn with Gemini transcription for Safari / Firefox uploads | as above + 20 × 320 audio tokens ≈ $0.005 | ≈ $0.11–0.15 |
-| Text-only mode (budget exhausted; browser voices) | chat only | ≈ $0.06 |
-| From 2027-01-01 (standard Flash prices) | chat cost doubles | turn ≈ $0.16–0.20; Live unchanged |
+| **Turn** with the browser's free recogniser + Flash + Gemini TTS | 20 × (chat ≈ 3,000 tokens in / 100 out ≈ $0.003; TTS ≈ 300 audio tokens ≈ $0.003–0.006) | **≈ $0.11–0.17** |
+| Turn with Gemini transcription for Safari / Firefox uploads | as above + 20 × 320 audio tokens ≈ $0.005 | ≈ $0.12–0.18 |
+| Text-only mode (budget exhausted; browser voices) | chat only | ≈ $0.05 |
+| From 2027-01-01 (standard Flash prices) | chat cost doubles | turn ≈ $0.16–0.22; Live unchanged |
 
-**Monthly, at N conversations per day** (≈ $0.13 each): 20 → ≈ $80; 100 → ≈ $400; 500 → ≈ $2,000.
+**Monthly (30 days), at N conversations per day** (≈ $0.13 each): 20 → ≈ $80; 100 → ≈ $400;
+500 → ≈ $2,000.
 
-**Fixed costs:** Cloudflare Workers Free $0 (Paid $5 / month only if exact per-route daily caps are
-wanted instead of the A5 scheme); GitHub Pages $0; a custom domain if the agency wants one.
+**Fixed costs:** Cloudflare Workers Free $0 up to ≈ 300 conversations a day (KV allows 1,000 writes
+a day and a session start costs three); above that, or for exact counters, Workers Paid $5 / month;
+GitHub Pages $0; a custom domain if the agency wants one.
 
-**Ceilings:** Google Tier 1 throttles spending at $10 per rolling 10 minutes (≈ 75 simultaneous Live
-conversations) — that is a rate limit, not a budget, so a Cloud Billing budget alert must be set
-separately. The real cap is the Worker's global daily minutes budget (A5): for example 300 minutes a
-day ≈ 30 conversations ≈ $4 a day ≈ $120 a month, after which the dock switches to text-only mode.
+**Ceilings:** Google Tier 1 throttles spending at $10 per rolling 10 minutes *(rate-limits page
+snippet)* — ≈ 75 Live conversations starting per 10 minutes — a rate limit, not a budget, so a Cloud
+Billing budget alert must be set separately. The real cap is the Worker's global daily minutes budget
+(A5): for example 300 minutes a day ≈ 30 conversations ≈ $4 a day ≈ $120 a month, after which the
+dock switches to text-only mode — which still bills ≈ $0.05 per conversation for `/chat`; the budget
+caps voice minutes, not chat.
 
 **For the budget request:** a pilot of ≈ 30 conversations a day costs ≈ $120 a month on the Gemini
 paid tier and nothing on Cloudflare; every additional 100 daily conversations add ≈ $400 a month.
@@ -1009,7 +1040,7 @@ limits, the public index and the Azure region are closed by A4–A7.
 |---|---|---|---|---|
 | Q1 | Safety filters (Gemini `safetySettings`, both tracks): with Google's default filters IO may refuse or stop mid-sentence when a child describes bullying or blackmail — IO's core topics. Loosening those two categories lets IO answer; the risk is harsher wording slipping through. Sexual and hate categories stay at default. | Sign-off by a named person. | loosen the two categories; keep the rest | before D3 |
 | Q2 | The presentation machine: Edge with the online natural voices installed and internet at the venue (browser speech, Edge voices and Gemini all need it); Ollama with `gemma3` installed as the offline fallback? Headphones or a speaker (self-interruption on the Live path)? | Without Edge there is no Georgian browser voice; without internet only Ollama + typed mode work. | Edge + internet + Ollama installed as the fallback; a wired headset | before D3 |
-| Q3 | Deployed preview: may the pasted runtime key also power `turn` and `live` there (A3 says Live is localhost-only)? | Enables the barge-in showcase on the preview; the key still lives only in the presenter's browser. | allow it behind the same guard, off by default | before D4 |
+| Q3 | Deployed preview: may the pasted runtime key also power `live` there? (`turn` already uses it, §5.4; A3 makes Live localhost-only.) | Enables the barge-in showcase on the preview; the key still lives only in the presenter's browser. | allow it behind the same guard, off by default | before D4 |
 | Q4 | Privacy wording of the demo README (§5.10) and the free-tier data-use terms: sign-off before the preview is pushed. | — | sign off in D6 | before D6 |
 | Q5 | New Georgian UI strings (§6.1): the typography lint plus one native review, or the three-writer process used for `hints.js`? | The lint cannot judge register or idiom. | lint + one native review | before D6 |
 | Q6 | Skill taxonomy: the 13 skills in §5.8, plus `screen_balance` (CyberHero mission 9)? | 14 gives CyberHero parity. | 14 | before D5 |
@@ -1022,10 +1053,10 @@ limits, the public index and the Azure region are closed by A4–A7.
 | # | Choice | See |
 |---|---|---|
 | B1 | Token TTL 10 min = the session cap (A5); `newSessionExpireTime` 60 s; explicit `fieldMask`; the P1 smoke script settles sub-path locking and reconnect-after-60 s | §2.2, §5.9 |
-| B2 | API version is a config value, default `v1beta`; the smoke script tests both | D4 |
-| B3 | Track P `/stt` receives WAV built in the browser | D7 |
+| B2 | API version is a config value, default `v1beta`; the smoke script tests both | V4 |
+| B3 | Track P `/stt` receives WAV built in the browser | V7 |
 | B4 | Desktop transcript in the bubble slot at a fixed 104 px; bottom sheet ≤ 900 px; fixed dock in embed | §5.1, §5.3 |
-| B5 | `RobotModel` gains `tapReaction`; `faceTexture` gains `eyesWide` | D9 |
+| B5 | `RobotModel` gains `tapReaction`; `faceTexture` gains `eyesWide` | V9 |
 | B6 | Talk-mode click on IO = interrupt only | §5.1 |
 | B7 | Manual interruption on Live: flush + discard until `turnComplete`; sending a short realtime text as well is a D4 experiment | §2.3 |
 | B8 | `index.html` gains `viewport-fit=cover` | §4.1 |
@@ -1034,7 +1065,7 @@ limits, the public index and the Azure region are closed by A4–A7.
 | B11 | Transcription language hint `ka` first, `ka-GE` tested | §2.3 |
 | B12 | *Talk* pressed before the 500 ms greeting skips the greeting; leaving talk mode applies the intro rule | §5.1 |
 | B13 | The Latin allowlist for `voice.*` strings gains the tokens those strings need, one by one | §6 |
-| B14 | Track P's `/chat` request is built in the Worker from the bundled tutor modules; Track D builds it in the browser | D20 |
+| B14 | Track P's `/chat` request is built in the Worker from the bundled tutor modules; Track D builds it in the browser | V20 |
 | B15 | The CyberHero index is committed (`public/io-index.json`); the Basic Course index, if any, is gitignored and dev-only | §4.4 |
 | B16 | The dev key reaches the browser only through `vite.config.js`'s `define` in `serve`; builds always define it empty | §5.4 |
 | B17 | Browser-voice mouth = word-boundary pulses; no boundary within 400 ms → the sine mouth | §5.2 |
@@ -1052,7 +1083,7 @@ limits, the public index and the Azure region are closed by A4–A7.
 | Edge's online voices or the recogniser fail without internet | the run sheet's offline plan: Ollama + typed mode + any local voice |
 | No word-boundary events from a voice → no mouth movement | automatic sine fallback (B17), verified per voice by the bake-off page |
 | Chrome cuts long `speechSynthesis` utterances | sentence chunking |
-| Georgian on the Live path is not good enough, or the key has no Live quota | G1(c); D4 is conditional; `browser` is the safety net |
+| Georgian on the Live path is not good enough, or the key has no Live quota | G1(c)/(d); D4 needs quota only; the per-language default keeps Live for English; `browser` is the safety net |
 | The key in the presenter's browser | dev serve only or pasted at runtime; never in a build (`vite.config.js` + `check:dist`); *Forget key* |
 | Free-tier data-use terms (content may be used to improve Google's products) | README says so; test content only; paid tier in Track P |
 | Proactive audio keeps the Live model silent on a child's short or quiet utterance | `thinking` timeout; `waitingForInput` honoured |
@@ -1060,7 +1091,7 @@ limits, the public index and the Azure region are closed by A4–A7.
 | Safety filters cut mid-sentence on the tutor's core topics | explicit `safetySettings` (Q1); streamed captions kept |
 | `localStorage` partitioned in a cross-site iframe | in-memory fallback; README note |
 | `MAX_TOKENS` at 400 truncates Georgian tool calls | detect `finishReason`, raise the cap for tool turns, short option text |
-| A 60 Hz level as React state; `StrictMode` double-mounts | ref transport (D8); audio and sockets created in the click handler |
+| A 60 Hz level as React state; `StrictMode` double-mounts | ref transport (V8); audio and sockets created in the click handler |
 | `connect()` hangs when the socket closes before `open` | 10 s timeout |
 | A tool call is not a user gesture (`window.open`, iframe navigation) | link card fallback |
 | CI runs Node 20 while `@google/genai` 3.x will need Node 22 | pin 2.x |
