@@ -58,6 +58,7 @@ export default function App() {
   const [talk, setTalk] = useState(null) // what the voice layer wants IO to do
   const [highlight, setHighlight] = useState(null) // the path card navigate_to_path chose
   const audioCtx = useRef(null)
+  const heroIo = useRef(null)
   const [speechOk, setSpeechOk] = useState(() => speechAvailable(lang))
 
   useEffect(() => {
@@ -132,6 +133,16 @@ export default function App() {
     },
     [exitTalk, embed],
   )
+
+  // on a narrow viewport the dock is a bottom sheet: bring IO to the top of
+  // the screen when talk mode opens, so he stays visible above it (D6)
+  useEffect(() => {
+    if (mode !== 'talk' || embed || !heroIo.current) return
+    if (!window.matchMedia('(max-width: 900px)').matches) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const top = heroIo.current.getBoundingClientRect().top + window.scrollY - 8
+    window.scrollTo({ top: Math.max(0, top), behavior: reduced ? 'auto' : 'smooth' })
+  }, [mode, embed])
 
   // T opens talk mode from host mode (e.code: a Georgian layout reports ტ)
   useEffect(() => {
@@ -239,7 +250,7 @@ export default function App() {
 
       <main id="main" className="page">
         <section className="hero">
-          <div className="hero-io">
+          <div className="hero-io" ref={heroIo}>
             <IoHost ref={io} lang={lang} size={360} skin={skin} hintLabel={t.ioLabel} mode={mode} talk={talk} />
             {mode === 'talk' ? null : <p className="io-hint">{t.ioHint}</p>}
             {entryButton}

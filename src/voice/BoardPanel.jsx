@@ -73,6 +73,12 @@ function Quiz({ quiz, answered, t, onAnswer }) {
                 {i + 1}
               </span>
               {option}
+              {state === 'correct' || state === 'wrong' ? (
+                <span className="voice-quiz-mark">
+                  <span aria-hidden="true">{state === 'correct' ? '✓' : '✗'}</span>
+                  <span className="sr-only"> {state === 'correct' ? t.markCorrect : t.markPicked}</span>
+                </span>
+              ) : null}
             </button>
           )
         })}

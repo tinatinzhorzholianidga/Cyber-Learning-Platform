@@ -18,14 +18,28 @@ test('user captions replace, IO captions append, sentences are announced once', 
   assert.deepEqual([tr.turns[0].role, tr.turns[0].text, tr.turns[0].final], ['user', 'გამარჯობა', true])
   tr = applyCaption(tr, { role: 'io', text: 'მე იო ვარ. ' })
   tr = applyCaption(tr, { role: 'io', text: 'რა გაინტე' })
-  assert.deepEqual(tr.announced, ['მე იო ვარ.'])
+  assert.deepEqual(tr.announced, [{ role: 'io', text: 'მე იო ვარ.' }])
   tr = applyCaption(tr, { role: 'io', text: 'რესებთ?', final: true })
   assert.equal(tr.turns[1].text, 'მე იო ვარ. რა გაინტერესებთ?')
-  assert.deepEqual(tr.announced, ['მე იო ვარ.', 'რა გაინტერესებთ?'])
+  assert.deepEqual(tr.announced, [{ role: 'io', text: 'მე იო ვარ.' }, { role: 'io', text: 'რა გაინტერესებთ?' }])
   // the next IO caption starts a new turn
   tr = applyCaption(tr, { role: 'io', text: 'კიდევ.' })
   assert.equal(tr.turns.length, 3)
   assert.equal(lastTurns(tr, 2).length, 2)
+})
+
+test('a heard utterance is announced once final; typed text is not read back', () => {
+  let tr = emptyTranscript()
+  tr = applyCaption(tr, { role: 'user', text: 'რა არის', final: false, heard: true })
+  assert.deepEqual(tr.announced, [])
+  tr = applyCaption(tr, { role: 'user', text: 'რა არის ფიშინგი?', final: true, heard: true })
+  assert.deepEqual(tr.announced, [{ role: 'user', text: 'რა არის ფიშინგი?' }])
+  tr = applyCaption(tr, { role: 'user', text: 'დაწერილი კითხვა', final: true })
+  assert.equal(tr.announced.length, 1)
+  tr = applyCaption(tr, { role: 'user', text: '   ', final: true, heard: true })
+  assert.equal(tr.announced.length, 1)
+  for (let i = 0; i < 8; i++) tr = applyCaption(tr, { role: 'io', text: `წინადადება ${i}.`, final: true })
+  assert.equal(tr.announced.length, 6, 'the list is capped')
 })
 
 test('an empty final user caption removes the open turn; replace overwrites', () => {

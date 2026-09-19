@@ -1,7 +1,8 @@
 /* The talk-mode transcript (docs/io-voice-plan.md §5.1): the last two
    turns plus the live one, the learner's words in a second style, IO's
    caption growing as it arrives, and its own polite live region that
-   announces completed sentences only.
+   announces IO's completed sentences and what he heard the learner say
+   (never tokens, never typed text).
 
    variant 'bubble'   inside IO's bubble at a fixed height (desktop)
            'sheet'    inside the bottom sheet (narrow viewports)
@@ -53,8 +54,8 @@ export default function TranscriptPanel({ store, lang, variant = 'bubble' }) {
       ) : null}
       {/* completed sentences, one node each, so assistive tech reads additions */}
       <div className="sr-only" aria-live="polite" aria-atomic="false">
-        {transcript.announced.map((s, i) => (
-          <span key={`${i}-${s.length}`}>{s} </span>
+        {transcript.announced.map((a, i) => (
+          <span key={`${i}-${a.text.length}`}>{a.role === 'user' ? `${t.you}: ${a.text}` : a.text} </span>
         ))}
       </div>
     </div>

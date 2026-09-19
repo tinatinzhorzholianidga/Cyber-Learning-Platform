@@ -269,7 +269,7 @@
 }
 
 .voice-error {
-  color: var(--coral-deep);
+  color: #b83838; /* 5.3:1 on the tint below (coral-deep is 4.05:1 there) */
   font-weight: 700;
   font-size: 0.86rem;
   text-align: center;
@@ -376,6 +376,26 @@
 @keyframes voice-blink {
   50% {
     opacity: 0.25;
+  }
+}
+
+.voice-toggle {
+  flex: none;
+}
+
+/* ---- narrow viewports (≤ 900 px, not embeds): the transcript lives in
+   the sheet, so the bubble keeps two compact lines and IO renders smaller
+   (RobotCanvas reads --io-size), so that he stays fully visible above the
+   expanded sheet; App scrolls him to the top when talk mode opens (D6) ---- */
+@media (max-width: 900px) {
+  body:not(.is-embed) .io-host[data-mode='talk'] .io-bubble {
+    height: 76px;
+  }
+  body:not(.is-embed) .io-host[data-mode='talk'] .voice-compact {
+    -webkit-line-clamp: 2;
+  }
+  body:not(.is-embed) .io-host[data-mode='talk'] .io-canvas {
+    --io-size: min(300px, 40vh);
   }
 }
 
@@ -491,10 +511,20 @@
 .voice-quiz-result {
   font-weight: 800;
   font-size: 0.9rem;
-  color: var(--coral-deep);
+  color: #b83838; /* 5.7:1 on white */
 }
 .voice-quiz-result[data-correct] {
-  color: #1f8f5f;
+  color: #187449; /* 5.8:1 on white */
+}
+/* the ✓ / ✗ beside an option: a mark and hidden text, never colour alone */
+.voice-quiz-mark {
+  margin-left: auto;
+  flex: none;
+  font-weight: 800;
+  color: #b83838;
+}
+.voice-quiz-option[data-state='correct'] .voice-quiz-mark {
+  color: #187449;
 }
 .voice-board-close {
   align-self: flex-end;

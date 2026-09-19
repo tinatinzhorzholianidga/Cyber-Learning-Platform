@@ -105,9 +105,9 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
   }
 
   /* ---- one answer ---- */
-  async function answer(question, { display = null } = {}) {
+  async function answer(question, { display = null, heard = false } = {}) {
     const my = ++gen
-    em.emit('userCaption', { text: display || question, final: true })
+    em.emit('userCaption', { text: display || question, final: true, ...(heard ? { heard: true } : {}) })
     setState('thinking')
     utteranceEndAt = performance.now()
     exchanges += 1
@@ -289,7 +289,7 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
           if (my !== gen) return
           em.emit('mic', { open: false })
           closeMic()
-          if (finalText) answer(finalText)
+          if (finalText) answer(finalText, { heard: true })
           else {
             if (!heard) em.emit('error', { key: 'errEmpty', fatal: false })
             em.emit('userCaption', { text: '', final: true })

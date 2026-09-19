@@ -9,7 +9,10 @@
    console error appears; the D3 sessions run against a mocked Gemini API
    and the D5 tools (card, mood, quiz, end_session, the returning
    greeting, navigate_to_path, Delete my data) against a mock that plays
-   the tutor. Prints one JSON report and exits 1 on a failed expectation.
+   the tutor; D6 adds the embed inside a test iframe, the accessibility
+   pass (keyboard, focus, names, live region, AA contrast) and an
+   emulated phone. Prints one JSON report and exits 1 on a failed
+   expectation.
 
    Needs: `npm run dev` on port 5173 (the dev server exposes window.__ioVoice)
    and playwright-core with a Chromium (`npx playwright-core install chromium`
@@ -105,6 +108,42 @@ const sampleMouth = async (page, ms) => {
   return { samples: out.length, numeric: nums.length, min: nums.length ? Math.min(...nums) : null, max: nums.length ? Math.max(...nums) : null, talking: out.some((v) => v.talking) }
 }
 
+/* WCAG contrast of an element's text against its effective background,
+   computed in the page from the rendered colours (AA: 4.5 for text) */
+const contrast = (page, selector) =>
+  page.evaluate((sel) => {
+    const el = document.querySelector(sel)
+    if (!el) return null
+    const parse = (c) => {
+      const m = String(c).match(/rgba?\(([^)]+)\)/)
+      if (!m) return null
+      const [r, g, b, a = 1] = m[1].split(',').map(Number)
+      return { r, g, b, a }
+    }
+    const lum = ({ r, g, b }) => {
+      const f = (v) => {
+        v /= 255
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+      }
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    }
+    const fg = parse(getComputedStyle(el).color)
+    let node = el
+    let bg = null
+    while (node && node !== document.documentElement) {
+      const c = parse(getComputedStyle(node).backgroundColor)
+      if (c && c.a > 0) {
+        bg = c
+        break
+      }
+      node = node.parentElement
+    }
+    if (!bg) bg = { r: 255, g: 255, b: 255, a: 1 }
+    if (bg.a < 1) bg = { r: bg.r * bg.a + 255 * (1 - bg.a), g: bg.g * bg.a + 255 * (1 - bg.a), b: bg.b * bg.a + 255 * (1 - bg.a) }
+    const [l1, l2] = [lum(fg), lum(bg)].sort((a, b) => b - a)
+    return Math.round(((l1 + 0.05) / (l2 + 0.05)) * 100) / 100
+  }, selector)
+
 /* ---- 1. the full flow with the amplitude mouth ---- */
 {
   const page = await context.newPage()
@@ -155,10 +194,11 @@ const sampleMouth = async (page, ms) => {
   expect((await page.textContent('.voice-mic')).includes('მიკროფონი'), 'mic-open indicator text')
   let micMax = 0
   let levelMax = 0
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 40; i++) {
     const v = await page.evaluate(() => ({ css: Number(getComputedStyle(document.querySelector('.voice-ring')).getPropertyValue('--mic')), lvl: window.__ioVoice?.api.micLevel() }))
     micMax = Math.max(micMax, v.css || 0)
     levelMax = Math.max(levelMax, v.lvl || 0)
+    if (micMax > 0.02 && levelMax > 0.02) break
     await sleep(50)
   }
   report.listen.ringMicMax = micMax
@@ -244,6 +284,8 @@ for (const mode of ['pulse', 'sine']) {
   await sleep(300)
   report.defaultSelection = { state: await state(page), error: await page.textContent('.voice-error').catch(() => null), badge: await page.textContent('.voice-dev').catch(() => null), keyField: Boolean(await page.$('.voice-key')) }
   expect(report.defaultSelection.error && report.defaultSelection.keyField, 'no session without a key: message + key field')
+  report.defaultSelection.errorContrast = await contrast(page, '.voice-error')
+  expect(report.defaultSelection.errorContrast >= 4.5, `error text meets AA (${report.defaultSelection.errorContrast})`)
   await page.close()
 
   const narrow = await context.newPage()
@@ -475,6 +517,14 @@ for (const mode of ['pulse', 'sine']) {
   report.tools.quiz.answer = (await page.$$eval('.voice-turn[data-role="io"] .voice-turn-text', (els) => els.map((e) => e.textContent.trim()))).at(-1)
   expect(report.tools.quiz.options === 3 && report.tools.quiz.scenario === QUIZ.scenario, 'ask_quiz shows the scenario and three options')
   expect(report.tools.quiz.result.correct === 'true' && report.tools.quiz.result.states.join(',') === 'other,correct,other' && report.tools.quiz.result.gesture === 'bounce', 'a right click is marked and IO bounces')
+  report.tools.quiz.a11y = {
+    resultContrast: await contrast(page, '.voice-quiz-result'),
+    optionContrast: await contrast(page, '.voice-quiz-option[data-state="correct"]'),
+    mark: (await page.textContent('.voice-quiz-option[data-state="correct"] .voice-quiz-mark')).trim(),
+    liveRegions: await page.$$eval('[aria-live]', (els) => els.length),
+  }
+  expect(report.tools.quiz.a11y.resultContrast >= 4.5 && report.tools.quiz.a11y.optionContrast >= 4.5, `quiz result and option text meet AA (${report.tools.quiz.a11y.resultContrast}, ${report.tools.quiz.a11y.optionContrast})`)
+  expect(report.tools.quiz.a11y.mark === '✓ სწორი პასუხი', 'the right option carries a mark and hidden text, not colour alone')
   expect(report.tools.quiz.sent === 'quiz_answer 2: გამგზავნს შევამოწმებ (correct; the right option was 2)', 'the click goes back to the model as quiz_answer')
   expect(report.tools.quiz.skill === 2 && report.tools.quiz.answer.startsWith('ზუსტად ასეა!'), 'record_skill writes the level; the reaction is captioned')
 
@@ -522,6 +572,203 @@ for (const mode of ['pulse', 'sine']) {
   expect(report.tools.deleted.profile === null && report.tools.deleted.turns === 0 && report.tools.deleted.key, 'Delete my data removes the profile and the transcript, keeps the key')
   expect(report.tools.deleted.greeting.startsWith('გამარჯობა! მე იო ვარ'), 'after the delete IO greets a first-time visitor')
   await c.close()
+}
+
+/* ---- 7. the embed inside a test iframe (D6): the README snippets on a
+   stand-in page, allow="microphone; autoplay", 520 px without a
+   scrollbar, the dock as a bottom sheet inside the frame ---- */
+{
+  const page = await context.newPage()
+  watch(page, 'embed-iframe')
+  await page.goto(`${BASE}scripts/e2e/embed-test.html`, { waitUntil: 'networkidle' })
+  const plain = page.frame({ url: /embed=1&lang=ka&size=260$/ })
+  const voice = page.frame({ url: /voice=stub/ })
+  expect(plain && voice, 'both iframes loaded')
+  await plain.waitForSelector('.io-canvas', { timeout: 10000 })
+  await voice.waitForSelector('.io-talk', { timeout: 10000 })
+  report.iframe = { frames: page.frames().length, plainButton: Boolean(await plain.$('.io-talk')), voiceButton: Boolean(await voice.$('.io-talk')) }
+  expect(!report.iframe.plainButton && report.iframe.voiceButton, 'only the frame with ?voice shows the Talk button')
+  report.iframe.allow = await page.getAttribute('#voice', 'allow')
+  expect(report.iframe.allow === 'microphone; autoplay', 'the talk-mode snippet carries allow="microphone; autoplay"')
+  await voice.click('.io-talk')
+  await voice.waitForSelector('.voice-dock', { timeout: 10000 })
+  const t0 = Date.now()
+  let s = null
+  while (Date.now() - t0 < 8000) {
+    s = await voice.evaluate(() => window.__ioVoice?.store.get().state ?? null)
+    if (s === 'speaking') break
+    await sleep(40)
+  }
+  report.iframe.state = s
+  report.iframe.mic = await voice.evaluate(() => window.__ioVoice?.store.get().micOpen)
+  report.iframe.dock = await voice.evaluate(() => {
+    const d = document.querySelector('.voice-dock')
+    const r = d.getBoundingClientRect()
+    return { position: getComputedStyle(d).position, bottom: Math.round(r.bottom), inner: window.innerHeight, overflow: getComputedStyle(document.body).overflow, scrollbar: window.innerWidth - document.documentElement.clientWidth }
+  })
+  report.iframe.canvas = await voice.evaluate(() => {
+    const r = document.querySelector('.io-canvas').getBoundingClientRect()
+    return { top: Math.round(r.top), bottom: Math.round(r.bottom), inner: window.innerHeight }
+  })
+  expect(report.iframe.state === 'speaking', 'the stub speaks inside the iframe (audio after the click)')
+  expect(report.iframe.mic === true, 'the microphone opens inside the iframe (allow="microphone")')
+  expect(report.iframe.dock.position === 'fixed' && report.iframe.dock.bottom <= report.iframe.dock.inner + 1, 'the dock is a bottom sheet pinned inside the frame')
+  expect(report.iframe.dock.overflow === 'hidden' && report.iframe.dock.scrollbar === 0, 'the 520 px frame shows no scrollbar with the dock open')
+  expect(report.iframe.canvas.top >= 0 && report.iframe.canvas.bottom <= report.iframe.canvas.inner, 'IO stays fully inside the frame')
+  report.iframe.hostScroll = await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)
+  expect(report.iframe.hostScroll, 'the host page keeps its own scroll')
+  await page.close()
+}
+
+/* ---- 8. accessibility (D6): keyboard-only entry, the tab order through
+   the dock, visible focus on every control, accessible names, one live
+   region announcing IO's sentences, Enter on IO interrupts him, AA
+   contrast of the dock's text, and no layout jump when the dock opens ---- */
+{
+  const page = await context.newPage()
+  watch(page, 'a11y')
+  await page.goto(`${BASE}?voice=stub`, { waitUntil: 'networkidle' })
+  // IO's offset inside his (sticky) column: scrolling, which focusing the
+  // text field may cause, is not a layout change
+  const measure = () =>
+    page.evaluate(() => {
+      const r = document.querySelector('.io-canvas').getBoundingClientRect()
+      const col = document.querySelector('.hero-io').getBoundingClientRect()
+      return { top: Math.round(r.top - col.top), left: Math.round(r.left - col.left), bubble: Math.round(document.querySelector('.io-bubble').getBoundingClientRect().height) }
+    })
+  const before = await measure()
+  // keyboard-only: Tab to the Talk button and press Enter
+  let hops = 0
+  while (hops < 40) {
+    await page.keyboard.press('Tab')
+    hops += 1
+    if (await page.evaluate(() => document.activeElement?.classList.contains('io-talk'))) break
+  }
+  report.a11y = { hopsToTalk: hops }
+  await page.keyboard.press('Enter')
+  await page.waitForSelector('.voice-dock', { timeout: 10000 })
+  await waitState(page, ['speaking'], 8000)
+  await sleep(400) // the bubble's height transition
+  const after = await measure()
+  report.a11y.canvasBefore = before
+  report.a11y.canvasAfter = after
+  // entering talk mode grows the bubble above him to its fixed transcript
+  // height (animated); that growth is the only thing that moves IO
+  expect(Math.abs(after.top - before.top - (after.bubble - before.bubble)) <= 2 && after.left === before.left, `on desktop IO moves only by the bubble's growth at entry (shift ${after.top - before.top}, bubble +${after.bubble - before.bubble})`)
+  // the tab order through the dock (wherever focus resumes after the
+  // button is replaced), with a visible focus ring on each stop
+  const stops = []
+  for (let i = 0; i < 24; i++) {
+    await page.keyboard.press('Tab')
+    const stop = await page.evaluate(() => {
+      const el = document.activeElement
+      if (!el || el === document.body) return null
+      const cs = getComputedStyle(el)
+      const visible = (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none'
+      const name = el.getAttribute('aria-label') || el.textContent.trim() || el.getAttribute('placeholder') || ''
+      return { tag: el.tagName, cls: el.className.split(' ')[0], name: name.slice(0, 30), visible, disabled: el.disabled === true }
+    })
+    stops.push(stop)
+    if (stop?.cls === 'voice-input') await page.keyboard.type('x') // enables the send button
+    if (stops.filter((x) => x?.cls === 'voice-btn').length >= 3) break
+  }
+  report.a11y.stops = stops
+  const classes = stops.filter(Boolean).map((s) => s.cls)
+  const order = ['voice-ring', 'voice-input', 'voice-send', 'voice-btn'].map((c) => classes.indexOf(c))
+  expect(order.every((i) => i >= 0) && order.every((i, k) => k === 0 || i > order[k - 1]), `the dock is reachable by Tab in order: ring, input, send, buttons (${classes.join(' > ')})`)
+  const dockStops = stops.filter((x) => x && x.cls.startsWith('voice-'))
+  expect(dockStops.every((s) => s.visible), 'every focused dock control shows a visible focus indicator')
+  expect(dockStops.every((s) => s.name.length > 0), 'every focused dock control has an accessible name')
+  report.a11y.names = await page.$$eval('.voice-dock button, .voice-dock input', (els) => els.map((e) => (e.getAttribute('aria-label') || e.textContent.trim() || e.getAttribute('placeholder') || '').length))
+  expect(report.a11y.names.every((n) => n > 0), 'every dock control has a name')
+  report.a11y.io = await page.evaluate(() => {
+    const c = document.querySelector('.io-canvas')
+    return { role: c.getAttribute('role'), tabIndex: c.tabIndex, label: c.getAttribute('aria-label') }
+  })
+  expect(report.a11y.io.role === 'button' && report.a11y.io.tabIndex === 0 && report.a11y.io.label?.includes('იო'), 'IO is a labelled keyboard button in talk mode')
+  // Enter on IO interrupts him while he speaks
+  await page.evaluate(() => document.querySelector('.io-canvas').focus())
+  if ((await state(page)) !== 'speaking') {
+    await page.fill('.voice-input', 'კითხვა')
+    await page.press('.voice-input', 'Enter')
+    await waitState(page, ['speaking'], 8000)
+    await page.evaluate(() => document.querySelector('.io-canvas').focus())
+  }
+  await page.keyboard.press('Enter')
+  report.a11y.enterOnIo = await waitState(page, ['interrupted'], 1500)
+  expect(report.a11y.enterOnIo === 'interrupted', 'Enter on IO interrupts him')
+  await waitState(page, ['idle'], 3000)
+  report.a11y.canvasLater = await measure()
+  expect(report.a11y.canvasLater.top === after.top && report.a11y.canvasLater.bubble === after.bubble, 'IO does not move during the conversation (desktop)')
+  report.a11y.live = await page.evaluate(() => ({
+    regions: document.querySelectorAll('[aria-live]').length,
+    text: document.querySelector('.voice-transcript .sr-only[aria-live]')?.textContent.trim().slice(0, 60) || '',
+    lang: document.querySelector('.voice-transcript')?.getAttribute('lang'),
+  }))
+  expect(report.a11y.live.regions === 1 && report.a11y.live.text.startsWith('გამარჯობა') && report.a11y.live.lang === 'ka', 'one polite live region announces IO\'s sentences, in Georgian')
+  report.a11y.contrast = {}
+  for (const sel of ['.voice-state', '.voice-hint', '.voice-privacy', '.voice-turn[data-role="io"] .voice-turn-text', '.voice-turn-role', '.voice-btn', '.voice-send', '.voice-input', '.voice-ring']) {
+    report.a11y.contrast[sel] = await contrast(page, sel)
+  }
+  const low = Object.entries(report.a11y.contrast).filter(([, v]) => v !== null && v < 4.5)
+  expect(low.length === 0, `dock text meets AA (${low.map(([k, v]) => `${k}=${v}`).join(', ')})`)
+  // T inside the text field types, never toggles listening
+  await page.fill('.voice-input', 'x')
+  await page.keyboard.press('KeyT')
+  report.a11y.tInField = await page.inputValue('.voice-input')
+  expect(report.a11y.tInField === 'xt', 'T inside the text field types, never toggles listening')
+  await page.close()
+}
+
+/* ---- 9. a phone (emulated): the bottom sheet, no horizontal scroll, no
+   layout jump, 16 px inputs (no iOS zoom), audio after a tap ---- */
+{
+  const phone = await browser.newContext({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['microphone'] })
+  const page = await phone.newPage()
+  watch(page, 'phone')
+  await page.goto(`${BASE}?voice=stub`, { waitUntil: 'networkidle' })
+  const before = await page.evaluate(() => {
+    const r = document.querySelector('.io-canvas').getBoundingClientRect()
+    return { top: Math.round(r.top + window.scrollY), left: Math.round(r.left), scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth }
+  })
+  await page.tap('.io-talk')
+  await page.waitForSelector('.voice-dock', { timeout: 10000 })
+  report.phone = { greeting: await waitState(page, ['speaking'], 8000), before }
+  report.phone.mouth = await sampleMouth(page, 600)
+  report.phone.after = await page.evaluate(() => {
+    const r = document.querySelector('.io-canvas').getBoundingClientRect()
+    const d = document.querySelector('.voice-dock').getBoundingClientRect()
+    return {
+      top: Math.round(r.top + window.scrollY),
+      left: Math.round(r.left),
+      canvasTop: Math.round(r.top),
+      canvasBottom: Math.round(r.bottom),
+      canvasSize: Math.round(r.height),
+      dockTop: Math.round(d.top),
+      bubble: Math.round(document.querySelector('.io-bubble').getBoundingClientRect().height),
+      scrollY: Math.round(window.scrollY),
+      scrollW: document.documentElement.scrollWidth,
+      innerW: window.innerWidth,
+      dockPosition: getComputedStyle(document.querySelector('.voice-dock')).position,
+      dockBottom: Math.round(d.bottom),
+      dockHeight: Math.round(d.height),
+      innerH: window.innerHeight,
+      inputPx: parseFloat(getComputedStyle(document.querySelector('.voice-input')).fontSize),
+      sheetTranscript: Boolean(document.querySelector('.voice-sheet-transcript')),
+    }
+  })
+  const a = report.phone.after
+  expect(report.phone.greeting === 'speaking' && report.phone.mouth.numeric > 3, 'audio plays after a tap on a phone viewport')
+  expect(a.canvasTop >= 0 && a.canvasBottom <= a.dockTop + 1 && a.canvasSize < 360, `IO renders smaller and stays fully visible above the sheet (canvas ${a.canvasTop}-${a.canvasBottom}, sheet from ${a.dockTop})`)
+  expect(a.bubble <= 80, `the bubble keeps two compact lines on a phone (${a.bubble} px)`)
+  expect(before.scrollW <= before.innerW && a.scrollW <= a.innerW, 'no horizontal scroll on a phone')
+  expect(a.dockPosition === 'fixed' && a.dockBottom <= a.innerH + 1 && a.dockHeight <= a.innerH * 0.45 + 1 && a.sheetTranscript, 'the dock is a bottom sheet of at most 45 vh with the transcript inside')
+  expect(a.inputPx >= 16, 'the text field is at least 16 px (no zoom on focus)')
+  await page.tap('.voice-toggle')
+  await sleep(200)
+  report.phone.collapsed = await page.evaluate(() => Math.round(document.querySelector('.voice-dock').getBoundingClientRect().height))
+  expect(report.phone.collapsed < a.dockHeight, 'the sheet collapses to the controls row')
+  await phone.close()
 }
 
 await browser.close()

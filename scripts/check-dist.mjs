@@ -8,7 +8,11 @@
       index.html references stay within a small budget of the measured
       baseline, and the voice code is a separate chunk that index.html
       does not reference.
-   4. No dev-only chunk (the bake-off panel) is emitted at all. */
+   4. No dev-only chunk (the bake-off panel) is emitted at all.
+   5. The talk-mode code is a real, separate chunk; the microphone worklet
+      is its own file; the dev-only defines were replaced.
+   6. The tutor's CyberHero index ships next to the page and no local
+      Basic Course index was copied into the build (A6). */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -87,6 +91,30 @@ else ok(`initial CSS ${cssGz} B gzipped (baseline ${BASE_CSS_GZ}, budget +${CSS_
 for (const f of files) {
   if (/Bakeoff/i.test(f)) fail(`${f.replace(DIST, 'dist/')}: the bake-off panel is dev-only and must not be built`)
 }
+if (!files.some((f) => /Bakeoff/i.test(f))) ok('no bake-off chunk')
+
+/* 5: the talk-mode chunk, the worklet, the defines */
+const jsAssets = files.filter((p) => p.endsWith('.js'))
+const referenced = new Set(refs.filter((r) => r.endsWith('.js')).map(local))
+const voiceChunks = jsAssets.filter((p) => !referenced.has(p) && /voice-dock/.test(readFileSync(p, 'utf8')))
+if (!voiceChunks.length) fail('no separate talk-mode chunk found (the dock must be built into a file index.html does not reference)')
+else ok(`talk-mode chunk: ${voiceChunks.map((f) => f.replace(DIST, 'dist/')).join(', ')}`)
+if (!files.some((p) => /mic-worklet/.test(p))) fail('the microphone worklet must be emitted as its own file (audioWorklet.addModule needs a URL)')
+else ok('microphone worklet emitted as a file')
+for (const f of jsAssets) {
+  if (/__IO_DEV_(GEMINI_KEY|SERVE)__/.test(readFileSync(f, 'utf8'))) fail(`${f.replace(DIST, 'dist/')}: a dev-only define was not replaced`)
+}
+
+/* 6: the tutor's index ships, the Basic Course does not */
+try {
+  const idx = JSON.parse(readFileSync(join(DIST, 'io-index.json'), 'utf8'))
+  if (!Array.isArray(idx.chunks) || idx.chunks.length < 300) fail(`io-index.json has ${idx.chunks?.length ?? 0} chunks; expected at least 300 (npm run build:index)`)
+  else if (idx.chunks.some((c) => c.source === 'course')) fail('io-index.json carries course chunks; only mission, guide and tip may ship')
+  else ok(`io-index.json: ${idx.chunks.length} CyberHero chunks`)
+} catch {
+  fail('dist/io-index.json is missing or not valid JSON')
+}
+if (files.some((p) => /basic\.json$|tutor[\\/]local/.test(p))) fail('a local course index was copied into the build')
 
 console.log(failed ? '\ncheck-dist: FAILED' : '\ncheck-dist: ok')
 process.exit(failed ? 1 : 0)

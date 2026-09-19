@@ -240,7 +240,7 @@ export function create({
     const inT = sc.inputTranscription
     if (inT?.text) {
       userText += inT.text
-      em.emit('userCaption', { text: userText, final: Boolean(inT.finished) })
+      em.emit('userCaption', { text: userText, final: Boolean(inT.finished), heard: true })
       if (inT.finished) {
         exchanges += 1
         if (!firstQuestion) firstQuestion = userText

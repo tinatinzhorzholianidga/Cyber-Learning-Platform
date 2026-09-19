@@ -120,8 +120,8 @@ test('the visitor speaks: input transcription → captions → thinking; a typed
   live.push({ serverContent: { inputTranscription: { text: 'what is ' } } })
   live.push({ serverContent: { inputTranscription: { text: 'phishing?', finished: true } } })
   assert.deepEqual(ev.user, [
-    { text: 'what is ', final: false },
-    { text: 'what is phishing?', final: true },
+    { text: 'what is ', final: false, heard: true },
+    { text: 'what is phishing?', final: true, heard: true },
   ])
   assert.equal(session.state, 'thinking')
   live.push({ serverContent: { outputTranscription: { text: 'Phishing is…' } } })

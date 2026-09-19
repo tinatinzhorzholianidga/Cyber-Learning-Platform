@@ -81,7 +81,7 @@ export default function RobotCanvas({ size = 300, className = '', label, ...robo
   return (
     <div
       className={`io-canvas ${className}`.trim()}
-      style={{ width: size, height: size }}
+      style={{ width: `var(--io-size, ${size}px)`, height: `var(--io-size, ${size}px)` }}
       role={onTap ? 'button' : 'img'}
       tabIndex={onTap ? 0 : undefined}
       onKeyDown={onKeyDown}

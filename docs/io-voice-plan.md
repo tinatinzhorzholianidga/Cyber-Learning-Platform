@@ -490,7 +490,8 @@ src/content/safety.js          KA/EN resources with placeholders the DGA team fi
 public/io-index.json           generated from the CyberHero content by scripts/build-io-index.mjs and committed
 scripts/
   lib/lint.mjs  lib/ioChunks.mjs  check-voice.mjs  check-dist.mjs  voice-smoke.mjs  voice-bakeoff.mjs  build-io-index.mjs
-  e2e/talk.mjs  e2e/live.mjs  e2e/host-diff.mjs   headless-Chromium acceptance (the stub, the mocked Gemini API, the mocked Live socket; host mode pixel diff), not run in CI
+  e2e/talk.mjs  e2e/live.mjs  e2e/host-diff.mjs   headless-Chromium acceptance (the stub, the mocked Gemini API, the tutor's tools, the embed iframe, accessibility, an emulated phone, the mocked Live socket; host mode pixel diff), not run in CI
+  e2e/embed-test.html          the Moodle stand-in page with the README's two iframe snippets (dev server only)
 bakeoff/README.md              rating sheet + decision block (audio files gitignored)
 docs/
   io-voice-build-prompt.md  io-voice-plan.md (this file)  io-voice-test-script.md  io-voice-demo.md (D6: run sheet for the presentation)
@@ -586,6 +587,12 @@ none of this runs (the early return at 200–203 precedes it and `paintFace` is 
 - **≤ 900 px:** dock + transcript + board as a `position: fixed` bottom sheet (`z-index: 90`, under
   the skip link's 100), collapsed ≈ 64 px / expanded ≤ 45 vh, internal scroll,
   `env(safe-area-inset-bottom)`. Never a descendant of `.io-canvas` (its `filter` traps `fixed`).
+  D6: so that IO stays fully visible above the expanded sheet, the bubble keeps two compact lines
+  (76 px) instead of the desktop transcript height, IO renders at `min(300px, 40vh)` (RobotCanvas
+  reads `--io-size`; host mode and embeds keep the prop), and App scrolls the hero to the top of
+  the screen when talk mode opens. On desktop the bubble grows to its fixed transcript height with
+  a 0.25 s transition, which moves IO down once, by that growth, at entry; nothing moves during the
+  conversation.
 - **Embed (`?embed=1&voice=1`, local test iframe in D6):** the dock is `position: fixed; bottom: 0`;
   captions stay in the fixed-height bubble; documented minimum height **520 px** with `voice=1`;
   460 px stays for embeds without it, which render pixel-identical.
@@ -1082,6 +1089,40 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
   quiz options and cards), `lookup_course_material` against real questions, `MAX_TOKENS` on tool
   turns (§12), the Live path's tool timing on the real service, and the Ollama text-tag path with
   a real local model (the mock only proves the parser). The 14th skill (Q6) is not added.
+- **D6 — built and verified in headless Chromium (2026-09-19).** The accessibility pass: the
+  transcript's live region now announces what IO heard the learner say as well as his sentences
+  (`heard` captions; typed text is not read back); two text colours below AA replaced (the error
+  line and the quiz results, now ≥ 5.3:1); quiz options carry a ✓ / ✗ mark with hidden text, not
+  colour alone; the acceptance script walks the dock by keyboard (ring, field, send, buttons, in
+  order, each with a visible focus ring and a name), Enter on IO interrupts him, one polite live
+  region in Georgian, `T` inside the field types, and the dock's text measures ≥ 5.0:1 in the page.
+  The mobile pass (an emulated 390 × 780 phone, touch): the D5 layout hid IO behind the sheet —
+  fixed as in §5.3 (compact bubble, smaller IO, scroll on entry); now the canvas sits fully above
+  the sheet, no horizontal scroll, the field is 16 px, the sheet collapses to its controls row,
+  audio plays after a tap. The embed: `scripts/e2e/embed-test.html` puts the README's two
+  snippets side by side; the frame with `voice` shows the button, the stub speaks and the
+  microphone opens inside it (`allow="microphone; autoplay"`), the dock is a bottom sheet pinned
+  inside the 520 px frame with no scrollbar and IO fully inside, the host page keeps its own
+  scroll. `check-dist.mjs` completed: the talk-mode chunk must be a real separate file, the worklet
+  its own file, the dev-only defines replaced, `io-index.json` shipped with ≥ 300 CyberHero chunks
+  and no course chunk, no local index copied. `index.html`: `viewport-fit=cover` and an honest
+  comment. README: the "Talk to IO (demo build)" section (§5.10), the files, scripts and query
+  parameters, the `voice=1` iframe snippet with `allow` and 520 px, the corrected privacy
+  paragraph, the production text marked not deployed. `docs/io-voice-demo.md`: the run sheet.
+  Host mode: the pixel diff of the current build against the untouched `dc8a296` build (clock
+  frozen, both skins) shows the Talk button and, on the metal skin only, 100 pixels of specular
+  sparkle on the chrome rivets inside IO's unchanged box (0.08 % of it; the classic skin matches
+  exactly; the same 100 pixels appear on the D2, D3 and D5 builds and not on D4, so it is
+  sub-pixel highlight rounding, not a change) — `host-diff.mjs` now allows at most 0.5 % inside
+  IO's box and nothing elsewhere. The initial chunk is +2.4 KB gzipped over the baseline (budget
+  4 KB); 132 unit tests; both acceptance scripts green.
+- **Not verified in D6 — needs devices and the team:** Android Chrome and iOS Safari for real
+  (the phone pass is an emulation: touch, viewport and the sheet, not Safari's audio unlock or
+  Android's recogniser); a screen reader run-through (the live regions and names are checked
+  structurally); the latency rows in §9 (no key here); the native review of the new Georgian
+  strings (Q5) and the sign-off of the privacy wording (Q4); the voice decision in
+  `bakeoff/README.md` (G1); the run sheet rehearsed on the presentation machine. The 14th skill
+  (Q6) stays open.
 - **Deferred:** Track P entirely.
 
 ---
@@ -1131,6 +1172,10 @@ pasted key (`live` on a phone waits for Track P, or for Q3 = yes):
 | `turn` (Gemini TTS) | KA | | |
 | `live` | KA | | — |
 | `live` | EN | | — |
+
+Measured without a key (D6, headless Chromium on the dev server, in-page timing): Esc reaches
+`interrupted` in ≈ 0.5 ms and a click on IO in ≈ 8 ms; the mocked answers do not measure the
+network. The rows above are filled in from `docs/io-voice-demo.md` §7 after the rehearsal.
 
 ---
 
@@ -1197,8 +1242,8 @@ limits, the public index and the Azure region are closed by A4–A7.
 | Q1 | Safety filters (Gemini `safetySettings`, both tracks): with Google's default filters IO may refuse or stop mid-sentence when a child describes bullying or blackmail — IO's core topics. Loosening those two categories lets IO answer; the risk is harsher wording slipping through. Sexual and hate categories stay at default. | Sign-off by a named person. | loosen the two categories; keep the rest | before D3 |
 | Q2 | The presentation machine: Edge with the online natural voices installed and internet at the venue (browser speech, Edge voices and Gemini all need it); Ollama with `gemma3` installed as the offline fallback? Headphones or a speaker (self-interruption on the Live path)? | Without Edge there is no Georgian browser voice; without internet only Ollama + typed mode work. | Edge + internet + Ollama installed as the fallback; a wired headset | before D3 |
 | Q3 | Deployed preview: may the pasted runtime key also power `live` there? (`turn` already uses it, §5.4; A3 makes Live localhost-only.) | Enables the barge-in showcase on the preview; the key still lives only in the presenter's browser. | allow it behind the same guard, off by default | before D4 |
-| Q4 | Privacy wording of the demo README (§5.10) and the free-tier data-use terms: sign-off before the preview is pushed. | — | sign off in D6 | before D6 |
-| Q5 | New Georgian UI strings (§6.1): the typography lint plus one native review, or the three-writer process used for `hints.js`? | The lint cannot judge register or idiom. | lint + one native review | before D6 |
+| Q4 | Privacy wording of the demo README (§5.10) and the free-tier data-use terms: sign-off before the preview is pushed. | — | the text is written (README, "Talk to IO"); sign-off pending | before the preview |
+| Q5 | New Georgian UI strings (§6.1): the typography lint plus one native review, or the three-writer process used for `hints.js`? | The lint cannot judge register or idiom. | lint + one native review; the review is pending | before the demo |
 | Q6 | Skill taxonomy: the 13 skills in §5.8, plus `screen_balance` (CyberHero mission 9)? | 14 gives CyberHero parity. | 14 | before D5 |
 | Q7 | Strictness: "grounded when relevant, honest when nothing matches" (the brief's rule) stands; with no course index, may IO answer everyday cybersecurity questions from general knowledge when neither CyberHero nor `hints.js` covers them? | Refusing makes the demo look empty; answering risks drift from the platform's wording. | answer briefly, then route to the course | before D5 |
 | Q8 | Moodle embed (Track P): can the admins add `allow="microphone; autoplay"` to the iframe (the HTML block purifier may strip it), does elearning.gov.ge send a restrictive `Permissions-Policy` header, and is 520 px acceptable? | Without the attribute the microphone never works inside Moodle. | test on the real Moodle in P3 | Track P |
@@ -1285,3 +1330,6 @@ limits, the public index and the Azure region are closed by A4–A7.
   and the quiz, the diagrams, `safety.js`, the CyberHero index and its builder, the tool loop in
   both session families, `navigate_to_path` in App, the returning greeting, the test script,
   the §6.3 checks; V29–V30 recorded; §4.4 counts updated to the current CyberHero content.
+- 2026-09-19 — D6 built (§7.3): both sides announced, AA colours and quiz marks, the phone layout
+  (§5.3), the embed test page, the completed dist scan, README and privacy text, the run sheet,
+  the accessibility and phone sections of the acceptance script, the region-aware host diff.

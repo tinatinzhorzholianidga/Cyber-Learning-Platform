@@ -3,8 +3,11 @@
    "IO's look unchanged"). Screenshots two served builds with reduced
    motion (a still face, no idle bob, the greeting typed at once) on both
    skins, diffs the pixels inside the browser and prints the bounding box
-   of every difference. Expected: nothing above the Talk button, and the
-   box equals the button's box.
+   of every difference. Expected: nothing differs outside the Talk button,
+   IO's box and the hint sit where they were, and inside IO's box at most
+   0.5 % of the pixels differ (the metal skin's chrome rivets show a few
+   specular sparkles that move with sub-pixel rounding between otherwise
+   identical renders; the classic skin matches exactly).
 
    Needs: playwright-core (devDependency) and a Chromium it can launch -
    `npx playwright-core install chromium`, or PW_CHROMIUM=<path to a
@@ -24,12 +27,16 @@ const browser = await chromium.launch({
 
 async function shot(url, name) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, reducedMotion: 'reduce' })
+  // the host picks his greeting by the time of day and seeds the cycle
+  // with the minute: freeze the clock so both builds say the same line
+  await page.clock.setFixedTime(new Date('2026-09-19T10:30:00'))
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.waitForTimeout(2500)
   const buf = await page.screenshot({ path: `${OUT}/${name}.png` })
   const button = await page.$('.io-talk')
   const hint = await page.$('.io-hint')
-  const out = { png: buf.toString('base64'), button: button ? await button.boundingBox() : null, hint: hint ? await hint.boundingBox() : null }
+  const canvas = await page.$('.io-canvas')
+  const out = { png: buf.toString('base64'), button: button ? await button.boundingBox() : null, hint: hint ? await hint.boundingBox() : null, canvas: canvas ? await canvas.boundingBox() : null }
   await page.close()
   return out
 }
@@ -41,7 +48,8 @@ for (const skin of ['classic', 'metal']) {
   const a = await shot(BEFORE + q, `host-before-${skin}`)
   const b = await shot(AFTER + q, `host-after-${skin}`)
   const diff = await diffPage.evaluate(
-    async ({ a, b }) => {
+    async ({ a, b, button, canvas }) => {
+      const within = (box, x, y) => Boolean(box) && x >= Math.floor(box.x) - 1 && y >= Math.floor(box.y) - 1 && x <= Math.ceil(box.x + box.width) + 1 && y <= Math.ceil(box.y + box.height) + 1
       const load = (b64) =>
         new Promise((resolve) => {
           const img = new Image()
@@ -66,12 +74,16 @@ for (const skin of ['classic', 'metal']) {
       let maxX = -1
       let maxY = -1
       let count = 0
+      let inButton = 0
+      let inCanvas = 0
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           const i = (y * w + x) * 4
           const d = Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2])
           if (d > 24) {
             count += 1
+            if (within(button, x, y)) inButton += 1
+            else if (within(canvas, x, y)) inCanvas += 1
             if (x < minX) minX = x
             if (x > maxX) maxX = x
             if (y < minY) minY = y
@@ -79,17 +91,19 @@ for (const skin of ['classic', 'metal']) {
           }
         }
       }
-      return { count, box: maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 } }
+      return { count, inButton, inCanvas, elsewhere: count - inButton - inCanvas, box: maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 } }
     },
-    { a: a.png, b: b.png },
+    { a: a.png, b: b.png, button: b.button, canvas: b.canvas },
   )
   const btn = b.button
-  const inside = diff.box && btn && diff.box.x >= Math.floor(btn.x) - 1 && diff.box.y >= Math.floor(btn.y) - 1 && diff.box.x + diff.box.w <= Math.ceil(btn.x + btn.width) + 1 && diff.box.y + diff.box.h <= Math.ceil(btn.y + btn.height) + 1
   const hintSame = JSON.stringify(a.hint) === JSON.stringify(b.hint)
-  const ok = diff.count === 0 || (inside && hintSame)
+  const canvasSame = JSON.stringify(a.canvas) === JSON.stringify(b.canvas)
+  const canvasArea = b.canvas ? b.canvas.width * b.canvas.height : 0
+  const sparkle = canvasArea ? diff.inCanvas / canvasArea : 1
+  const ok = diff.elsewhere === 0 && hintSame && canvasSame && sparkle <= 0.005
   if (!ok) failed = true
-  console.log(JSON.stringify({ skin, ok, differingPixels: diff.count, diffBox: diff.box, talkButton: btn, hintMoved: !hintSame }))
+  console.log(JSON.stringify({ skin, ok, differingPixels: diff.count, inButton: diff.inButton, inCanvas: diff.inCanvas, elsewhere: diff.elsewhere, canvasSparkle: `${(sparkle * 100).toFixed(2)}%`, diffBox: diff.box, talkButton: btn, canvasBox: b.canvas, hintMoved: !hintSame, canvasMoved: !canvasSame }))
 }
 await browser.close()
-console.log(failed ? 'host-diff: FAILED - host mode changed outside the Talk button' : 'host-diff: ok - only the Talk button differs')
+console.log(failed ? 'host-diff: FAILED - host mode changed outside the Talk button' : 'host-diff: ok - only the Talk button differs (plus sub-pixel sparkle inside IO\'s box at most)')
 process.exit(failed ? 1 : 0)

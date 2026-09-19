@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- A stand-in for the Moodle front page (docs/io-voice-plan.md §5.3, D6):
+     the two iframe snippets from the README, side by side. Served by the
+     dev server at /IO-for-main-page/scripts/e2e/embed-test.html and driven
+     by scripts/e2e/talk.mjs (section 7); never part of a build.
+     The second frame uses voice=stub so the audio harness runs without a
+     key; a real page uses voice=1. -->
+<html lang="ka">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IO embed test</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; background: #f4f6fa; color: #1c2434; }
+      main { max-width: 900px; margin: 0 auto; padding: 24px; }
+      .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+      figure { margin: 0; }
+      figcaption { font-size: 0.85rem; color: #5b6b82; margin-top: 6px; }
+      iframe { border: 0; background: transparent; }
+      .filler { height: 900px; background: repeating-linear-gradient(#fff 0 40px, #eef2f7 40px 80px); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Moodle front page (stand-in)</h1>
+      <p>Left: the host-only embed (460 px). Right: the same embed with talk mode (520 px, <code>allow="microphone; autoplay"</code>).</p>
+      <div class="row">
+        <figure>
+          <iframe
+            id="plain"
+            src="/IO-for-main-page/?embed=1&amp;lang=ka&amp;size=260"
+            title="იო — კიბერუსაფრთხოების გზამკვლევი"
+            width="340"
+            height="460"
+            loading="lazy"
+            allowtransparency="true"
+          ></iframe>
+          <figcaption>?embed=1 (no Talk button)</figcaption>
+        </figure>
+        <figure>
+          <iframe
+            id="voice"
+            src="/IO-for-main-page/?embed=1&amp;lang=ka&amp;size=260&amp;voice=stub"
+            title="იო — კიბერუსაფრთხოების გზამკვლევი"
+            width="340"
+            height="520"
+            loading="lazy"
+            allow="microphone; autoplay"
+            allowtransparency="true"
+          ></iframe>
+          <figcaption>?embed=1&amp;voice=… (Talk button, bottom-sheet dock)</figcaption>
+        </figure>
+      </div>
+      <p>The page keeps its own scroll; the frames never grow a scrollbar.</p>
+      <div class="filler"></div>
+    </main>
+  </body>
+</html>
