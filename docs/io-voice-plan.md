@@ -136,6 +136,8 @@ numbered V1–V24; the demo phases are D1–D6 (§7.1).
 | V22 | Phase 4 acceptance "works end-to-end in Chrome and Safari"; definition of done "Safari (desktop + iOS)" | Track D: Safari uses `webkitSpeechRecognition` where its locale is served (English; `ka-GE` assumed unsupported → typed mode), Firefox typed mode; no `/stt` upload without a Worker | a Worker is what makes uploads possible; Track P's `stt/upload.js` restores the brief's coverage | §5.5, §7.1 |
 | V23 | `VoiceSession` = `start`, `sendText`, `interrupt`, `end`, `on`; states without `idle` | plus optional `listen()`, `stopListening()`, `setMuted()`, `micLevel()` and a `pushToTalk` flag; an `idle` state between push-to-talk turns; events `mouth` (`level` / `pulse` / `sine`), `boundary`, `mic` next to the brief's five | the browser, turn and stub sessions are push-to-talk (V15) and browser voices move the mouth by word events, not amplitude (V18); the ring needs the mic level and the mic-open indicator needs the track state | `session/VoiceSession.js` |
 | V24 | Phase 2 acceptance "a stub session that plays a local WAV" | the stub synthesises a speech-like signal (syllable bursts) by default and plays a WAV with `?voice=stub&wav=<url>` (e.g. a bake-off file served by the dev server); `&mouth=pulse` / `&mouth=sine` exercise the browser-voice mouth paths | no audio file in the repository, the harness works before Gate G1 produces any WAV, and all three mouth paths are tested | `session/StubVoiceSession.js` |
+| V25 | Phase 3: a hidden `session_started` turn makes IO greet | the push-to-talk sessions (browser, turn) speak the scripted greeting from `tutor/strings.js` without a model call; Live (D4) keeps the nudge | the free tier's daily request quota is spent on answers, not greetings; the scripted line is reviewed Georgian | §5.5, `session/pushToTalk.js` |
+| V26 | a voice session always speaks | without a voice for the page language (Chrome or Firefox without a Georgian voice, Safari) the browser session answers in captions with the sine mouth and says so once (`voice.noVoice`); the ring reports typed mode when recognition is missing (`voice.errSpeech`) | A8 promised typed mode everywhere; captions-only is the honest fallback on those browsers | §5.5 |
 
 ---
 
@@ -462,6 +464,8 @@ src/voice/
   useIoVoice.js                state machine: one VoiceSession, events → IoHost props, Esc / T handling, thinking timeout, the mouth loop
   session/VoiceSession.js      the interface (JSDoc typedefs) + shared helpers
   session/select.js            ?voice= → VITE_IO_VOICE_DEFAULT (per-language allowed) → capability fallback; exposes the reason for the badge
+  session/pipeline.js          the turn pipeline: rolling window, generation counter, abort, safety settings, 429 retry, Gemini | local backend
+  session/pushToTalk.js        the shared push-to-talk session (recogniser → pipeline → a speaker); browser and turn differ only in the speaker
   session/BrowserVoiceSession.js   webSpeech + geminiDirect|openaiCompatible + speechSynthesis (A3)
   session/TurnVoiceSession.js  webSpeech(+upload in P) + chat transport + geminiDirect|worker TTS → player
   session/LiveVoiceSession.js  @google/genai live.connect with an auth provider
@@ -984,6 +988,28 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
 - **Not verified in D2:** a real microphone and a real browser voice (headless Chromium has a fake
   device and no voices) — the pulse/sine paths ran on synthetic boundary events; Edge on the
   presenter's machine confirms them in D3 with `BrowserVoiceSession`.
+- **D3 — built and verified against a mocked Gemini API (2026-09-19).** `stt/webSpeech.js` (the
+  recogniser: interim captions, one utterance per press, the error map of §5.5), `tutor/persona.js`
+  (the D3 system instruction with the platform facts imported from `hints.js` / `ui.js`),
+  `session/pipeline.js` (the ported turn pipeline: rolling window, generation counter, abort with
+  the partial answer kept, explicit safety settings, one retry on a per-minute 429, Gemini or the
+  local backend), the browser-voice sentence queue in `tts/speechSynthesis.js` (pulse within 400 ms
+  of `onstart`, else sine), `tts/geminiDirect.js` (per-sentence Gemini TTS into the player, the next
+  sentence prefetched, time to first audio printed in the dev console), `session/pushToTalk.js`
+  (the shared session) with `BrowserVoiceSession` and `TurnVoiceSession` on top, the key field that
+  also forgets a stored key, four new strings, 24 more unit tests (77 in all). Verified in
+  headless Chromium with the chat and TTS endpoints intercepted: with a pasted key the browser
+  session is selected (badge „browser · gemini“), the scripted greeting is captioned, a typed
+  Georgian question streams back as captions with the sine mouth (no voice in headless), the key
+  travels in a header and never in a URL, the recogniser starts on `T`; the turn session plays the
+  mocked TTS through the player with the amplitude mouth for the greeting and for both answer
+  sentences (one TTS request per sentence) and returns to idle; pasting a key on the plain page
+  starts the browser session and *Forget key* clears it; no console error; `check`, `test`, `build`
+  and the dist scan pass (initial chunk +9 B).
+- **Not verified in D3 — needs the team's key and the presentation machine:** a Georgian question
+  answered by voice in Edge (Giorgi / Eka) and in Chrome, real word-boundary events, the first-audio
+  figure on a real connection (the target is ≤ 3 s), Safari's `en-US` recognition, and the answers'
+  Georgian quality (Q5). Gate G1 still decides the defaults.
 - **Deferred:** `build:index` (D5); Track P entirely.
 
 ---
@@ -1177,3 +1203,6 @@ limits, the public index and the Azure region are closed by A4–A7.
 - 2026-09-19 — D2 built (§7.3): the mouth, the listening cue and talk mode in the mascot; the entry
   button and `T`; the lazy voice layer with the audio primitives, the state machine, the dock, the
   transcript and the stub harness; V23–V24 and B19 recorded; headless acceptance scripts added.
+- 2026-09-19 — D3 built (§7.3): the recogniser, the turn pipeline, the persona, the two speakers, the
+  browser and turn sessions, the key field's forget path; V25–V26 recorded; the acceptance script
+  now runs both sessions against a mocked Gemini API.

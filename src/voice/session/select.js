@@ -4,15 +4,17 @@
    reason (for the dev badge), whether a pasted key would unlock the
    wanted kind, and a loader for the session module.
 
-   The registry grows with the phases: D2 ships the stub harness only;
-   D3 adds browser and turn; D4 adds live. A kind that is not built yet
-   falls through like an unavailable one. */
+   The registry grows with the phases: D2 shipped the stub harness, D3
+   the browser and turn sessions; D4 adds live. A kind that is not built
+   yet falls through like an unavailable one. */
 import { devKey, resolveKey } from '../auth/devKey.js'
 
 const ENV = (typeof import.meta !== 'undefined' && import.meta.env) || {}
 export const KINDS = ['browser', 'live', 'turn', 'stub']
 
 const REGISTRY = {
+  browser: () => import('./BrowserVoiceSession.js'),
+  turn: () => import('./TurnVoiceSession.js'),
   stub: () => import('./StubVoiceSession.js'),
 }
 

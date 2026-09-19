@@ -126,7 +126,7 @@ export default function VoiceDock({ voice, lang, sheet = false, reduced = false,
         </button>
       </div>
 
-      {needsKey && !devKey() ? <KeyField t={t} onChange={voice.restart} /> : null}
+      {(needsKey || runtimeKey()) && !devKey() ? <KeyField t={t} onChange={voice.restart} /> : null}
 
       <p className="voice-privacy">
         {t.privacy} {t.privacyText}
@@ -143,7 +143,9 @@ export default function VoiceDock({ voice, lang, sheet = false, reduced = false,
 }
 
 /* The pasted-key field (A2): the value goes to localStorage['io.gemini.key']
-   and nowhere else. Never rendered when a dev key is injected. */
+   and nowhere else. Never rendered when a dev key is injected. While a
+   pasted key exists only the Forget button shows, so the presenter can
+   always remove it from this browser. */
 function KeyField({ t, onChange }) {
   const [value, setValue] = useState('')
   const saved = Boolean(runtimeKey())
@@ -159,21 +161,27 @@ function KeyField({ t, onChange }) {
     onChange()
   }
   return (
-    <form className="voice-key" onSubmit={save}>
-      <label>
-        <span>{t.keyLabel}</span>
-        <input type="password" value={value} onChange={(e) => setValue(e.target.value)} placeholder={t.keyPlaceholder} autoComplete="off" />
-      </label>
-      <div className="voice-actions">
-        <button type="submit" className="voice-btn" disabled={!value.trim()}>
-          {t.keySave}
-        </button>
-        {saved ? (
+    <form className="voice-key" onSubmit={save} data-saved={saved || undefined}>
+      {saved ? (
+        <div className="voice-actions">
+          <span className="voice-key-saved">{t.keyLabel}</span>
           <button type="button" className="voice-btn" onClick={forget}>
             {t.keyForget}
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : (
+        <>
+          <label>
+            <span>{t.keyLabel}</span>
+            <input type="password" value={value} onChange={(e) => setValue(e.target.value)} placeholder={t.keyPlaceholder} autoComplete="off" />
+          </label>
+          <div className="voice-actions">
+            <button type="submit" className="voice-btn" disabled={!value.trim()}>
+              {t.keySave}
+            </button>
+          </div>
+        </>
+      )}
     </form>
   )
 }

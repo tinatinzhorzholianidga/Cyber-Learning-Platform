@@ -381,3 +381,8 @@
 
 /* reduced motion: global.css already stops every animation and
    transition; the ring's mic scale is driven from JS and stays at 0 */
+
+.voice-key-saved {
+  align-self: center;
+  font-weight: 600;
+}

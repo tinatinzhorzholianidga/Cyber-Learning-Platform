@@ -191,3 +191,85 @@ export function createBoundaryLogger() {
     },
   }
 }
+
+/* ---- D3: the sentence queue for BrowserVoiceSession (§5.5) ----
+   speak(sentence) queues utterances in order (speechSynthesis keeps its
+   own queue, so the first sentence starts while the reply is still
+   streaming). Per utterance the mouth mode is decided once: 'pulse' when
+   a word boundary arrives within `boundaryWaitMs` of onstart, otherwise
+   'sine' (A3's fallback). Chrome never ends an utterance it has garbage
+   collected, so live utterances are held until they end. Callbacks:
+     onMouth('pulse'|'sine')   onBoundary(e)   onSentence(text)
+     onDone()  after the last queued utterance   onError(err) */
+export function createBrowserSpeaker({ voice, lang, rate = 1, pitch = 1, boundaryWaitMs = 400, onMouth, onBoundary, onSentence, onDone, onError } = {}) {
+  let gen = 0
+  let pending = 0
+  const live = new Set()
+  let watchdog = 0
+
+  const finishOne = (my) => {
+    if (my !== gen) return
+    pending -= 1
+    if (pending <= 0) {
+      pending = 0
+      onDone?.()
+    }
+  }
+
+  return {
+    speak(sentence) {
+      const text = String(sentence || '').trim()
+      if (!text) return
+      const my = gen
+      pending += 1
+      let sawBoundary = false
+      try {
+        speechSynthesis.resume() // Chrome can be left paused by a previous cancel()
+      } catch {
+        /* ignore */
+      }
+      const handle = speakSentence(text, {
+        voice,
+        lang,
+        rate,
+        pitch,
+        onStart: () => {
+          if (my !== gen) return
+          onSentence?.(text)
+          clearTimeout(watchdog)
+          watchdog = setTimeout(() => {
+            if (my === gen && !sawBoundary) onMouth?.('sine')
+          }, boundaryWaitMs)
+        },
+        onBoundary: (e) => {
+          if (my !== gen || (e.name && e.name !== 'word')) return
+          if (!sawBoundary) {
+            sawBoundary = true
+            clearTimeout(watchdog)
+            onMouth?.('pulse')
+          }
+          onBoundary?.(e)
+        },
+        onEnd: () => {
+          live.delete(handle.utterance)
+          finishOne(my)
+        },
+        onError: (err) => {
+          live.delete(handle.utterance)
+          if (my === gen) onError?.(err)
+          finishOne(my)
+        },
+      })
+      if (handle.utterance) live.add(handle.utterance)
+    },
+    cancel() {
+      gen += 1
+      pending = 0
+      clearTimeout(watchdog)
+      live.clear()
+      cancelAll()
+    },
+    pending: () => pending,
+    idle: () => pending === 0,
+  }
+}

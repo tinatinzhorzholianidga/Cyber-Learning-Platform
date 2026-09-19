@@ -21,7 +21,7 @@ import { lintPair, createReporter, LATIN_ALLOW } from './lib/lint.mjs'
 const report = createReporter()
 const root = new URL('..', import.meta.url)
 const rel = (p) => new URL(p, root)
-const VOICE_LATIN_ALLOW = [...LATIN_ALLOW, 'Google', 'Microsoft', 'Gemini', 'Esc', 'Chrome', 'Edge', 'Safari', 'Firefox']
+const VOICE_LATIN_ALLOW = [...LATIN_ALLOW, 'Google', 'Microsoft', 'Gemini', 'Esc', 'Chrome', 'Edge', 'Safari', 'Firefox', 'Ollama']
 const VOICE_OPTS = { emojiMax: 0, tipCheck: false, latinAllow: VOICE_LATIN_ALLOW, noDots: true }
 
 /* ---- ui.js: the two language trees must have the same shape ---- */

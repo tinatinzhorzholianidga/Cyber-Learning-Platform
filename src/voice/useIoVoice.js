@@ -172,6 +172,8 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
             if (!alive) return
             if (e.fatal) fail(e.key)
             else store.set({ error: e.key })
+            // a rejected key brings the key field back (A2)
+            if (e.key === 'errKey') store.set({ needsKey: true })
           }),
         )
         try {

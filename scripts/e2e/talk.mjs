@@ -13,6 +13,7 @@
    and playwright-core with a Chromium (`npx playwright-core install chromium`
    or PW_CHROMIUM=<path>). Usage: node scripts/e2e/talk.mjs [base url] */
 import { chromium } from 'playwright-core'
+import { synthSpeech } from '../../src/voice/audio/pcm.js'
 
 const BASE = process.argv[2] || process.env.IO_BASE || 'http://localhost:5173/IO-for-main-page/'
 const browser = await chromium.launch({
@@ -259,6 +260,122 @@ for (const mode of ['pulse', 'sine']) {
   }
   expect(report.narrow.position === 'fixed' && report.narrow.sheetTranscript && report.narrow.compactBubble && report.narrow.liveRegions === 1, 'narrow: bottom sheet, one live region')
   await narrow.close()
+}
+
+/* ---- 5. the real sessions against a mocked Gemini API (D3) ----
+   The chat and TTS endpoints are intercepted in the page: the answer is
+   two Georgian sentences, the audio a speech-like test signal. Headless
+   Chromium has no voices, so the browser session answers in captions;
+   the turn session plays the mocked audio through the player. */
+{
+  const FAKE_KEY = 'AIza' + 'e'.repeat(35)
+  const ANSWER = ['ფიშინგი თაღლითობაა, რომელიც ყალბი წერილით გატყუებთ. ', 'ბმულზე დაწკაპუნებამდე გამგზავნი შეამოწმეთ.']
+  const pcm = synthSpeech({ seconds: 1.2, seed: 5 })
+  const pcmB64 = Buffer.from(pcm.buffer, pcm.byteOffset, pcm.byteLength).toString('base64')
+  const sse = (chunks) => chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join('')
+  const apiCalls = []
+  const mockGemini = async (page) => {
+    await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
+      const url = route.request().url()
+      const model = (url.match(/models\/([^:]+):/) || [])[1]
+      apiCalls.push({ model, key: route.request().headers()['x-goog-api-key'] === FAKE_KEY, inUrl: url.includes(FAKE_KEY) })
+      const body = /tts/.test(model)
+        ? sse([{ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/l16; rate=24000; channels=1', data: pcmB64 } }] } }] }])
+        : sse([{ candidates: [{ content: { parts: [{ text: ANSWER[0] }] } }] }, { candidates: [{ content: { parts: [{ text: ANSWER[1] }] }, finishReason: 'STOP' }] }])
+      await route.fulfill({ status: 200, contentType: 'text/event-stream', body })
+    })
+  }
+  const withKey = async () => {
+    const c = await browser.newContext({ viewport: { width: 1200, height: 900 }, permissions: ['microphone'] })
+    await c.addInitScript((k) => localStorage.setItem('io.gemini.key', k), FAKE_KEY)
+    return c
+  }
+
+  // browser session: captions only in headless (no voices), the sine mouth while text streams
+  {
+    const c = await withKey()
+    const page = await c.newPage()
+    watch(page, 'browser')
+    await mockGemini(page)
+    await page.goto(`${BASE}?voice=browser`, { waitUntil: 'networkidle' })
+    await page.click('.io-talk')
+    await page.waitForSelector('.voice-dock', { timeout: 10000 })
+    const greeted = await waitState(page, ['idle'], 8000)
+    report.browser = { greeted, badge: await page.textContent('.voice-dev').catch(() => null), greeting: (await page.textContent('.voice-turn[data-role="io"] .voice-turn-text').catch(() => '')).slice(0, 40), noVoice: await page.textContent('.voice-error').catch(() => null) }
+    expect(greeted === 'idle' && report.browser.badge?.startsWith('browser'), 'browser session selected with the pasted key')
+    expect(report.browser.greeting.startsWith('გამარჯობა'), 'scripted greeting captioned')
+    await page.fill('.voice-input', 'რა არის ფიშინგი?')
+    await page.press('.voice-input', 'Enter')
+    report.browser.thinking = await waitState(page, ['thinking', 'speaking'], 4000)
+    report.browser.speaking = await waitState(page, ['speaking'], 4000)
+    const m = await sampleMouth(page, 700)
+    report.browser.mouth = m
+    report.browser.done = await waitState(page, ['idle'], 8000)
+    report.browser.answer = (await page.$$eval('.voice-turn[data-role="io"] .voice-turn-text', (els) => els.map((e) => e.textContent.trim()))).at(-1)
+    expect(report.browser.speaking === 'speaking' && report.browser.done === 'idle', 'typed question → speaking → idle')
+    expect(report.browser.answer === ANSWER.join('').trim(), 'the mocked answer is captioned in full')
+    expect(m.talking && m.numeric === 0, 'captions-only answer moves the sine mouth')
+    // T: recognition in headless Chromium fails fast or listens; either way no hang and no crash
+    await page.evaluate(() => document.activeElement?.blur())
+    await page.keyboard.press('KeyT')
+    const afterT = await waitState(page, ['listening', 'idle'], 3000)
+    report.browser.afterT = { state: afterT, error: await page.textContent('.voice-error').catch(() => null) }
+    await sleep(1500)
+    report.browser.afterT.later = await state(page)
+    expect(['listening', 'idle', 'thinking', 'speaking'].includes(report.browser.afterT.later), 'recognition attempt leaves a valid state')
+    expect(apiCalls.every((x) => x.key && !x.inUrl), 'the key travels in the header, never in the URL')
+    await c.close()
+  }
+
+  // turn session: mocked TTS audio through the player, the amplitude mouth
+  {
+    const c = await withKey()
+    const page = await c.newPage()
+    watch(page, 'turn')
+    const infos = []
+    page.on('console', (msg) => msg.type() === 'info' && msg.text().includes('[io-voice]') && infos.push(msg.text()))
+    await mockGemini(page)
+    await page.goto(`${BASE}?voice=turn`, { waitUntil: 'networkidle' })
+    await page.click('.io-talk')
+    await page.waitForSelector('.voice-dock', { timeout: 10000 })
+    const s1 = await waitState(page, ['speaking'], 8000)
+    const g = await sampleMouth(page, 900)
+    report.turn = { greetingState: s1, greetingMouth: g, badge: await page.textContent('.voice-dev').catch(() => null) }
+    expect(s1 === 'speaking' && g.numeric > 5 && g.max - g.min > 0.25, 'turn greeting: amplitude mouth from the mocked TTS audio')
+    await waitState(page, ['idle'], 8000)
+    await page.fill('.voice-input', 'რა არის ფიშინგი?')
+    await page.press('.voice-input', 'Enter')
+    report.turn.speaking = await waitState(page, ['speaking'], 6000)
+    const m = await sampleMouth(page, 900)
+    report.turn.answerMouth = m
+    report.turn.done = await waitState(page, ['idle'], 10000)
+    report.turn.firstAudioLog = infos.find((t) => t.includes('after the question')) || infos.find((t) => t.includes('first audio')) || null
+    expect(report.turn.speaking === 'speaking' && m.numeric > 5 && m.max - m.min > 0.25 && report.turn.done === 'idle', 'turn answer: two TTS sentences played, amplitude mouth, back to idle')
+    expect(Boolean(report.turn.firstAudioLog), 'time to first audio printed in the dev console')
+    expect(apiCalls.filter((x) => /tts/.test(x.model)).length >= 3, 'one TTS request per sentence (greeting + two)')
+    await c.close()
+  }
+
+  // the key field: no key → message + field; paste → the browser session starts
+  {
+    const c = await browser.newContext({ viewport: { width: 1200, height: 900 }, permissions: ['microphone'] })
+    const page = await c.newPage()
+    watch(page, 'keyfield')
+    await mockGemini(page)
+    await page.goto(`${BASE}`, { waitUntil: 'networkidle' })
+    await page.click('.io-talk')
+    await page.waitForSelector('.voice-key', { timeout: 10000 })
+    await page.fill('.voice-key input', FAKE_KEY)
+    await page.click('.voice-key button[type="submit"]')
+    const after = await waitState(page, ['idle'], 10000)
+    report.keyField = { after, badge: await page.textContent('.voice-dev').catch(() => null), stored: await page.evaluate(() => localStorage.getItem('io.gemini.key') === 'AIza' + 'e'.repeat(35)) }
+    expect(after === 'idle' && report.keyField.badge?.startsWith('browser') && report.keyField.stored, 'pasting a key starts the browser session')
+    await page.click('.voice-btn:has-text("დავიწყება")')
+    await sleep(300)
+    report.keyField.forgot = await page.evaluate(() => localStorage.getItem('io.gemini.key'))
+    expect(report.keyField.forgot === null, 'forget key clears localStorage')
+    await c.close()
+  }
 }
 
 await browser.close()
