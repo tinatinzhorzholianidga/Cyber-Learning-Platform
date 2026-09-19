@@ -3,5 +3,16 @@ dist/
 *.local
 .env
 .env.*
+!.env.example
 .DS_Store
 npm-debug.log*
+
+# IO voice (docs/io-voice-plan.md §4.1): bake-off audio, the optional local
+# course index and Track P's Worker secrets never enter the repository
+bakeoff/*
+!bakeoff/README.md
+src/voice/tutor/local/
+worker/.dev.vars
+worker/.dev.vars.*
+!worker/.dev.vars.example
+worker/.wrangler/

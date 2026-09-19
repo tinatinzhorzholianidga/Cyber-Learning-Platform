@@ -7,12 +7,19 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "node scripts/check-dist.mjs",
     "preview": "vite preview",
-    "check": "node scripts/check-hints.mjs"
+    "check": "node scripts/check-hints.mjs && node scripts/check-voice.mjs",
+    "check:voice": "node scripts/check-voice.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
+    "test": "node --test",
+    "smoke:voice": "node scripts/voice-smoke.mjs",
+    "bakeoff": "node scripts/voice-bakeoff.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/noto-sans-georgian": "^5.3.0",
+    "@google/genai": "^2.23.0",
     "@react-three/fiber": "^8.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

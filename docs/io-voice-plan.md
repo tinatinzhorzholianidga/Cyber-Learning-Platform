@@ -224,7 +224,9 @@ issues; a local esbuild measurement; Google's two browser samples.
 - `ai.live.connect({ model, config, callbacks })` resolves **after `setupComplete`**; `onmessage`
   required; `config.httpOptions` throws (`apiVersion` goes on the client); `LiveConnectConfig.generationConfig`
   is deprecated — `responseModalities`, `speechConfig`, `temperature` sit on `config`.
-- Issues: #1257 `connect()` never rejects when the socket closes before `open` → 10 s timeout; #1236
+- Issues: #1257 `connect()` never rejects when the socket closes before `open` → 10 s timeout
+  (confirmed in D1: with an invalid key the socket closes with 1007 "API key not valid" and
+  `connect()` never settles; the scripts' timeout reports the close code and reason); #1236
   close code 1008 on the 2.5 native-audio preview; #324 the Node entry crashes in Cloudflare Workers.
 - Sending: `sendRealtimeInput({ audio: { data: <base64 string>, mimeType } })` (base64 only, never the
   legacy `media` key), `sendRealtimeInput({ text })`, `sendRealtimeInput({ audioStreamEnd: true })`,
@@ -417,7 +419,7 @@ Line numbers refer to `IO-for-main-page` (`dc8a296`) and are for the implementer
 | `src/App.jsx` | `params` memo (12); `embed` / `skin` (13–14); embed branch (34–40); hero mounts `IoHost` + `.io-hint` (83–86); `PathCard` drives the ref (115–148); language buttons (58–68); login URL hard-coded (70). | Parse `?voice` (`browser` / `live` / `turn` / `stub`; `1` enables the dock in embed). Render the static **ესაუბრეთ იოს / Talk to IO** `<button>` under `.io-hint` (V11) — or a *Type a question* button when the browser has neither `SpeechRecognition` nor a voice for the page language (A8; voices are re-checked on `voiceschanged`) — and a `keydown` listener for `KeyT` (`e.code`, since a Georgian layout reports `ტ`; ignored when the target is editable or `altKey` / `ctrlKey` / `metaKey` / `isComposing` is set). The handler **synchronously** creates and resumes one `AudioContext` and speaks an empty `SpeechSynthesisUtterance` (both unlocks inside the gesture), then `await import('./voice/VoiceDock.jsx')` (prefetched on `pointerenter`), then sets `mode='talk'`. Pass `mode`, the AudioContext, `lang`, the ref, `{ paths: { basic: { url }, kids: { url, newTab: true } }, loginUrl }` to the voice layer as props; hide `.io-hint` in talk mode; restart the session when `lang` changes. Host-mode tree otherwise unchanged. | D2, D3, D5 |
 | `src/main.jsx`, `index.html` | fonts; shell. | `main.jsx` untouched. `index.html`: reword line 10; `viewport-fit=cover` (B8). | D6 |
 | `vite.config.js` | `base: '/IO-for-main-page/'`, `plugins: [react()]`, no `rollupOptions`. | `defineConfig(({ command, mode }) => …)` with `loadEnv` reading `.env.local`; `define: { __IO_DEV_GEMINI_KEY__: JSON.stringify(command === 'serve' ? env.IO_GEMINI_KEY ?? '' : '') }` — the key is injected into dev serves only and is **structurally absent from every build** whatever `.env.local` contains (V13). `base` unchanged. | D1 |
-| `package.json` / lockfile | react 18.3.1, three 0.169.0, r3f 8.18.0, vite 5.4.21; scripts `dev build preview check`. | Add `@google/genai` 2.x (lazy chunk only); scripts `check:voice`, `check:dist`, `smoke:voice`, `bakeoff`, `build:index`; `check` becomes `check-hints && check-voice`; `postbuild` runs `check:dist`. No npm workspaces; `worker/` (Track P) has its own `package.json`. | D1 |
+| `package.json` / lockfile | react 18.3.1, three 0.169.0, r3f 8.18.0, vite 5.4.21; scripts `dev build preview check`. | Add `@google/genai` 2.x (lazy chunk only); scripts `check:voice`, `check:dist`, `smoke:voice`, `bakeoff`, `test` (Node's built-in runner over `test/*.test.mjs`); `check` becomes `check-hints && check-voice`; `postbuild` runs `check:dist`; `build:index` arrives with its script in D5. No npm workspaces; `worker/` (Track P) has its own `package.json`. | D1 |
 | `.github/workflows/deploy.yml` | push to `main` + gate `repository.name == 'IO-for-main-page'`, Node 20, `npm ci && npm run check && npm run build`. | Gate unchanged (it publishes the preview from the personal repository, A2). Add `env:` `VITE_IO_VOICE_DEFAULT` from a repository variable; `check:dist` runs via `postbuild`. `VITE_IO_SAFETY_REQUIRED: '1'` belongs to the Track P workflow (P3): the demo builds with `0`, and while `safety.js` holds placeholders the persona says "tell a trusted adult now" without reading the file (`check-voice.mjs` warns). A separate `voice-ci.yml` on `io-voice` builds and checks, deploys nothing. Track P adds `VITE_IO_API_BASE` and a Worker type-check job. | D1 |
 | `.gitignore` | `node_modules/ dist/ *.local .env .env.* .DS_Store npm-debug.log*` — `.env.*` also hides `.env.example`. | Add `!.env.example`, `bakeoff/*` + `!bakeoff/README.md`, `src/voice/tutor/local/` (the optional Basic Course index, A6), `worker/.dev.vars`, `worker/.dev.vars.*`, `!worker/.dev.vars.example`, `worker/.wrangler/`. | D1 |
 | `src/mascot/IoHost.jsx` | Timers: greet + wave at 500 ms (0 in reduced motion), intro at 6500 ms (52–63), sleepy wake-up 2600 ms (48), unhover drift-back 1400 ms (97–101); typewriter 2 code points / 22 ms (113–131); `talking = shown < text` (133); `onTap → host.next()` (65–71); ref API `hover/unhover/farewell` (79–108); DOM `.io-bubble > p[aria-hidden] + span.sr-only[role=status][aria-live=polite][aria-atomic]` (137–144); props to `RobotCanvas` (145–155). | Add `mode = 'host'` and a `talk` prop bundle `{ emotion, gesture, mouthLevel, talking, listening, label, panel, onInterrupt }`. Host mode unchanged. Entering talk: `clearLater()`, `hover/unhover` return early, `onTap` → `talk.onInterrupt()` before `host.next()`, the bubble's content becomes `talk.panel` (a slot from App), `emotion/gesture/talking/label` come from `talk`, `mouthLevel/listening/tapReaction={false}` forwarded. Leaving talk: `setGesture(null)`, clear hover bookkeeping, then verbatim `if (!lastCycled.current) lastCycled.current = host.intro(); say(lastCycled.current)`. `farewell()` keeps host semantics. §5.1. | D2 |
@@ -607,9 +609,10 @@ export default defineConfig(({ command, mode }) => {
   `check:dist` (`postbuild`) additionally scans the `.js`, `.css`, `.html` and `.json` files in
   `dist/` for full key shapes (`AIza[0-9A-Za-z_-]{35}`, `AQ\.[A-Za-z0-9_-]{20,}`) and for a Basic
   Course sentence, and fails the build on a hit.
-- In a dev serve the `define` values are page globals set by `/@vite/client`, readable by anyone who
-  can load the dev server: **never run `vite --host` (a LAN-exposed dev server) with a key in
-  `.env.local`**; phones are tested against the deployed preview with a pasted key.
+- In a dev serve Vite 5 does not replace `define` values in the served source; it sets them as page
+  globals from the `/@vite/env` module that `/@vite/client` imports (verified in D1), readable by
+  anyone who can load the dev server: **never run `vite --host` (a LAN-exposed dev server) with a
+  key in `.env.local`**; phones are tested against the deployed preview with a pasted key.
 - `auth/devKey.js`: `devKey()` returns `__IO_DEV_GEMINI_KEY__` only when `__IO_DEV_SERVE__` is true
   and `location.hostname` is `localhost` / `127.0.0.1`; `runtimeKey()` returns the pasted key;
   `resolveKey()` = dev key, else runtime key. **Live uses `devKey()` only** (A3: localhost); `turn`
@@ -930,6 +933,28 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
 | P2 | `auth/workerToken.js`, `llm/workerProxy.js`, `tts/worker.js`, `stt/upload.js`, text-only mode on budget exhaustion, `VITE_IO_API_BASE` in the workflow | the same conversations run with no key in the browser; sessions end at 10 min; the dock switches to text-only when the budget is exhausted |
 | P3 | Moodle embed with the admins (Q8), deployment on the agency account, production README and privacy text, `VITE_IO_SAFETY_REQUIRED=1` in the Pages workflow | brief's definition of done on the live page |
 
+### 7.3 Status
+
+- **D1 — built and verified without a key (2026-09-19).** Everything in the D1 row, plus
+  `scripts/lib/{env,wav,liveNode}.mjs` (dotenv reading and key masking, WAV writing, a Live session
+  with a connect timeout and a message queue), `src/voice/dev/bakeoffLines.js` (the seven lines,
+  shared by the page and the script), six unit-test files under `test/` (`npm test`, 34 tests) and
+  `deploy.yml`'s `VITE_IO_VOICE_DEFAULT` env. Verified in this session: `npm run check` prints exactly
+  what it printed before the lint refactor; `npm test`; a production build with a fake
+  `IO_GEMINI_KEY` in `.env.local` leaves no key and no bake-off chunk in `dist/`, `check:dist`
+  passes, and the initial chunk is byte-identical to the untouched branch's build (§9); `npm ci`
+  from the committed lockfile, then build and tests again; the dev server exposes the defines as
+  globals through `/@vite/env` (§5.4) and `devKey()` sees the key on localhost; headless Chromium
+  renders the host page, `?embed=1` and `?bakeoff=1` without console errors (the bake-off page shows
+  its "no Georgian voice" state — headless Linux has no voices). With a bogus key: `smoke:voice`
+  reports `BAD_KEY` and exits 1, `bakeoff` exits 1, and `bakeoff --only-live` shows the SDK's
+  `connect()` never settling (close 1007) with the timeout reporting the reason (§2.4).
+- **Not verified — Gate G1 needs the team's key and a Windows machine with Edge:** the smoke test
+  against real quota (which Flash model has a usable free tier, whether the key has Live quota), the
+  Gemini and Live WAVs, Giorgi's and Eka's Georgian and whether they raise word-boundary events. The
+  bake-off page's own UI is English (a dev tool, never built); the `voice.*` strings arrive in D2.
+- **Deferred:** `build:index` (D5); Track P entirely.
+
 ---
 
 ## 8. Non-negotiables → where each is enforced
@@ -956,14 +981,16 @@ Vite 5.4.21); CI uses Node 20.
 | Item | Value |
 |---|---|
 | `npm run check` | 0 errors, 0 warnings |
-| `dist/assets/index-*.js` | 1,013,041 bytes (281,207 gzipped) |
-| `dist/assets/index-*.css` | 62,253 bytes (14,006 gzipped) |
+| `dist/assets/index-*.js` | 1,013,041 bytes (282,152 gzipped at zlib's default level, the figure Vite prints; 281,207 with `gzip -9`) |
+| `dist/assets/index-*.css` | 62,253 bytes (14,306 gzipped at the default level; 14,006 with `gzip -9`) |
 | `dist/` total | 2.5 MB (fonts included) |
 | Build time | ≈ 4 s |
 
-`check-dist.mjs` fails a build if the initial JS chunk grows by more than 4 KB gzipped (the budget
-is fixed from the D2 measurement) or the CSS by more than 1 KB, or if the voice chunk is referenced
-by `index.html`.
+`check-dist.mjs` measures with zlib's default level, so its constants are the 282,152 / 14,306
+figures. It fails a build if the initial JS chunk grows by more than 4 KB gzipped (the budget is
+fixed from the D2 measurement) or the CSS by more than 1 KB, or if the voice chunk is referenced by
+`index.html`. D1 result: the initial chunk is byte-identical to the untouched `IO-for-main-page`
+build (same content hashes) — the dev-only route folds away entirely.
 
 Latency (D6, Track D). Laptop rows on localhost in Edge; phone rows on the deployed preview with a
 pasted key (`live` on a phone waits for Track P, or for Q3 = yes):
@@ -1110,3 +1137,8 @@ limits, the public index and the Azure region are closed by A4–A7.
   backend; production deferred), `BrowserVoiceSession`, dev-only key injection, the A5 limit scheme,
   no Basic Course text in the repository, the free bake-off, the accepted entry button, the
   budget-request section (§10).
+- 2026-09-19 — D1 built (§7.3): dev-key injection, checks and postbuild scan, the direct Gemini and
+  local-LLM transports, browser-voice helpers, the `?bakeoff=1` page, the smoke and bake-off
+  scripts, the rating sheet, unit tests and `voice-ci.yml`. Corrections from D1: §9's gzip figures
+  were `gzip -9` numbers (the check uses zlib's default level, as Vite does); §5.4 names `/@vite/env`
+  as the dev-define carrier; §2.4 confirms the `connect()` hang on a rejected key.

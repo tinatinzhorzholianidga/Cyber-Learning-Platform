@@ -1,0 +1,29 @@
+name: IO voice - check and build
+
+# Runs on the io-voice branch in any repository: string checks, unit
+# tests and a production build with the postbuild dist scan (no key, no
+# course text, size budget). Deploys nothing - deploy.yml does that from
+# `main` in the IO-for-main-page repository only.
+on:
+  push:
+    branches: [io-voice]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_IO_VOICE_DEFAULT: browser

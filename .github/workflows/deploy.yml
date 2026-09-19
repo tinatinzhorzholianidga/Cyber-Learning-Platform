@@ -31,7 +31,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      # `postbuild` scans dist/ for key shapes and course text and checks
+      # the size budget (scripts/check-dist.mjs). The voice default is a
+      # repository variable decided at Gate G1 (docs/io-voice-plan.md §6.2).
       - run: npm run build
+        env:
+          VITE_IO_VOICE_DEFAULT: ${{ vars.VITE_IO_VOICE_DEFAULT || 'browser' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

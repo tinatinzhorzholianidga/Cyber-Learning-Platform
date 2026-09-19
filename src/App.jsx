@@ -1,16 +1,25 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { UI, LANGS, initialLang } from './i18n/ui.js'
 import IoHost from './mascot/IoHost.jsx'
+
+/* Dev-only pages. `__IO_DEV_SERVE__` comes from vite.config.js: true under
+   `npm run dev`, false in every build - there the import below is dead
+   code and no chunk is emitted (scripts/check-dist.mjs verifies). */
+const DEV_SERVE = typeof __IO_DEV_SERVE__ !== 'undefined' && __IO_DEV_SERVE__ === true
+const BakeoffPanel = DEV_SERVE ? lazy(() => import('./voice/dev/BakeoffPanel.jsx')) : null
 
 /* The welcome page for elearning.gov.ge with IO as the host.
 
    ?lang=ka|en   pick the language (also remembered)
    ?embed=1      render only IO + his bubble, transparent - for an
                  <iframe> inside the real Moodle page
-   ?skin=metal   the metal-droid IO instead of the original */
+   ?skin=metal   the metal-droid IO instead of the original
+   ?bakeoff=1    dev server only: the browser-voice bake-off page
+                 (docs/io-voice-plan.md §6.2) */
 export default function App() {
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const embed = params.get('embed') === '1'
+  const bakeoff = DEV_SERVE && params.get('bakeoff') === '1'
   const skin = params.get('skin') === 'metal' ? 'metal' : 'classic'
   const [lang, setLang] = useState(initialLang)
   const t = UI[lang]
@@ -30,6 +39,14 @@ export default function App() {
   useEffect(() => {
     document.body.classList.toggle('is-embed', embed)
   }, [embed])
+
+  if (bakeoff && BakeoffPanel) {
+    return (
+      <Suspense fallback={null}>
+        <BakeoffPanel />
+      </Suspense>
+    )
+  }
 
   if (embed) {
     return (
