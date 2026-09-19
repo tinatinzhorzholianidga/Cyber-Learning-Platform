@@ -6,8 +6,10 @@
    once, typed questions flow, End returns to host mode with the click
    cycle intact, reduced motion shows captions at once, embeds get the
    button only with ?voice, narrow viewports get the bottom sheet, and no
-   console error appears. Prints one JSON report and exits 1 on a failed
-   expectation.
+   console error appears; the D3 sessions run against a mocked Gemini API
+   and the D5 tools (card, mood, quiz, end_session, the returning
+   greeting, navigate_to_path, Delete my data) against a mock that plays
+   the tutor. Prints one JSON report and exits 1 on a failed expectation.
 
    Needs: `npm run dev` on port 5173 (the dev server exposes window.__ioVoice)
    and playwright-core with a Chromium (`npx playwright-core install chromium`
@@ -376,6 +378,150 @@ for (const mode of ['pulse', 'sine']) {
     expect(report.keyField.forgot === null, 'forget key clears localStorage')
     await c.close()
   }
+}
+
+/* ---- 6. the tutor's tools against a mocked Gemini (D5) ----
+   The mock plays the tutor from the request: a card and a mood answered in
+   a second call, a quiz answered by click (the next request starts with
+   quiz_answer), end_session (summary stored, host mode), the returning
+   greeting after a reload, navigate_to_path (card highlight, the page
+   follows the link, served locally here) and Delete my data. */
+{
+  const FAKE_KEY = 'AIza' + 'e'.repeat(35)
+  const sse = (chunks) => chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join('')
+  const text = (t) => ({ candidates: [{ content: { parts: [{ text: t }] }, finishReason: 'STOP' }] })
+  const calls = (list) => ({ candidates: [{ content: { parts: list.map(([name, args]) => ({ functionCall: { name, args } })) }, finishReason: 'STOP' }] })
+  const QUIZ = { scenario: 'წერილი გთხოვთ პაროლის დადასტურებას.', options: ['დავაწკაპუნებ', 'გამგზავნს შევამოწმებ', 'გადავაგზავნი'], correctIndex: 1, skill: 'phishing' }
+  const requests = []
+  const tutor = (body) => {
+    const last = body.contents.at(-1)
+    const said = last.parts.map((p) => p.text || '').join('')
+    const responded = last.parts.filter((p) => p.functionResponse).map((p) => p.functionResponse.name)
+    if (responded.includes('ask_quiz')) return [text('აი კითხვა — აირჩიეთ პასუხი.')]
+    if (responded.includes('record_skill')) return [text('ზუსტად ასეა! ახლა უფრო რთულს ვკითხავ.')]
+    if (responded.includes('end_session')) return [text('ნახვამდის! დღეს ფიშინგზე ვისაუბრეთ.')]
+    if (responded.includes('navigate_to_path')) return [text('წარმატებები კურსზე!')]
+    if (responded.length) return [text('ფიშინგი თაღლითობაა. ბარათზე სამი ნაბიჯია.')]
+    if (said.startsWith('quiz_answer')) return [calls([['set_mood', { mood: 'celebrate' }], ['record_skill', { skill: 'phishing', level: 2, evidence: 'quiz' }]])]
+    if (/ფიშინგი/.test(said)) return [calls([['set_mood', { mood: 'excited' }], ['show_card', { kind: 'steps', title: 'სამი ნაბიჯი', items: ['გამგზავნი შეამოწმეთ', 'ბმულს ნუ დააწკაპუნებთ', 'ჰკითხეთ კოლეგას'] }]])]
+    if (/ვიქტორინა/.test(said)) return [calls([['ask_quiz', QUIZ]])]
+    if (/ნახვამდის/.test(said)) return [calls([['end_session', { summary_ka: 'ფიშინგზე ვისაუბრეთ.', summary_en: 'We talked about phishing.', skills: ['phishing'] }]])]
+    if (/კურსი/.test(said)) return [calls([['navigate_to_path', { path: 'basic' }]])]
+    return [text('კარგი.')]
+  }
+  const c = await browser.newContext({ viewport: { width: 1200, height: 900 }, permissions: ['microphone'] })
+  await c.addInitScript((k) => localStorage.setItem('io.gemini.key', k), FAKE_KEY)
+  await c.route('https://generativelanguage.googleapis.com/**', async (route) => {
+    const body = route.request().postDataJSON()
+    requests.push(body)
+    await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(tutor(body)) })
+  })
+  // the course link is served here, so the navigation can be observed
+  await c.route('https://elearning.gov.ge/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>course</title><p>course</p>' }))
+  const page = await c.newPage()
+  watch(page, 'tools')
+  const face = () => page.evaluate(() => window.__ioVoice?.store.get().face ?? null)
+  const profile = () => page.evaluate(() => JSON.parse(localStorage.getItem('io.learner.v1') || 'null'))
+  const ask = async (q) => {
+    await page.fill('.voice-input', q)
+    await page.press('.voice-input', 'Enter')
+  }
+  const waitFor = async (fn, ms) => {
+    const t0 = Date.now()
+    while (Date.now() - t0 < ms) {
+      const v = await fn()
+      if (v) return v
+      await sleep(40)
+    }
+    return null
+  }
+  await page.goto(`${BASE}?voice=browser`, { waitUntil: 'networkidle' })
+  await page.click('.io-talk')
+  await page.waitForSelector('.voice-dock', { timeout: 10000 })
+  await waitState(page, ['idle'], 8000)
+  report.tools = {}
+
+  // a mood and a steps card, then the answer in a second call
+  await ask('რა არის ფიშინგი?')
+  await page.waitForSelector('.voice-board .voice-card[data-kind="steps"]', { timeout: 8000 })
+  report.tools.card = { title: await page.textContent('.voice-card-title'), items: await page.$$eval('.voice-card-list li', (els) => els.length) }
+  report.tools.moodWhileSpeaking = await waitFor(async () => {
+    const f = await face()
+    const s = await state(page)
+    return f?.emotion === 'excited' && s === 'speaking' ? f.emotion : null
+  }, 5000)
+  report.tools.answered = await waitState(page, ['idle'], 8000)
+  report.tools.faceAfter = (await face())?.emotion
+  report.tools.answer = (await page.$$eval('.voice-turn[data-role="io"] .voice-turn-text', (els) => els.map((e) => e.textContent.trim()))).at(-1)
+  expect(report.tools.card.items === 3 && report.tools.card.title === 'სამი ნაბიჯი', 'show_card renders three steps on the board')
+  expect(report.tools.moodWhileSpeaking === 'excited', 'set_mood holds the face through the answer')
+  expect(report.tools.answered === 'idle' && report.tools.faceAfter === 'happy', 'the face returns to idle after the answer')
+  expect(report.tools.answer === 'ფიშინგი თაღლითობაა. ბარათზე სამი ნაბიჯია.', 'the second call\'s text is captioned')
+  expect(requests.length === 2 && requests[1].contents.at(-1).parts.length === 2 && requests[1].contents.at(-1).parts.every((p) => p.functionResponse), 'the second request carries both function responses')
+  expect(requests.every((b) => b.tools?.[0]?.functionDeclarations?.length === 7), 'every chat request declares the seven tools')
+  expect(/LEARNER\nFirst visit/.test(requests[0].systemInstruction.parts[0].text), 'first visit: the learner block says so')
+
+  // a quiz, answered by click
+  await ask('ვიქტორინა')
+  await page.waitForSelector('.voice-quiz-option', { timeout: 8000 })
+  await waitState(page, ['idle'], 8000)
+  report.tools.quiz = { options: await page.$$eval('.voice-quiz-option', (els) => els.length), scenario: await page.textContent('.voice-quiz-scenario') }
+  await page.click('.voice-quiz-option:nth-child(2)')
+  await page.waitForSelector('.voice-quiz-result', { timeout: 5000 })
+  report.tools.quiz.result = { correct: await page.getAttribute('.voice-quiz-result', 'data-correct'), states: await page.$$eval('.voice-quiz-option', (els) => els.map((e) => e.dataset.state)), gesture: (await face())?.gesture?.type }
+  report.tools.quiz.reaction = await waitState(page, ['idle'], 8000)
+  report.tools.quiz.sent = requests.find((b) => String(b.contents.at(-1).parts[0].text || '').startsWith('quiz_answer'))?.contents.at(-1).parts[0].text || null
+  report.tools.quiz.skill = (await profile())?.skills?.phishing?.level ?? null
+  report.tools.quiz.answer = (await page.$$eval('.voice-turn[data-role="io"] .voice-turn-text', (els) => els.map((e) => e.textContent.trim()))).at(-1)
+  expect(report.tools.quiz.options === 3 && report.tools.quiz.scenario === QUIZ.scenario, 'ask_quiz shows the scenario and three options')
+  expect(report.tools.quiz.result.correct === 'true' && report.tools.quiz.result.states.join(',') === 'other,correct,other' && report.tools.quiz.result.gesture === 'bounce', 'a right click is marked and IO bounces')
+  expect(report.tools.quiz.sent === 'quiz_answer 2: გამგზავნს შევამოწმებ (correct; the right option was 2)', 'the click goes back to the model as quiz_answer')
+  expect(report.tools.quiz.skill === 2 && report.tools.quiz.answer.startsWith('ზუსტად ასეა!'), 'record_skill writes the level; the reaction is captioned')
+
+  // goodbye: end_session, the farewell, then host mode with the summary stored
+  await ask('ნახვამდის, იო')
+  await page.waitForSelector('.io-talk', { timeout: 15000 })
+  await sleep(300)
+  report.tools.end = { dock: Boolean(await page.$('.voice-dock')), mode: await page.getAttribute('.io-host', 'data-mode'), sessions: (await profile())?.sessions || [] }
+  expect(!report.tools.end.dock && report.tools.end.mode === null, 'end_session returns to host mode after the farewell')
+  expect(report.tools.end.sessions.length === 1 && report.tools.end.sessions[0].summary_ka === 'ფიშინგზე ვისაუბრეთ.' && report.tools.end.sessions[0].skills.join() === 'phishing', 'the summary and the skills are stored')
+
+  // reload: the returning greeting names the last topic; the model gets the summary
+  await page.goto(`${BASE}?voice=browser`, { waitUntil: 'networkidle' })
+  await page.click('.io-talk')
+  await page.waitForSelector('.voice-dock', { timeout: 10000 })
+  await waitState(page, ['idle'], 8000)
+  report.tools.returning = (await page.textContent('.voice-turn[data-role="io"] .voice-turn-text').catch(() => '')).trim()
+  expect(report.tools.returning === 'ისევ თქვენ! წინა ჯერზე ფიშინგზე ვისაუბრეთ — იქიდანვე გავაგრძელოთ?', 'the returning greeting names ფიშინგზე')
+
+  // navigate_to_path: the card lights up, IO waves, the page follows the link
+  await ask('კურსი მინდა')
+  await page.waitForSelector('.path-card.path-basic[data-io-highlight]', { timeout: 10000 })
+  report.tools.navigate = { mode: await page.getAttribute('.io-host', 'data-mode'), highlighted: Boolean(await page.$('.path-card.path-basic[data-io-highlight]')), learnerBlock: /Returning learner, 1 previous session/.test(requests.at(-1).systemInstruction.parts[0].text) }
+  await page.waitForURL(/elearning\.gov\.ge\/course/, { timeout: 8000 }).catch(() => {})
+  report.tools.navigate.url = page.url()
+  expect(report.tools.navigate.highlighted && report.tools.navigate.mode === null, 'navigate_to_path highlights the Basic Course card in host mode')
+  expect(report.tools.navigate.url.startsWith('https://elearning.gov.ge/course/view.php?id=18'), 'the page follows the course link after the farewell')
+  expect(report.tools.navigate.learnerBlock, 'the returning learner summary reaches the model')
+
+  // Delete my data: the profile goes, the next session greets a first-time visitor
+  await page.goto(`${BASE}?voice=browser`, { waitUntil: 'networkidle' })
+  await page.click('.io-talk')
+  await page.waitForSelector('.voice-dock', { timeout: 10000 })
+  await waitState(page, ['idle'], 8000)
+  page.once('dialog', (d) => d.accept())
+  await page.click('.voice-btn:has-text("წაშლა")')
+  await sleep(200)
+  report.tools.deleted = { profile: await profile(), turns: await page.evaluate(() => window.__ioVoice?.store.get().transcript.turns.length), key: await page.evaluate(() => Boolean(localStorage.getItem('io.gemini.key'))) }
+  await page.click('.voice-btn:has-text("დასრულება")')
+  await page.waitForSelector('.io-talk', { timeout: 5000 })
+  await page.click('.io-talk')
+  await page.waitForSelector('.voice-dock', { timeout: 10000 })
+  await waitState(page, ['idle'], 8000)
+  report.tools.deleted.greeting = (await page.textContent('.voice-turn[data-role="io"] .voice-turn-text').catch(() => '')).slice(0, 20)
+  expect(report.tools.deleted.profile === null && report.tools.deleted.turns === 0 && report.tools.deleted.key, 'Delete my data removes the profile and the transcript, keeps the key')
+  expect(report.tools.deleted.greeting.startsWith('გამარჯობა! მე იო ვარ'), 'after the delete IO greets a first-time visitor')
+  await c.close()
 }
 
 await browser.close()

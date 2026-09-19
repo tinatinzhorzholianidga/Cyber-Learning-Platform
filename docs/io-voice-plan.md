@@ -108,7 +108,7 @@ added to the CyberHero workflow's branch list (its `sync-main` job force-pushes 
 
 The brief says: when the Gemini docs contradict it, follow the docs and note the difference. Every
 deviation is listed here, including the ones the team's decisions introduce. Deviations are
-numbered V1–V24; the demo phases are D1–D6 (§7.1).
+numbered V1–V30; the demo phases are D1–D6 (§7.1).
 
 | # | Brief says | Plan does | Why | Where |
 |---|---|---|---|---|
@@ -140,6 +140,8 @@ numbered V1–V24; the demo phases are D1–D6 (§7.1).
 | V26 | a voice session always speaks | without a voice for the page language (Chrome or Firefox without a Georgian voice, Safari) the browser session answers in captions with the sine mouth and says so once (`voice.noVoice`); the ring reports typed mode when recognition is missing (`voice.errSpeech`) | A8 promised typed mode everywhere; captions-only is the honest fallback on those browsers | §5.5 |
 | V27 | Phase 3: the 90 s goodbye "calls `end_session`"; manual interruption may need an "activityStart-equivalent nudge" | the idle goodbye is a hidden `session_idle` event the persona answers with one sentence, and the session ends when that turn completes (the `end_session` tool arrives in D5); a manual interruption flushes the player and discards the rest of the turn, with no message to the server (B7 stays a D4 experiment for the real service) | no tools exist before D5; the Live API has no interrupt message and realtime text as a nudge is untested | §5.7, `session/LiveVoiceSession.js` |
 | V28 | (none in the brief) the SDK loads on demand | `@google/genai` is pre-bundled by the dev server (`optimizeDeps.include`) although only the Live session imports it | Vite discovers a dependency first imported at run time mid-session and reloads the page, which would end the presenter's talk session on the first Live start | `vite.config.js` |
+| V29 | A6: the optional local Basic Course index is "gitignored" and used by the dev-only demo | `tutor/lookup.js` fetches `src/voice/tutor/local/basic.json` from the dev server at look-up time, and only while `__IO_DEV_SERVE__` is true; nothing imports it | a static import or `import.meta.glob` would let Vite bundle the course text into a build the moment the file exists on the presenter's machine; a dev-server fetch of a path outside `public/` cannot reach `dist/`, and `check-dist.mjs` still greps every build | §4.4, `tutor/lookup.js`, `scripts/build-io-index.mjs` |
+| V30 | Phase 5: a quiz answered by click "goes back to the model as a tool response"; §5.8 (Phase 0) added that a voice answer updates the card "from the next `record_skill` call" | push-to-talk sessions send the click as the user message `quiz_answer N: <option> (correct \| not correct; the right option was M)` with the option text as the caption; Live sends a second response to the still-open `ask_quiz` call with `scheduling: INTERRUPT`; a voice answer is graded by the model in conversation and the card stays open until a click, the next card or *Close* | a `generateContent` turn has no open function call to answer later, while the Live API allows exactly this (`willContinue`, then an INTERRUPT response); marking the card from a skill level would show a choice the learner never made | §5.8, `session/pushToTalk.js`, `session/LiveVoiceSession.js` |
 
 ---
 
@@ -487,11 +489,11 @@ src/voice/
 src/content/safety.js          KA/EN resources with placeholders the DGA team fills in
 public/io-index.json           generated from the CyberHero content by scripts/build-io-index.mjs and committed
 scripts/
-  lib/lint.mjs  check-voice.mjs  check-dist.mjs  voice-smoke.mjs  voice-bakeoff.mjs  build-io-index.mjs
+  lib/lint.mjs  lib/ioChunks.mjs  check-voice.mjs  check-dist.mjs  voice-smoke.mjs  voice-bakeoff.mjs  build-io-index.mjs
   e2e/talk.mjs  e2e/live.mjs  e2e/host-diff.mjs   headless-Chromium acceptance (the stub, the mocked Gemini API, the mocked Live socket; host mode pixel diff), not run in CI
 bakeoff/README.md              rating sheet + decision block (audio files gitignored)
 docs/
-  io-voice-build-prompt.md  io-voice-plan.md (this file)  io-voice-test-script.md (D5)  io-voice-demo.md (D6: run sheet for the presentation)
+  io-voice-build-prompt.md  io-voice-plan.md (this file)  io-voice-test-script.md  io-voice-demo.md (D6: run sheet for the presentation)
 .env.example                   §5.11
 worker/ (Track P)              package.json  tsconfig.json  wrangler.jsonc  .dev.vars.example  README.md
                                src/index.ts  config.ts  limits.ts  text.ts  tutor.ts  routes/{token,chat,tts,stt}.ts  tts/{types,gemini}.ts
@@ -500,11 +502,15 @@ worker/ (Track P)              package.json  tsconfig.json  wrangler.jsonc  .dev
 ### 4.4 Grounding content (A6, V10)
 
 `scripts/build-io-index.mjs` reads the CyberHero content straight from git
-(`origin/main:src/content/{guardians,parents,mascot}`), builds the 330 bilingual chunks with the
-`ioBrain` builder, tags each `{ source: 'mission'|'guide'|'tip', ref, title, en, ka }` and writes
-`public/io-index.json` (≈ 480 KB raw, ≈ 113 KB gzipped). `tutor/lookup.js` fetches it on the first
-`lookup()` (never on page load), scores client-side and returns the top 3 as text; there is no
-server round-trip. The Basic Course is **not** indexed in the repository: for questions about it IO
+(`origin/main:src/content/{guardians,parents,mascot}`; `origin/main@99fb804` when D5 ran), builds
+the bilingual chunks with the ported `ioBrain` builder (`scripts/lib/ioChunks.mjs`: 424 chunks —
+206 mission, 196 guide and 22 tip passages — the content grew since Phase 0 counted 330), tags each
+`{ source: 'mission'|'guide'|'tip', ref, title, en, ka }` and writes `public/io-index.json`
+(554 KB raw, 125 KB gzipped; committed, rebuilt with `npm run build:index`). `tutor/lookup.js`
+fetches it on the first `lookup()` (never on page load), scores client-side (BM25 with a title
+boost, Georgian suffix and English plural stems, a small synonym map) and returns the top 3 as
+text; there is no server round-trip. `check-voice.mjs` verifies the file's shape and that eleven
+learner questions rank the expected mission or guide first. The Basic Course is **not** indexed in the repository: for questions about it IO
 states what the course covers from `hints.js` (nine topics, three hours, the test) and points to it.
 The optional gitignored local index (§4.2) exists only for a dev-mode demo on the presenter's machine.
 
@@ -739,9 +745,14 @@ speakers; `echoCancellation: true` is on).
   name only if volunteered; every `localStorage` access in try/catch with an in-memory fallback.
 - `tools.js`: the seven declarations **exactly as the brief's Phase 5** (`set_mood`, `show_card`,
   `ask_quiz`, `record_skill`, `lookup_course_material`, `navigate_to_path`, `end_session`); handlers
-  browser-side; on the Ollama backend the text-tag convention of §5.4. A quiz answered by click goes
-  back as a tool response with the option index; answered by voice it is graded by the model from
-  the transcript and the card is updated from the next `record_skill` call.
+  browser-side (`runTool(name, args, ctx) → { response, effect }`); on the Ollama backend the
+  text-tag convention of §5.4 plus the top-3 passages injected up front, because that path has no
+  lookup tool. The quiz answer travels as described in V30. `set_mood` holds IO's face until the
+  answer ends; `show_card` / `ask_quiz` render in `BoardPanel.jsx`; `navigate_to_path` and
+  `end_session` take effect after the answer is spoken (§5.3) — in an embed `navigate_to_path`
+  shows a link card and the session goes on. The push-to-talk greeting for a returning learner is
+  the scripted `strings.returning` line with the last session's first skill in the -ზე form
+  (`skills[].kaOn`), no model call.
 - `docs/io-voice-test-script.md`: the 6-turn KA/EN script from the brief's Phase 5 acceptance, plus
   the off-topic and "hack my friend" refusals.
 
@@ -1037,7 +1048,41 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
   events, whether a manual flush without a server message leaves the model mid-turn (B7), and the
   reconnect against a real `goAway`. `npm run smoke:voice` and `npm run bakeoff -- --only-live`
   are the first checks; `?voice=live` on `npm run dev` with the key in `.env.local` is the second.
-- **Deferred:** `build:index` (D5); Track P entirely.
+- **D5 — built and verified against a mocked tutor (2026-09-19).** `tutor/persona.js` (the
+  brief's Phase 5 instruction with the Georgian examples verbatim, facts imported, the safety
+  fallback while `safety.js` holds placeholders, the LEARNER block, the tools block, the text-tag
+  block for Ollama, the Live event rules), `tutor/skills.js` (13 skills with `kaOn`), `tutor/memory.js`
+  (the profile schema, ≤ 10 sessions, `summarise()` ≤ 300 chars, in-memory fallback), `tutor/tools.js`
+  (the seven declarations, `validateArgs`, `runTool`, Live behaviours and scheduling, the `@@tool`
+  parser), `tutor/lookup.js` (§4.4), `BoardPanel.jsx` + three inline SVG diagrams, `src/content/safety.js`
+  with placeholders, `scripts/lib/ioChunks.mjs` + `build-io-index.mjs` + the committed
+  `public/io-index.json`, the tool loop in `pipeline.js` (three rounds, function responses replayed),
+  tool effects in both session families and in `useIoVoice` (mood, board, quiz answers, end,
+  navigate), `App.navigate` (card highlight, farewell, the link after ≈ 1.9 s), the returning
+  greeting, `docs/io-voice-test-script.md`, 45 more unit tests (131 in all) and the §6.3 checks
+  (tool schemas, skill ids, the index's shape, eleven retrieval queries, `{topic}` slots, persona
+  quotes and digits). Verified in headless Chromium against a mock that plays the tutor from the
+  request: `set_mood` + `show_card` → the steps card renders, the face stays *excited* through the
+  answer and returns to *happy* at idle, the second request carries both function responses;
+  `ask_quiz` → three options, a click on the right one marks it ✓ (text, not colour), IO bounces,
+  the next request starts with `quiz_answer 2: …`, `record_skill` writes level 2; `end_session` →
+  the farewell is captioned, the summary and skills are stored, the dock closes; a reload greets
+  with „ისევ თქვენ! წინა ჯერზე ფიშინგზე ვისაუბრეთ — …“ and the model gets `Returning learner, 1
+  previous session…`; `navigate_to_path` → the Basic Course card lights up in host mode and the
+  page follows the link (served locally in the test); *Delete my data* removes the profile and the
+  transcript and the next session greets a first-time visitor; on the mocked Live socket a
+  `toolCall` is answered with `scheduling: SILENT` and moves the face; every chat request declares
+  the seven tools; no console error; `check`, `test`, `build` and the dist scan pass (initial JS
+  +2.2 KB gzipped, the index is a separate 554 KB file fetched on the first lookup). Found and fixed
+  by the run: the browser and turn session factories dropped the `page` context, so
+  `navigate_to_path` had no URL.
+- **Not verified in D5 — needs the team's key (G1) and the presentation machine:** the six-turn
+  script in `docs/io-voice-test-script.md` by hand against the real model (whether Gemini calls
+  the tools when it should, the Socratic quality, the refusals' wording, the Georgian of the
+  quiz options and cards), `lookup_course_material` against real questions, `MAX_TOKENS` on tool
+  turns (§12), the Live path's tool timing on the real service, and the Ollama text-tag path with
+  a real local model (the mock only proves the parser). The 14th skill (Q6) is not added.
+- **Deferred:** Track P entirely.
 
 ---
 
@@ -1236,3 +1281,7 @@ limits, the public index and the Azure region are closed by A4–A7.
 - 2026-09-19 — D4 built (§7.3): `LiveVoiceSession` with the dev key, resumption, idle and hidden
   handling, the fallback to `browser`; V27–V28 recorded; `scripts/e2e/live.mjs` mocks the Live
   socket.
+- 2026-09-19 — D5 built (§7.3): the tutor brain (persona, skills, memory, tools, lookup), the board
+  and the quiz, the diagrams, `safety.js`, the CyberHero index and its builder, the tool loop in
+  both session families, `navigate_to_path` in App, the returning greeting, the test script,
+  the §6.3 checks; V29–V30 recorded; §4.4 counts updated to the current CyberHero content.

@@ -11,7 +11,7 @@ import { devKey, runtimeKey, setRuntimeKey, isDevServe } from './auth/devKey.js'
 
 const RING_STATES = ['idle', 'connecting', 'listening', 'thinking', 'speaking']
 
-export default function VoiceDock({ voice, lang, sheet = false, reduced = false, typedOnly = false, transcript = null, onExit }) {
+export default function VoiceDock({ voice, lang, sheet = false, reduced = false, typedOnly = false, transcript = null, board = null, onExit }) {
   const t = VOICE[lang] || VOICE.ka
   const state = useStore(voice.store, (s) => s.state)
   const micOpen = useStore(voice.store, (s) => s.micOpen)
@@ -90,6 +90,7 @@ export default function VoiceDock({ voice, lang, sheet = false, reduced = false,
       </div>
 
       {transcript ? <div className="voice-sheet-transcript">{transcript}</div> : null}
+      {board}
 
       {error ? (
         <p className="voice-error" role="alert">

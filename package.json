@@ -15,6 +15,7 @@
     "test": "node --test",
     "smoke:voice": "node scripts/voice-smoke.mjs",
     "bakeoff": "node scripts/voice-bakeoff.mjs",
+    "build:index": "node scripts/build-io-index.mjs",
     "e2e:talk": "node scripts/e2e/talk.mjs",
     "e2e:live": "node scripts/e2e/live.mjs",
     "e2e:host-diff": "node scripts/e2e/host-diff.mjs"

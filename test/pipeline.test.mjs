@@ -5,6 +5,8 @@ import { createChat, normalise, retryDelayFor, errorKeyOf, chatConfig } from '..
 const KEY = 'AIza' + 'p'.repeat(35)
 const sse = (chunks) => chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join('')
 const textChunk = (text, finish) => ({ candidates: [{ content: { parts: [{ text }] }, ...(finish ? { finishReason: finish } : {}) }] })
+const callChunk = (calls, finish = 'STOP') => ({ candidates: [{ content: { parts: calls.map(([name, args]) => ({ functionCall: { name, args } })) }, finishReason: finish }] })
+const lastParts = (body) => body.contents.at(-1).parts
 
 /* fetch mock: `handler(url, init)` returns { status, body, sse, slow } */
 function mockFetch(handler) {
@@ -192,6 +194,122 @@ test('a per-minute 429 is retried once after the server delay', async () => {
     }
   } finally {
     if (globalThis.fetch !== undefined) m.restore()
+  }
+})
+
+test('a function call runs the handler and the model continues in a second call', async () => {
+  const m = mockFetch((url, init, n) => {
+    const body = JSON.parse(init.body)
+    if (lastParts(body).some((p) => p.functionResponse)) return { body: sse([textChunk('ბარათი '), textChunk('დაფაზეა.', 'STOP')]) }
+    return { body: sse([textChunk(''), callChunk([['set_mood', { mood: 'excited' }], ['show_card', { kind: 'steps', title: 'ნაბიჯები', items: ['ა', 'ბ'] }]])]) }
+  })
+  try {
+    const handled = []
+    const chat = createChat({
+      system: 'SYS',
+      apiKey: KEY,
+      config: { backend: 'gemini', model: 'm' },
+      tools: [{ functionDeclarations: [{ name: 'set_mood' }, { name: 'show_card' }] }],
+      onToolCall: async (name, args) => {
+        handled.push({ name, args })
+        return name === 'set_mood' ? { ok: true } : { shown: true }
+      },
+    })
+    const deltas = []
+    const r = await chat.ask('რა არის ფიშინგი?', { onText: (d) => deltas.push(d) })
+    assert.equal(r.text, 'ბარათი დაფაზეა.')
+    assert.deepEqual(deltas, ['ბარათი ', 'დაფაზეა.'])
+    assert.deepEqual(handled, [
+      { name: 'set_mood', args: { mood: 'excited' } },
+      { name: 'show_card', args: { kind: 'steps', title: 'ნაბიჯები', items: ['ა', 'ბ'] } },
+    ])
+    assert.deepEqual(r.calls.map((c) => c.name), ['set_mood', 'show_card'])
+    assert.equal(m.calls.length, 2)
+    assert.equal(m.calls[0].body.tools[0].functionDeclarations.length, 2)
+    // the second request replays the call parts and carries the handlers' responses
+    const second = m.calls[1].body.contents
+    assert.deepEqual(second.map((c) => c.role), ['user', 'model', 'user'])
+    assert.deepEqual(second[1].parts, [
+      { functionCall: { name: 'set_mood', args: { mood: 'excited' } } },
+      { functionCall: { name: 'show_card', args: { kind: 'steps', title: 'ნაბიჯები', items: ['ა', 'ბ'] } } },
+    ])
+    assert.deepEqual(second[2].parts, [
+      { functionResponse: { name: 'set_mood', response: { ok: true } } },
+      { functionResponse: { name: 'show_card', response: { shown: true } } },
+    ])
+    // the history keeps the plain exchange only
+    assert.deepEqual(chat.history, [
+      { role: 'user', content: 'რა არის ფიშინგი?' },
+      { role: 'assistant', content: 'ბარათი დაფაზეა.' },
+    ])
+  } finally {
+    m.restore()
+  }
+})
+
+test('a handler that throws answers with an error; tool rounds stop at three', async () => {
+  const m = mockFetch(() => ({ body: sse([callChunk([['set_mood', { mood: 'wink' }]])]) }))
+  try {
+    let n = 0
+    const chat = createChat({
+      system: 's',
+      apiKey: KEY,
+      config: { backend: 'gemini', model: 'm' },
+      onToolCall: async () => {
+        n += 1
+        if (n === 1) throw new Error('boom')
+        return { ok: true }
+      },
+    })
+    const r = await chat.ask('a')
+    assert.equal(n, 3)
+    assert.equal(r.calls.length, 3)
+    assert.equal(r.text, '')
+    assert.equal(m.calls.length, 4)
+    assert.deepEqual(lastParts(m.calls[1].body), [{ functionResponse: { name: 'set_mood', response: { error: 'boom' } } }])
+    assert.equal(chat.history.at(-1).content, '…')
+  } finally {
+    m.restore()
+  }
+})
+
+test('the local backend consumes @@tool lines, even split across chunks, and never shows them', async () => {
+  const pieces = ['data: {"choices":[{"delta":{"content":"გამარჯობა.\\n@@tool set_"}}]}\n\n', 'data: {"choices":[{"delta":{"content":"mood {\\"mood\\":\\"wink\\"}\\nკიდევ."}}]}\n\n', 'data: [DONE]\n\n']
+  const m = mockFetch(() => ({
+    stream: new ReadableStream({
+      start(c) {
+        const enc = new TextEncoder()
+        pieces.forEach((p) => c.enqueue(enc.encode(p)))
+        c.close()
+      },
+    }),
+  }))
+  try {
+    const handled = []
+    const chat = createChat({ system: 's', config: { backend: 'openai', base: 'http://localhost:11434/v1', model: 'gemma3' }, onToolCall: async (name, args) => handled.push({ name, args }) })
+    const deltas = []
+    const r = await chat.ask('a', { onText: (d) => deltas.push(d) })
+    assert.deepEqual(deltas, ['გამარჯობა.\n', 'კიდევ.'])
+    assert.equal(r.text, 'გამარჯობა.\nკიდევ.')
+    assert.deepEqual(handled, [{ name: 'set_mood', args: { mood: 'wink' } }])
+    assert.deepEqual(r.calls, [{ name: 'set_mood', args: { mood: 'wink' }, viaTag: true }])
+    assert.equal(m.calls.length, 1, 'the text convention has no second call')
+    assert.equal(m.calls[0].body.messages[0].content, 's')
+  } finally {
+    m.restore()
+  }
+})
+
+test('extraSystem is appended to the system instruction for one answer', async () => {
+  const m = mockFetch(() => ({ body: sse([textChunk('კარგი.', 'STOP')]) }))
+  try {
+    const chat = createChat({ system: 'SYS', apiKey: KEY, config: { backend: 'gemini', model: 'm' } })
+    await chat.ask('a', { extraSystem: 'PLATFORM MATERIAL\n[1] x' })
+    await chat.ask('b')
+    assert.equal(m.calls[0].body.systemInstruction.parts[0].text, 'SYS\n\nPLATFORM MATERIAL\n[1] x')
+    assert.equal(m.calls[1].body.systemInstruction.parts[0].text, 'SYS')
+  } finally {
+    m.restore()
   }
 })
 

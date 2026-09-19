@@ -6,8 +6,10 @@
    signal), a typed question likewise, then hands out a resumption
    handle and a goAway so the client reconnects. Checks: the session is
    selected with the dev key, the microphone streams 16 kHz chunks, the
-   amplitude mouth moves, Esc discards the rest of a turn, the reconnect
-   carries the handle, End returns to host mode, no console error.
+   amplitude mouth moves, a toolCall (set_mood) is answered with SILENT
+   scheduling and moves the face, Esc discards the rest of a turn, the
+   reconnect carries the handle, End returns to host mode, no console
+   error.
 
    Needs the dev server started WITH a (fake) dev key and the Live flag:
      IO_GEMINI_KEY=AIzaFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE1234 VITE_IO_LIVE_OK=1 npm run dev
@@ -77,7 +79,7 @@ const GREETING = ['გამარჯობა! ', 'მე იო ვარ, თ
 const ANSWER = ['ფიშინგი თაღლითობაა, რომელიც ყალბი წერილით გატყუებთ. ', 'ბმულს ნუ დააწკაპუნებთ. ', 'ჯერ გამგზავნი შეამოწმეთ. ', 'ეჭვის შემთხვევაში ჰკითხეთ კოლეგას.']
 let socketN = 0
 await page.routeWebSocket(/BidiGenerateContent/, (ws) => {
-  const sock = { n: ++socketN, url: ws.url().replace(/key=[^&]+/, 'key=***'), keyInUrl: /key=AIzaFAKE/.test(ws.url()), setup: null, audioChunks: 0, texts: [], clientContents: [], audioStreamEnds: 0 }
+  const sock = { n: ++socketN, url: ws.url().replace(/key=[^&]+/, 'key=***'), keyInUrl: /key=AIzaFAKE/.test(ws.url()), setup: null, audioChunks: 0, texts: [], clientContents: [], audioStreamEnds: 0, toolResponses: [] }
   report.sockets.push(sock)
   const send = (obj) => ws.send(JSON.stringify(obj))
   const answer = async (sentences) => {
@@ -93,6 +95,10 @@ await page.routeWebSocket(/BidiGenerateContent/, (ws) => {
     if (msg.setup) {
       sock.setup = msg.setup
       send({ setupComplete: {} })
+      return
+    }
+    if (msg.toolResponse) {
+      sock.toolResponses.push(msg.toolResponse)
       return
     }
     if (msg.clientContent) {
@@ -112,6 +118,9 @@ await page.routeWebSocket(/BidiGenerateContent/, (ws) => {
       if (msg.realtimeInput.text) {
         sock.texts.push(msg.realtimeInput.text)
         send({ serverContent: { inputTranscription: { text: msg.realtimeInput.text, finished: true } } })
+        // the tutor sets his mood before answering (D5): a non-blocking tool call
+        send({ toolCall: { functionCalls: [{ id: 'fc-1', name: 'set_mood', args: { mood: 'wink' } }] } })
+        await sleep(50)
         await answer(ANSWER)
       }
     }
@@ -146,7 +155,8 @@ report.audioChunks = report.sockets.map((s) => s.audioChunks)
 await page.fill('.voice-input', 'რა არის ფიშინგი?')
 await page.press('.voice-input', 'Enter')
 report.typed = { thinking: await waitState(['thinking', 'speaking'], 5000), speaking: await waitState(['speaking'], 8000) }
-report.answerMouth = await sampleMouth(250)
+report.answerMouth = await sampleMouth(400)
+report.answerMood = await page.evaluate(() => window.__ioVoice?.store.get().face.emotion)
 // Esc while IO speaks: the rest of the turn is discarded, then listening
 await page.evaluate(() => document.activeElement?.blur())
 await page.keyboard.press('Escape')
@@ -158,6 +168,9 @@ expect(report.answerMouth.numeric > 3, 'answer audio moved the mouth before the 
 report.userTurn = await page.textContent('.voice-turn[data-role="user"] .voice-turn-text').catch(() => null)
 expect(report.userTurn === 'რა არის ფიშინგი?', 'typed question shown as the user turn')
 expect(report.sockets[1]?.texts?.[0] === 'რა არის ფიშინგი?', 'typed question sent as realtime text')
+report.toolResponse = report.sockets[1]?.toolResponses?.[0]?.functionResponses?.[0] || null
+expect(report.toolResponse?.id === 'fc-1' && report.toolResponse?.scheduling === 'SILENT' && report.toolResponse?.response?.ok === true, 'set_mood answered at once with scheduling SILENT')
+expect(report.answerMood === 'wink', 'the tool call set the face while IO answered')
 
 // mute via the ring, then End → host mode
 await page.click('.voice-ring')

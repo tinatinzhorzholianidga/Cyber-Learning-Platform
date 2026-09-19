@@ -1,13 +1,14 @@
 /* The voice layer's root component, mounted by App.jsx in talk mode next
    to IoHost. It runs the state machine, renders the dock (and, on narrow
-   viewports, the transcript sheet) and hands IoHost what it needs
-   through `onTalk` (docs/io-voice-plan.md §5.1). Discrete changes only
-   travel that way; streaming captions re-render the transcript alone. */
-import { useEffect, useMemo, useState } from 'react'
+   viewports, the transcript sheet), IO's board, and hands IoHost what it
+   needs through `onTalk` (docs/io-voice-plan.md §5.1). Discrete changes
+   only travel that way; streaming captions re-render the transcript alone. */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useIoVoice } from './useIoVoice.js'
 import { useStore } from './store.js'
 import VoiceDock from './VoiceDock.jsx'
 import TranscriptPanel from './TranscriptPanel.jsx'
+import BoardPanel from './BoardPanel.jsx'
 import { VOICE } from './i18n.js'
 import { isDevServe } from './auth/devKey.js'
 import './voice.css'
@@ -27,10 +28,20 @@ function useMedia(query) {
   return matches
 }
 
-export default function IoVoice({ lang, kind, audioContext, embed = false, typedOnly = false, page, onTalk, onExit }) {
+export default function IoVoice({ lang, kind, audioContext, embed = false, typedOnly = false, page, onTalk, onExit, onNavigate }) {
   const reduced = useMedia('(prefers-reduced-motion: reduce)')
   const narrow = useMedia('(max-width: 900px)')
-  const voice = useIoVoice({ lang, kind, audioContext, page, reduced })
+  const exited = useRef(false)
+  const leave = useCallback(
+    (nav = null) => {
+      if (exited.current) return
+      exited.current = true
+      if (nav) onNavigate?.(nav)
+      else onExit()
+    },
+    [onExit, onNavigate],
+  )
+  const voice = useIoVoice({ lang, kind, audioContext, page, reduced, onNavigate: (nav) => leave(nav), onEnded: () => leave(null) })
   const face = useStore(voice.store, (s) => s.face)
   const t = VOICE[lang] || VOICE.ka
   // narrow viewports move the full transcript into the sheet; the bubble
@@ -56,7 +67,7 @@ export default function IoVoice({ lang, kind, audioContext, embed = false, typed
     })
   }, [face, panel, t.ioLabelTalk, voice, onTalk])
 
-  // dev serves expose the store and the mouth level for the acceptance script
+  // dev serves expose the store and the mouth level for the acceptance scripts
   useEffect(() => {
     if (!isDevServe()) return undefined
     window.__ioVoice = { store: voice.store, mouth: () => voice.mouthLevel.current, api: voice }
@@ -67,7 +78,7 @@ export default function IoVoice({ lang, kind, audioContext, embed = false, typed
 
   const exit = async () => {
     await voice.end()
-    onExit()
+    leave(null)
   }
 
   return (
@@ -78,6 +89,7 @@ export default function IoVoice({ lang, kind, audioContext, embed = false, typed
       reduced={reduced}
       typedOnly={typedOnly}
       transcript={transcriptInSheet ? <TranscriptPanel store={voice.store} lang={lang} variant="sheet" /> : null}
+      board={<BoardPanel store={voice.store} lang={lang} onAnswer={voice.answerQuiz} onClose={voice.clearBoard} />}
       onExit={exit}
     />
   )

@@ -386,3 +386,126 @@
   align-self: center;
   font-weight: 600;
 }
+
+/* ---- IO's board: cards and the quiz (D5) ---- */
+.voice-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+.voice-card-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin: 0;
+}
+.voice-card-list {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.voice-card-check {
+  list-style: none;
+  padding-left: 0;
+}
+.voice-card-link {
+  align-self: flex-start;
+  font-weight: 800;
+  color: #fff;
+  background: var(--blue);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+.voice-card-link:hover {
+  background: var(--blue-2);
+}
+.voice-diagram {
+  width: 100%;
+  height: auto;
+  font-family: var(--font);
+}
+.voice-quiz-scenario {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.voice-quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.voice-quiz-option {
+  appearance: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--ink);
+  background: var(--blue-soft);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.voice-quiz-option:hover:not(:disabled) {
+  border-color: var(--blue-2);
+}
+.voice-quiz-option:disabled {
+  cursor: default;
+}
+.voice-quiz-option[data-state='correct'] {
+  border-color: #2fbf83;
+  background: #e9f8f1;
+}
+.voice-quiz-option[data-state='wrong'] {
+  border-color: var(--coral);
+  background: #fff1f1;
+}
+.voice-quiz-option[data-state='other'] {
+  opacity: 0.6;
+}
+.voice-quiz-index {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: grid;
+  place-items: center;
+}
+.voice-quiz-result {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--coral-deep);
+}
+.voice-quiz-result[data-correct] {
+  color: #1f8f5f;
+}
+.voice-board-close {
+  align-self: flex-end;
+}
+
+/* navigate_to_path: the chosen card lights up like a hover (§5.3) */
+.path-card[data-io-highlight] {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--blue-2);
+}
+.path-kids[data-io-highlight] {
+  border-color: var(--kids);
+}

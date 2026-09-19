@@ -19,6 +19,9 @@ import { openMic, micSupported, micErrorKey } from '../audio/mic.js'
 import { buildSystemInstruction } from '../tutor/persona.js'
 import { devKey, isDevServe } from '../auth/devKey.js'
 import { errorKeyOf } from './pipeline.js'
+import { geminiTools, runTool, LIVE_SCHEDULING } from '../tutor/tools.js'
+import { lookup } from '../tutor/lookup.js'
+import { touchProfile, summarise, isReturning, recordSkill, addSession, loadProfile } from '../tutor/memory.js'
 
 const ENV = (typeof import.meta !== 'undefined' && import.meta.env) || {}
 export const CONNECT_TIMEOUT_MS = 10000
@@ -52,11 +55,12 @@ async function sdkConnect({ apiKey, model, config, callbacks }) {
 }
 
 /* What the session asks of the Live model (§2.3). `handle` resumes. */
-export function liveConfig({ lang, voiceName, handle = null, systemInstruction }) {
+export function liveConfig({ lang, voiceName, handle = null, systemInstruction, tools = geminiTools({ live: true }) }) {
   return {
     responseModalities: ['AUDIO'],
     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
     systemInstruction,
+    tools,
     inputAudioTranscription: { languageCodes: [lang] }, // a BCP-47 hint (B11: 'ka' first)
     outputAudioTranscription: {},
     realtimeInputConfig: { automaticActivityDetection: {}, turnCoverage: 'TURN_INCLUDES_ONLY_ACTIVITY' },
@@ -78,6 +82,8 @@ export function create({
   connectTimeoutMs = CONNECT_TIMEOUT_MS,
   idleMs = IDLE_GOODBYE_MS,
   hiddenMs = HIDDEN_PAUSE_MS,
+  page = null,
+  lookupImpl = lookup,
 } = {}) {
   const em = createEmitter()
   const timers = createTimers()
@@ -98,6 +104,14 @@ export function create({
   let hiddenTimer = 0
   let pausedByHidden = false
   let gen = 0
+  let learner = ''
+  let exchanges = 0
+  let firstQuestion = ''
+  let touchedSkills = []
+  let sessionSaved = false
+  let afterTurn = null // { type: 'end' } | { type: 'navigate', … } taken when the model's turn completes
+  let quiz = null // { id, options, correctIndex, skill } while a quiz card is open
+  const toolCtx = { lang, page, lookup: (q, l) => lookupImpl(q, l || lang), memory: { recordSkill, addSession } }
 
   const log = (...args) => {
     if (isDevServe()) console.info('[io-voice live]', ...args)
@@ -162,11 +176,43 @@ export function create({
     if (modelSpeaking && !discarded && player) await player.drained()
     if (my !== gen || state === 'ended') return
     modelSpeaking = false
-    if (pendingGoodbye) {
+    if (pendingGoodbye || afterTurn?.type === 'end') {
+      afterTurn = null
+      await session.end()
+      return
+    }
+    if (afterTurn?.type === 'navigate') {
+      const next = afterTurn
+      afterTurn = null
+      em.emit('navigate', next)
       await session.end()
       return
     }
     if (state === 'speaking' || state === 'thinking' || state === 'interrupted') setState(restState())
+  }
+
+  /* the model's function calls: run the handlers, answer at once (§5.7) */
+  async function handleToolCall(toolCall) {
+    const responses = []
+    for (const fc of toolCall.functionCalls || []) {
+      const { response, effect } = await runTool(fc.name, fc.args, toolCtx)
+      const entry = { id: fc.id, name: fc.name, response, scheduling: LIVE_SCHEDULING[fc.name] || undefined }
+      if (effect) {
+        if (effect.type === 'quiz') {
+          quiz = { id: fc.id, ...effect.quiz }
+          entry.willContinue = true
+        }
+        if (effect.type === 'skill' && !touchedSkills.includes(effect.skill)) touchedSkills.push(effect.skill)
+        if (effect.type === 'end') {
+          sessionSaved = true
+          afterTurn = { type: 'end' }
+        } else if (effect.type === 'navigate') afterTurn = effect
+        em.emit('tool', { name: fc.name, args: fc.args, effect })
+      }
+      log('tool', fc.name, fc.args)
+      responses.push(entry)
+    }
+    if (responses.length) send((l) => l.sendToolResponse({ functionResponses: responses }))
   }
 
   function handleMessage(msg) {
@@ -180,7 +226,14 @@ export function create({
       reconnect()
       return
     }
-    if (msg.toolCall) return // D5
+    if (msg.toolCall) {
+      handleToolCall(msg.toolCall)
+      return
+    }
+    if (msg.toolCallCancellation) {
+      quiz = null
+      return
+    }
     const sc = msg.serverContent
     if (!sc) return
     if (sc.interrupted) onInterrupted()
@@ -189,6 +242,8 @@ export function create({
       userText += inT.text
       em.emit('userCaption', { text: userText, final: Boolean(inT.finished) })
       if (inT.finished) {
+        exchanges += 1
+        if (!firstQuestion) firstQuestion = userText
         userText = ''
         if (state === 'listening' || state === 'idle') setState('thinking')
       }
@@ -239,7 +294,7 @@ export function create({
     })
     try {
       live = await Promise.race([
-        connect({ apiKey, model, config: liveConfig({ lang, voiceName, handle, systemInstruction: buildSystemInstruction({ lang, live: true }) }), callbacks }),
+        connect({ apiKey, model, config: liveConfig({ lang, voiceName, handle, systemInstruction: buildSystemInstruction({ lang, live: true, mode: 'live', learner }) }), callbacks }),
         timeout,
       ])
     } finally {
@@ -335,6 +390,8 @@ export function create({
 
     async start() {
       if (!apiKey) throw Object.assign(new Error('no dev key for Live'), { key: 'errNoSession', fallback: 'browser' })
+      const profile = touchProfile(lang)
+      learner = summarise(lang, profile)
       try {
         await connectOnce()
       } catch (err) {
@@ -359,7 +416,7 @@ export function create({
       }
       if (typeof document !== 'undefined') document.addEventListener?.('visibilitychange', onVisibility)
       // the hidden nudge: IO greets in the session language (§5.7)
-      send((l) => l.sendClientContent({ turns: [{ role: 'user', parts: [{ text: `session_started ${JSON.stringify({ lang, page: 'welcome', learner: {} })}` }] }], turnComplete: true }))
+      send((l) => l.sendClientContent({ turns: [{ role: 'user', parts: [{ text: `session_started ${JSON.stringify({ lang, page: 'welcome', returning: isReturning(profile), learner })}` }] }], turnComplete: true }))
       setState('thinking')
       touch()
     },
@@ -374,13 +431,33 @@ export function create({
       if (state === 'listening') session.setMuted(true)
     },
 
-    sendText(text) {
+    sendText(text, { display = null } = {}) {
       const clean = String(text || '').trim()
       if (!clean || !live || state === 'ended' || state === 'connecting') return
       if (state === 'speaking' || state === 'thinking') session.interrupt()
       finalizeUserTurn()
-      em.emit('userCaption', { text: clean, final: true })
+      exchanges += 1
+      if (!firstQuestion && !clean.startsWith('quiz_answer')) firstQuestion = clean
+      em.emit('userCaption', { text: display || clean, final: true })
       send((l) => l.sendRealtimeInput({ text: clean }))
+      setState('thinking')
+      touch()
+    },
+
+    /* the learner clicked a quiz option: a second tool response that interrupts (§5.7) */
+    answerQuiz(index) {
+      const q = quiz
+      if (!q || !Number.isInteger(index) || !q.options[index] || state === 'ended') return
+      quiz = null
+      const text = q.options[index]
+      const correct = index === q.correctIndex
+      em.emit('tool', { name: 'quiz_answer', args: { index, correct }, effect: { type: 'quizAnswered', index, correct, skill: q.skill } })
+      if (state === 'speaking' || state === 'thinking') session.interrupt()
+      finalizeUserTurn()
+      em.emit('userCaption', { text, final: true })
+      if (q.id && live) {
+        send((l) => l.sendToolResponse({ functionResponses: [{ id: q.id, name: 'ask_quiz', response: { quiz_answer: index + 1, text, correct, correctIndex: q.correctIndex + 1 }, scheduling: 'INTERRUPT' }] }))
+      } else send((l) => l.sendRealtimeInput({ text: `quiz_answer ${index + 1}: ${text} (${correct ? 'correct' : 'not correct'})` }))
       setState('thinking')
       touch()
     },
@@ -416,10 +493,15 @@ export function create({
     async end() {
       if (state === 'ended') return { summary: '' }
       teardown()
+      if (!sessionSaved && exchanges > 0 && firstQuestion) {
+        const summary = firstQuestion.slice(0, 120)
+        addSession({ summary_ka: summary, summary_en: summary, skills: touchedSkills })
+        sessionSaved = true
+      }
       state = 'ended'
       em.emit('state', 'ended')
       em.clear()
-      return { summary: '' }
+      return { summary: loadProfile()?.sessions?.at(-1)?.[lang === 'ka' ? 'summary_ka' : 'summary_en'] || '' }
     },
 
     on: em.on,

@@ -1,7 +1,8 @@
 /* The push-to-talk session shared by BrowserVoiceSession and
-   TurnVoiceSession (docs/io-voice-plan.md §5.5, §5.6): speech recognition
-   in the browser → the chat pipeline (streamed) → a speaker that reads
-   the answer sentence by sentence while the rest is still arriving.
+   TurnVoiceSession (docs/io-voice-plan.md §5.5, §5.6, §5.8): speech
+   recognition in the browser → the chat pipeline (streamed, with the
+   tutor's tools) → a speaker that reads the answer sentence by sentence
+   while the rest is still arriving.
 
    States: connecting → idle ⇄ listening → thinking → speaking → idle.
    The visitor presses the ring to talk (V15); recognition ends by itself
@@ -10,19 +11,23 @@
 
    `makeSpeaker({ callbacks })` returns the speaker (browser voices or
    Gemini TTS through the player) or null when no voice exists: then IO
-   answers in captions only. */
+   answers in captions only. Tool effects reach the UI as 'tool' events;
+   an end_session or navigate_to_path effect takes hold after the answer. */
 import { createEmitter, createTimers } from './VoiceSession.js'
-import { createChat, errorKeyOf } from './pipeline.js'
+import { createChat, errorKeyOf, chatConfig } from './pipeline.js'
 import { createRecognizer, recognitionSupported } from '../stt/webSpeech.js'
 import { openMic, micSupported } from '../audio/mic.js'
 import { splitSentences, stripForSpeech } from '../tts/speechSynthesis.js'
 import { buildSystemInstruction } from '../tutor/persona.js'
 import { STRINGS } from '../tutor/strings.js'
+import { geminiTools, runTool } from '../tutor/tools.js'
+import { lookup } from '../tutor/lookup.js'
+import { touchProfile, summarise, isReturning, lastTopic, recordSkill, addSession, loadProfile } from '../tutor/memory.js'
 import { isDevServe } from '../auth/devKey.js'
 
 const NO_VOICE_MS_PER_CHAR = 45 // captions-only pace, so the answer reads like speech
 
-export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSpeaker, chatOptions = {}, reduced = false }) {
+export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSpeaker, chatOptions = {}, reduced = false, page = null, lookupImpl = lookup }) {
   const em = createEmitter()
   const timers = createTimers()
   const strings = STRINGS[lang] || STRINGS.ka
@@ -34,8 +39,13 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
   let mic = null
   let muted = false
   let gen = 0
-  let speakingSince = 0
   let utteranceEndAt = 0
+  let exchanges = 0
+  let firstQuestion = ''
+  let touchedSkills = []
+  let sessionSaved = false
+  let afterAnswer = null // { type: 'end' } | { type: 'navigate', … } taken after the answer is spoken
+  let quiz = null // the open quiz: { options, correctIndex, skill }
 
   const setState = (s) => {
     if (state === 'ended' || state === s) return
@@ -47,7 +57,7 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
   }
 
   /* ---- the speaker: created once, reset by cancel() ---- */
-  let speakingDone = null // resolve when the speaker finishes the current answer
+  let speakingDone = null
   const speakerCallbacks = {
     onMouth: (mode) => em.emit('mouth', { mode }),
     onBoundary: (e) => em.emit('boundary', e),
@@ -72,12 +82,36 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
     m?.close()
   }
 
+  /* ---- tools ---- */
+  const toolCtx = {
+    lang,
+    page,
+    lookup: (q, l) => lookupImpl(q, l || lang),
+    memory: { recordSkill, addSession },
+  }
+  async function onToolCall(name, args) {
+    const { response, effect } = await runTool(name, args, toolCtx)
+    if (effect) {
+      if (effect.type === 'quiz') quiz = effect.quiz
+      if (effect.type === 'skill' && !touchedSkills.includes(effect.skill)) touchedSkills.push(effect.skill)
+      if (effect.type === 'end') {
+        sessionSaved = true
+        afterAnswer = { type: 'end' }
+      } else if (effect.type === 'navigate') afterAnswer = effect
+      em.emit('tool', { name, args, effect })
+    }
+    log('tool', name, args)
+    return response
+  }
+
   /* ---- one answer ---- */
-  async function answer(question) {
+  async function answer(question, { display = null } = {}) {
     const my = ++gen
-    em.emit('userCaption', { text: question, final: true })
+    em.emit('userCaption', { text: display || question, final: true })
     setState('thinking')
     utteranceEndAt = performance.now()
+    exchanges += 1
+    if (!firstQuestion && !question.startsWith('quiz_answer')) firstQuestion = question
     let pendingText = ''
     let spokenAny = false
     let captionAny = false
@@ -91,7 +125,19 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
     }
     const done = new Promise((resolve) => (speakingDone = resolve))
     try {
+      // the local backend has no lookup tool: ground the question up front
+      let extraSystem = ''
+      if (chat.config.backend === 'openai') {
+        try {
+          const r = await lookupImpl(question, lang)
+          if (r?.chunks?.length) extraSystem = `PLATFORM MATERIAL THAT MAY HELP\n${r.text}`
+        } catch {
+          /* no index: answer without grounding */
+        }
+        if (my !== gen) return
+      }
       const result = await chat.ask(question, {
+        extraSystem,
         onText: (delta) => {
           if (my !== gen) return
           if (!captionAny) {
@@ -115,11 +161,21 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
       if (spokenAny) {
         if (state === 'thinking') setState('speaking')
         await done
-      } else if (voiceless && !reduced) {
+      } else if (voiceless && captionAny && !reduced) {
         await new Promise((r) => timers.later(r, Math.min(6000, result.text.length * NO_VOICE_MS_PER_CHAR)))
       }
       if (my !== gen) return
-      speakingSince = 0
+      if (afterAnswer) {
+        const next = afterAnswer
+        afterAnswer = null
+        if (next.type === 'end') {
+          await session.end()
+          return
+        }
+        em.emit('navigate', next)
+        await session.end()
+        return
+      }
       setState('idle')
     } catch (err) {
       if (my !== gen) return
@@ -128,7 +184,6 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
         log('chat error', err?.code || err?.message || err)
         em.emit('error', { key, fatal: false })
       }
-      em.emit('userCaption', { text: question, final: true })
       em.emit('ioCaption', { text: '', final: true })
       setState('idle')
     }
@@ -142,6 +197,7 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
     player?.flush()
     speakingDone?.()
     speakingDone = null
+    afterAnswer = null
   }
 
   /* ---- listening ---- */
@@ -159,7 +215,15 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
 
     async start() {
       setState('connecting')
-      chat = createChat({ system: buildSystemInstruction({ lang }), ...chatOptions })
+      const profile = touchProfile(lang)
+      const config = chatOptions.config || chatConfig()
+      const textTools = config.backend === 'openai'
+      chat = createChat({
+        system: buildSystemInstruction({ lang, learner: summarise(lang, profile), mode: kind, textTools }),
+        tools: textTools ? null : geminiTools(),
+        onToolCall,
+        ...chatOptions,
+      })
       speaker = await makeSpeaker({ callbacks: speakerCallbacks })
       voiceless = !speaker
       if (state === 'ended') return
@@ -167,7 +231,8 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
       // the scripted greeting: no model call, so the free tier is spent on answers
       const my = ++gen
       setState('speaking')
-      const greeting = strings.greeting
+      const topic = isReturning(profile) ? lastTopic(profile, lang, 'on') : null
+      const greeting = topic ? strings.returning.replace('{topic}', topic) : isReturning(profile) ? strings.returningPlain : strings.greeting
       if (speaker) {
         const done = new Promise((resolve) => (speakingDone = resolve))
         em.emit('ioCaption', { text: greeting, final: true })
@@ -242,7 +307,7 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
       stopRecognition(false)
     },
 
-    sendText(text) {
+    sendText(text, { display = null } = {}) {
       const clean = String(text || '').trim()
       if (!clean || state === 'ended' || state === 'connecting') return
       if (state === 'listening') {
@@ -251,7 +316,18 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
         em.emit('mic', { open: false })
         closeMic()
       } else if (state === 'speaking' || state === 'thinking') session.interrupt()
-      answer(clean)
+      answer(clean, { display })
+    },
+
+    /* the learner clicked a quiz option: the model reacts to it */
+    answerQuiz(index) {
+      const q = quiz
+      if (!q || !Number.isInteger(index) || !q.options[index]) return
+      quiz = null
+      const text = q.options[index]
+      const correct = index === q.correctIndex
+      em.emit('tool', { name: 'quiz_answer', args: { index, correct }, effect: { type: 'quizAnswered', index, correct, skill: q.skill } })
+      session.sendText(`quiz_answer ${index + 1}: ${text} (${correct ? 'correct' : 'not correct'}; the right option was ${q.correctIndex + 1})`, { display: text })
     },
 
     interrupt() {
@@ -288,21 +364,25 @@ export function createPushToTalkSession({ ctx, player, lang = 'ka', kind, makeSp
     micLevel: () => (muted ? 0 : mic?.level() ?? 0),
 
     async end() {
+      if (state === 'ended') return { summary: '' }
       cancelAnswer()
       stopRecognition(true)
       await closeMic()
       em.emit('mic', { open: false })
+      // a session with real exchanges leaves a short record even without end_session
+      if (!sessionSaved && exchanges > 0 && firstQuestion) {
+        const summary = firstQuestion.slice(0, 120)
+        addSession({ summary_ka: summary, summary_en: summary, skills: touchedSkills })
+        sessionSaved = true
+      }
       setState('ended')
       em.clear()
-      return { summary: '' }
+      return { summary: loadProfile()?.sessions?.at(-1)?.[lang === 'ka' ? 'summary_ka' : 'summary_en'] || '' }
     },
 
     on: em.on,
     get state() {
       return state
-    },
-    get speakingSince() {
-      return speakingSince
     },
   }
   return session

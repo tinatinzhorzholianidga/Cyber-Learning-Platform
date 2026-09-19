@@ -10,12 +10,13 @@ import { LANG_TAG } from '../stt/webSpeech.js'
 
 const ENV = (typeof import.meta !== 'undefined' && import.meta.env) || {}
 
-export function create({ ctx, player, lang = 'ka', reduced = false }) {
+export function create({ ctx, player, lang = 'ka', reduced = false, page = null }) {
   return createPushToTalkSession({
     ctx,
     player,
     lang,
     reduced,
+    page,
     kind: 'browser',
     async makeSpeaker({ callbacks }) {
       if (!hasSpeechSynthesis()) return null

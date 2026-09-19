@@ -13,6 +13,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
+import { COURSE_SENTENCE } from './lib/lint.mjs'
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url))
 // baseline: an untouched IO-for-main-page dc8a296 build, gzipped with
@@ -22,8 +23,8 @@ const BASE_CSS_GZ = 14306
 const JS_BUDGET = 4 * 1024
 const CSS_BUDGET = 1024
 const KEY_PATTERNS = [/AIza[0-9A-Za-z_-]{35}/, /AQ\.[A-Za-z0-9_-]{20,}/]
-// one sentence of the Basic Cybersecurity Course that never appears in the site's own copy
-const COURSE_SENTENCE = 'USB Baiting არის სოციალური ინჟინერიის ერთ-ერთი ფორმა'
+// COURSE_SENTENCE (scripts/lib/lint.mjs): one sentence of the Basic
+// Cybersecurity Course that never appears in the site's own copy
 
 let failed = false
 const fail = (m) => {

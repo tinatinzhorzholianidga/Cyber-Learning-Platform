@@ -9,6 +9,12 @@ export const MAX_LEN = 110
 export const TIP_WORDS = /(პაროლ|ფიშინგ|ანტივირუს|password|phishing|antivirus|two-factor|2fa|update your|განაახლ)/i
 export const EMOJI = /\p{Extended_Pictographic}/gu
 export const LATIN_ALLOW = ['English', 'CyberHero', 'IO', 'DGA', 'elearning.gov.ge']
+/* a `{name}` slot a string fills at run time (tutor/strings.js `returning`) */
+export const PLACEHOLDER = /\{[a-z_]+\}/g
+/* one sentence of the Basic Cybersecurity Course that never appears in the
+   site's own copy: check-dist.mjs greps builds for it, check-voice.mjs the
+   committed index (docs/io-voice-plan.md §4.4, A6) */
+export const COURSE_SENTENCE = 'USB Baiting არის სოციალური ინჟინერიის ერთ-ერთი ფორმა'
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -19,6 +25,7 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
      tipCheck      warn when a line looks like a cyber tip (host lines only)
      latinAllow    words that may appear in Latin letters inside Georgian
      noDots        error on "..." (voice strings use the single … character)
+     placeholders  `{name}` slots are not Latin leaks (talk-mode strings)
    Returns { errors: string[], warnings: string[] } with the same wording
    check-hints.mjs has always printed. */
 export function lintPair(label, line, opts = {}) {
@@ -28,6 +35,7 @@ export function lintPair(label, line, opts = {}) {
     tipCheck = false,
     latinAllow = LATIN_ALLOW,
     noDots = false,
+    placeholders = false,
   } = opts
   const errors = []
   const warnings = []
@@ -51,7 +59,7 @@ export function lintPair(label, line, opts = {}) {
     // Latin letters inside a Georgian line are usually a leaked
     // translation (brand names like CyberHero / English are allowed)
     const allow = new RegExp(latinAllow.map(escapeRe).join('|'), 'g')
-    const stripped = line.ka.replace(allow, '')
+    const stripped = (placeholders ? line.ka.replace(PLACEHOLDER, '') : line.ka).replace(allow, '')
     if (/[a-z]/i.test(stripped)) warnings.push(`${label}.ka: contains Latin letters - "${line.ka}"`)
   }
   // typography (Georgian orthography, §6.9): a hyphen never stands in

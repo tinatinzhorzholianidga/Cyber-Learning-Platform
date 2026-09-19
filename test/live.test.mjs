@@ -83,7 +83,7 @@ test('start connects, sends the hidden session_started turn, plays audio and cap
   assert.equal(sdk.calls.length, 1)
   assert.equal(sdk.last().model, 'gemini-3.8-live')
   assert.match(sdk.last().config.systemInstruction, /session_started/)
-  assert.match(sdk.last().config.systemInstruction, /Reply in Georgian/)
+  assert.match(sdk.last().config.systemInstruction, /You speak Georgian \(ქართული\) by default in the polite plural/)
   const live = sdk.last().live
   assert.equal(live.sent.length, 1)
   assert.match(live.sent[0].clientContent.turns[0].parts[0].text, /^session_started \{"lang":"ka"/)
@@ -242,4 +242,117 @@ test('mute stops sending and ends the audio stream; the ring toggles it', async 
   assert.equal(session.state, 'listening')
   assert.ok(ev.mic.length >= 2)
   await session.end()
+})
+
+/* ---- D5: tools on the Live path ---- */
+
+function fakeStorage() {
+  const map = new Map()
+  return {
+    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => map.set(k, String(v)),
+    removeItem: (k) => map.delete(k),
+    key: (i) => [...map.keys()][i] ?? null,
+    get length() {
+      return map.size
+    },
+  }
+}
+const QUIZ = { scenario: 'წერილი გთხოვთ პაროლის დადასტურებას.', options: ['დავაწკაპუნებ', 'გამგზავნს შევამოწმებ', 'გადავაგზავნი'], correctIndex: 1, skill: 'phishing' }
+
+test('a toolCall runs the handlers and answers with the Live scheduling; a click answers the quiz with INTERRUPT', async () => {
+  Object.defineProperty(globalThis, 'localStorage', { value: fakeStorage(), configurable: true, writable: true })
+  const { forgetProfile, loadProfile } = await import('../src/voice/tutor/memory.js')
+  forgetProfile()
+  try {
+    const sdk = fakeConnect()
+    const session = create({ ctx: null, player: fakePlayer(), lang: 'ka', connect: sdk.connect, apiKey: KEY, idleMs: 100000 })
+    const ev = record(session)
+    const tools = []
+    session.on('tool', (e) => tools.push(e))
+    await session.start()
+    const live = sdk.last().live
+    assert.equal(sdk.last().config.tools[0].functionDeclarations.find((d) => d.name === 'ask_quiz').behavior, 'NON_BLOCKING')
+    live.push({ serverContent: { turnComplete: true } })
+    await sleep(5)
+    session.sendText('რა არის ფიშინგი?')
+    live.push({ toolCall: { functionCalls: [{ id: 'c1', name: 'set_mood', args: { mood: 'wink' } }, { id: 'c2', name: 'ask_quiz', args: QUIZ }, { id: 'c3', name: 'set_mood', args: { mood: 'angry' } }] } })
+    await sleep(5)
+    const sent = live.sent.at(-1).toolResponse.functionResponses
+    assert.deepEqual(sent[0], { id: 'c1', name: 'set_mood', response: { ok: true }, scheduling: 'SILENT' })
+    assert.equal(sent[1].id, 'c2')
+    assert.equal(sent[1].willContinue, true)
+    assert.equal(sent[1].scheduling, 'SILENT')
+    assert.equal(sent[1].response.shown, true)
+    assert.match(sent[2].response.error, /mood must be one of/)
+    assert.deepEqual(tools.map((t) => t.effect.type), ['mood', 'quiz'])
+
+    session.answerQuiz(1)
+    const answer = live.sent.at(-1).toolResponse.functionResponses[0]
+    assert.deepEqual(answer, { id: 'c2', name: 'ask_quiz', response: { quiz_answer: 2, text: 'გამგზავნს შევამოწმებ', correct: true, correctIndex: 2 }, scheduling: 'INTERRUPT' })
+    assert.deepEqual(ev.user.at(-1), { text: 'გამგზავნს შევამოწმებ', final: true })
+    assert.equal(session.state, 'thinking')
+    assert.deepEqual(tools.at(-1).effect, { type: 'quizAnswered', index: 1, correct: true, skill: 'phishing' })
+    session.answerQuiz(1)
+    assert.equal(tools.length, 3, 'the quiz is closed after one answer')
+    // a cancelled quiz is dropped
+    live.push({ toolCall: { functionCalls: [{ id: 'c4', name: 'ask_quiz', args: QUIZ }] } })
+    await sleep(5)
+    live.push({ toolCallCancellation: { ids: ['c4'] } })
+    session.answerQuiz(0)
+    assert.equal(tools.length, 4)
+    live.push({ toolCall: { functionCalls: [{ id: 'c5', name: 'record_skill', args: { skill: 'phishing', level: 2, evidence: 'quiz' } }] } })
+    await sleep(5)
+    assert.equal(loadProfile().skills.phishing.level, 2)
+    await session.end()
+    assert.deepEqual(loadProfile().sessions.at(-1).skills, ['phishing'])
+    assert.equal(loadProfile().sessions.at(-1).summary_ka, 'რა არის ფიშინგი?')
+  } finally {
+    forgetProfile()
+    delete globalThis.localStorage
+  }
+})
+
+test('end_session closes after the turn; navigate_to_path emits navigate and closes', async () => {
+  Object.defineProperty(globalThis, 'localStorage', { value: fakeStorage(), configurable: true, writable: true })
+  const { forgetProfile, loadProfile, addSession } = await import('../src/voice/tutor/memory.js')
+  forgetProfile()
+  try {
+    const sdk = fakeConnect()
+    const page = { paths: { basic: { url: 'https://x/basic' }, kids: { url: 'https://x/kids', newTab: true } } }
+    const s1 = create({ ctx: null, player: fakePlayer(), lang: 'en', connect: sdk.connect, apiKey: KEY, idleMs: 100000, page })
+    const ev = record(s1)
+    await s1.start()
+    let live = sdk.last().live
+    assert.match(live.sent[0].clientContent.turns[0].parts[0].text, /"returning":false,"learner":""/)
+    live.push({ toolCall: { functionCalls: [{ id: 'e1', name: 'end_session', args: { summary_ka: 'ფიშინგზე ვისაუბრეთ.', summary_en: 'We talked about phishing.', skills: ['phishing'] } }] } })
+    await sleep(5)
+    assert.equal(live.sent.at(-1).toolResponse.functionResponses[0].scheduling, undefined, 'a blocking tool has no scheduling')
+    assert.equal(s1.state, 'thinking')
+    live.push(audioPart())
+    live.push({ serverContent: { turnComplete: true } })
+    await sleep(10)
+    assert.equal(s1.state, 'ended')
+    assert.equal(ev.state.at(-1), 'ended')
+    assert.equal(live.closed, true)
+    assert.deepEqual(loadProfile().sessions.map((s) => s.summary_en), ['We talked about phishing.'])
+
+    const s2 = create({ ctx: null, player: fakePlayer(), lang: 'en', connect: sdk.connect, apiKey: KEY, idleMs: 100000, page })
+    const nav = []
+    s2.on('navigate', (e) => nav.push(e))
+    await s2.start()
+    live = sdk.last().live
+    assert.match(live.sent[0].clientContent.turns[0].parts[0].text, /"returning":true,"learner":"Returning learner, 1 previous session\. Last time: We talked about phishing\./)
+    live.push({ toolCall: { functionCalls: [{ id: 'n1', name: 'navigate_to_path', args: { path: 'kids' } }] } })
+    await sleep(5)
+    live.push({ serverContent: { turnComplete: true } })
+    await sleep(10)
+    assert.deepEqual(nav, [{ type: 'navigate', path: 'kids', url: 'https://x/kids', newTab: true }])
+    assert.equal(s2.state, 'ended')
+    addSession({ summary_ka: 'x', summary_en: 'x' })
+    assert.equal(loadProfile().sessions.length, 2)
+  } finally {
+    forgetProfile()
+    delete globalThis.localStorage
+  }
 })

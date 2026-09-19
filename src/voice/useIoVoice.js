@@ -8,6 +8,7 @@ import { createStore } from './store.js'
 import { emptyTranscript, applyCaption, markInterrupted, dropEmptyUser } from './transcript.js'
 import { selectSession } from './session/select.js'
 import { createPlayer } from './audio/player.js'
+import { forgetProfile } from './tutor/memory.js'
 
 /* the face for each state: speaking needs a mouth-responsive face */
 const FACE = {
@@ -27,7 +28,7 @@ const STORAGE_PREFIX = 'io.voice.'
 
 const isEditable = (el) => Boolean(el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)))
 
-export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) {
+export function useIoVoice({ lang, kind, audioContext, page, reduced = false, onNavigate = null, onEnded = null }) {
   const store = useMemo(
     () =>
       createStore({
@@ -41,9 +42,15 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
         error: null,
         face: { emotion: 'thinking', gesture: null, listening: false, talking: false },
         transcript: emptyTranscript(),
+        board: { card: null, quiz: null, answered: null },
       }),
     [],
   )
+  const navigateRef = useRef(onNavigate)
+  navigateRef.current = onNavigate
+  const endedRef = useRef(onEnded)
+  endedRef.current = onEnded
+  const pendingNav = useRef(null)
   const ctrl = useRef(null)
   const mouthLevel = useRef(null) // read by RobotModel every frame
   const mouth = useRef({ mode: null, pulseAt: 0, raf: 0 })
@@ -60,7 +67,8 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
 
   useEffect(() => {
     let alive = true
-    const c = { session: null, player: null, unsubs: [], waved: false }
+    // `mood`: a set_mood call holds IO's face through the rest of that answer
+    const c = { session: null, player: null, unsubs: [], waved: false, mood: null }
     ctrl.current = c
     const m = mouth.current
 
@@ -109,13 +117,14 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
         transcript: state === 'listening' ? s.transcript : dropEmptyUser(s.transcript),
       }))
       clearTimeout(timers.current.overlay)
+      if (state !== 'thinking' && state !== 'speaking') c.mood = null
       if (state === 'interrupted') {
         setFace({ emotion: 'surprised', listening: false, talking: false })
         timers.current.overlay = setTimeout(() => {
           if (alive) setFace({ emotion: FACE[store.get().state] || 'happy' })
         }, SURPRISE_MS)
       } else {
-        setFace({ emotion: FACE[state] || 'happy', listening: state === 'listening', talking: state === 'speaking' && m.mode === 'sine' })
+        setFace({ emotion: c.mood || FACE[state] || 'happy', listening: state === 'listening', talking: state === 'speaking' && m.mode === 'sine' })
       }
       if (!c.waved && (state === 'speaking' || state === 'listening' || state === 'idle')) {
         c.waved = true
@@ -123,6 +132,12 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       }
       if (state === 'speaking') startMouth()
       else stopMouth()
+      if (state === 'ended') {
+        const nav = pendingNav.current
+        pendingNav.current = null
+        if (nav) navigateRef.current?.(nav)
+        else endedRef.current?.()
+      }
       clearTimeout(timers.current.thinking)
       if (state === 'thinking') {
         timers.current.thinking = setTimeout(() => {
@@ -147,6 +162,7 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       micOpen: false,
       face: { emotion: choice.kind ? 'thinking' : 'sad', gesture: null, listening: false, talking: false },
       transcript: emptyTranscript(),
+      board: { card: null, quiz: null, answered: null },
     }))
     m.mode = null
 
@@ -181,6 +197,22 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
             m.pulseAt = performance.now()
           }),
           session.on('mic', (e) => store.set({ micOpen: Boolean(e.open) })),
+          /* the tutor's tools → the face and the board (docs/io-voice-plan.md §5.8) */
+          session.on('tool', ({ effect }) => {
+            if (!alive || !effect) return
+            if (effect.type === 'mood') {
+              c.mood = effect.mood
+              setFace({ emotion: effect.mood })
+            } else if (effect.type === 'card') store.set({ board: { card: effect.card, quiz: null, answered: null } })
+            else if (effect.type === 'quiz') store.set({ board: { card: null, quiz: effect.quiz, answered: null } })
+            else if (effect.type === 'quizAnswered') {
+              store.set((s) => ({ ...s, board: { ...s.board, answered: { index: effect.index, correct: effect.correct } } }))
+              if (!reduced) fireGesture(effect.correct ? 'bounce' : 'wave')
+            }
+          }),
+          session.on('navigate', (e) => {
+            pendingNav.current = e
+          }),
           session.on('error', (e) => {
             if (!alive) return
             if (e.fatal) failOrFallback(e.key, e.fallback)
@@ -248,8 +280,12 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
           /* already closed */
         }
       },
+      /* the learner clicked a quiz option */
+      answerQuiz: (index) => ctrl.current?.session?.answerQuiz?.(index),
+      clearBoard: () => store.set({ board: { card: null, quiz: null, answered: null } }),
       /* Delete my data: everything talk mode keeps in this browser */
       forget: () => {
+        forgetProfile()
         try {
           const keys = []
           for (let i = 0; i < localStorage.length; i++) {
@@ -261,7 +297,7 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
           /* storage blocked */
         }
         ctrl.current?.session?.forget?.()
-        store.set({ transcript: emptyTranscript() })
+        store.set({ transcript: emptyTranscript(), board: { card: null, quiz: null, answered: null } })
       },
       /* re-run session selection (after a key was pasted or forgotten) */
       restart: () => {

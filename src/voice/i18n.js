@@ -47,6 +47,12 @@ export const VOICE = {
     showTranscript: 'საუბრის ტექსტის ჩვენება',
     hideTranscript: 'საუბრის ტექსტის დამალვა',
     interruptedMark: '(შეწყდა)',
+    boardLabel: 'იოს დაფა',
+    boardClose: 'დახურვა',
+    quizTitle: 'სწრაფი კითხვა',
+    quizCorrect: 'ზუსტად ასეა!',
+    quizWrong: 'ჯერ არა — კიდევ დაფიქრდით.',
+    openLink: 'ბმულის გახსნა',
   },
   en: {
     connecting: 'Connecting…',
@@ -90,6 +96,12 @@ export const VOICE = {
     showTranscript: 'Show the transcript',
     hideTranscript: 'Hide the transcript',
     interruptedMark: '(interrupted)',
+    boardLabel: "IO's board",
+    boardClose: 'Close',
+    quizTitle: 'Quick question',
+    quizCorrect: 'Exactly right!',
+    quizWrong: 'Not yet — think again.',
+    openLink: 'Open the link',
   },
 }
 

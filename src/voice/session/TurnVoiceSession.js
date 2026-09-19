@@ -9,12 +9,13 @@ import { resolveKey } from '../auth/devKey.js'
 
 const ENV = (typeof import.meta !== 'undefined' && import.meta.env) || {}
 
-export function create({ ctx, player, lang = 'ka', reduced = false }) {
+export function create({ ctx, player, lang = 'ka', reduced = false, page = null }) {
   return createPushToTalkSession({
     ctx,
     player,
     lang,
     reduced,
+    page,
     kind: 'turn',
     async makeSpeaker({ callbacks }) {
       const apiKey = resolveKey()

@@ -56,6 +56,7 @@ export default function App() {
   modeRef.current = mode
   const [Voice, setVoice] = useState(null) // the lazy layer's component, once loaded
   const [talk, setTalk] = useState(null) // what the voice layer wants IO to do
+  const [highlight, setHighlight] = useState(null) // the path card navigate_to_path chose
   const audioCtx = useRef(null)
   const [speechOk, setSpeechOk] = useState(() => speechAvailable(lang))
 
@@ -112,6 +113,26 @@ export default function App() {
     setMode('host')
   }, [])
 
+  // navigate_to_path (docs/io-voice-plan.md §5.3): back to host mode, the
+  // chosen card lights up, IO waves goodbye, then the page follows the link
+  const navigate = useCallback(
+    ({ path, url, newTab }) => {
+      exitTalk()
+      setHighlight(path)
+      io.current?.farewell()
+      if (!url || embed) return
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      window.setTimeout(() => {
+        if (newTab) {
+          // a tool call is not a user gesture, so the popup may be blocked;
+          // the highlighted card then stays for the learner to click
+          window.open(url, '_blank', 'noopener')
+        } else window.location.assign(url)
+      }, reduced ? 1000 : 1900)
+    },
+    [exitTalk, embed],
+  )
+
   // T opens talk mode from host mode (e.code: a Georgian layout reports ტ)
   useEffect(() => {
     if (!voiceEnabled) return undefined
@@ -133,10 +154,15 @@ export default function App() {
     ) : null
 
   // what the tutor may point to (D5); one object per language, so the
-  // voice layer never restarts its session on a page re-render
+  // voice layer never restarts its session on a page re-render. In an
+  // embed navigate_to_path shows a link card instead of leaving the frame.
   const page = useMemo(
-    () => ({ paths: { basic: { url: t.basic.url }, kids: { url: t.kids.url, newTab: true } }, loginUrl: t.loginUrl }),
-    [t],
+    () => ({
+      paths: { basic: { url: t.basic.url, title: t.basic.title }, kids: { url: t.kids.url, title: t.kids.title, newTab: true } },
+      loginUrl: t.loginUrl,
+      embed,
+    }),
+    [t, embed],
   )
 
   const voiceLayer =
@@ -150,6 +176,7 @@ export default function App() {
         page={page}
         onTalk={setTalk}
         onExit={exitTalk}
+        onNavigate={navigate}
       />
     ) : null
 
@@ -228,8 +255,8 @@ export default function App() {
 
             <h2 className="paths-title">{t.pathsTitle}</h2>
             <div className="paths">
-              <PathCard kind="basic" data={t.basic} io={io} />
-              <PathCard kind="kids" data={t.kids} io={io} external newTab={t.newTab} />
+              <PathCard kind="basic" data={t.basic} io={io} highlight={highlight === 'basic'} />
+              <PathCard kind="kids" data={t.kids} io={io} external newTab={t.newTab} highlight={highlight === 'kids'} />
             </div>
           </div>
         </section>
@@ -246,11 +273,12 @@ export default function App() {
 /* One of the two doors. Hover / focus makes IO react; choosing it makes
    him wave goodbye (the link itself navigates normally). The card's
    accessible name is title + call to action, not the whole card text. */
-function PathCard({ kind, data, io, external = false, newTab = '' }) {
+function PathCard({ kind, data, io, external = false, newTab = '', highlight = false }) {
   const id = useId()
   return (
     <a
       className={`path-card path-${kind}`}
+      data-io-highlight={highlight || undefined}
       href={data.url}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
