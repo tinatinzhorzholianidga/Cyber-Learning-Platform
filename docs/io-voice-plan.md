@@ -138,6 +138,8 @@ numbered V1–V24; the demo phases are D1–D6 (§7.1).
 | V24 | Phase 2 acceptance "a stub session that plays a local WAV" | the stub synthesises a speech-like signal (syllable bursts) by default and plays a WAV with `?voice=stub&wav=<url>` (e.g. a bake-off file served by the dev server); `&mouth=pulse` / `&mouth=sine` exercise the browser-voice mouth paths | no audio file in the repository, the harness works before Gate G1 produces any WAV, and all three mouth paths are tested | `session/StubVoiceSession.js` |
 | V25 | Phase 3: a hidden `session_started` turn makes IO greet | the push-to-talk sessions (browser, turn) speak the scripted greeting from `tutor/strings.js` without a model call; Live (D4) keeps the nudge | the free tier's daily request quota is spent on answers, not greetings; the scripted line is reviewed Georgian | §5.5, `session/pushToTalk.js` |
 | V26 | a voice session always speaks | without a voice for the page language (Chrome or Firefox without a Georgian voice, Safari) the browser session answers in captions with the sine mouth and says so once (`voice.noVoice`); the ring reports typed mode when recognition is missing (`voice.errSpeech`) | A8 promised typed mode everywhere; captions-only is the honest fallback on those browsers | §5.5 |
+| V27 | Phase 3: the 90 s goodbye "calls `end_session`"; manual interruption may need an "activityStart-equivalent nudge" | the idle goodbye is a hidden `session_idle` event the persona answers with one sentence, and the session ends when that turn completes (the `end_session` tool arrives in D5); a manual interruption flushes the player and discards the rest of the turn, with no message to the server (B7 stays a D4 experiment for the real service) | no tools exist before D5; the Live API has no interrupt message and realtime text as a nudge is untested | §5.7, `session/LiveVoiceSession.js` |
+| V28 | (none in the brief) the SDK loads on demand | `@google/genai` is pre-bundled by the dev server (`optimizeDeps.include`) although only the Live session imports it | Vite discovers a dependency first imported at run time mid-session and reloads the page, which would end the presenter's talk session on the first Live start | `vite.config.js` |
 
 ---
 
@@ -486,7 +488,7 @@ src/content/safety.js          KA/EN resources with placeholders the DGA team fi
 public/io-index.json           generated from the CyberHero content by scripts/build-io-index.mjs and committed
 scripts/
   lib/lint.mjs  check-voice.mjs  check-dist.mjs  voice-smoke.mjs  voice-bakeoff.mjs  build-io-index.mjs
-  e2e/talk.mjs  e2e/host-diff.mjs   headless-Chromium acceptance (talk mode with the stub; host mode pixel diff), not run in CI
+  e2e/talk.mjs  e2e/live.mjs  e2e/host-diff.mjs   headless-Chromium acceptance (the stub, the mocked Gemini API, the mocked Live socket; host mode pixel diff), not run in CI
 bakeoff/README.md              rating sheet + decision block (audio files gitignored)
 docs/
   io-voice-build-prompt.md  io-voice-plan.md (this file)  io-voice-test-script.md (D5)  io-voice-demo.md (D6: run sheet for the presentation)
@@ -1010,6 +1012,31 @@ Phase 6 = D6 (+ P3 for the Moodle embed).
   answered by voice in Edge (Giorgi / Eka) and in Chrome, real word-boundary events, the first-audio
   figure on a real connection (the target is ≤ 3 s), Safari's `en-US` recognition, and the answers'
   Georgian quality (Q5). Gate G1 still decides the defaults.
+- **D4 — built and verified against a mocked Live server (2026-09-19).**
+  `session/LiveVoiceSession.js`: the SDK's `live.connect` (loaded on demand, its own 72 KB gzipped
+  chunk) with the §2.3 config (audio out, the chosen voice, the persona with the Live event rules,
+  input transcription with the `ka` hint, output transcription, automatic VAD with
+  `TURN_INCLUDES_ONLY_ACTIVITY`, sliding-window compression, resumption) behind a 10 s connect
+  timeout; the microphone's 16 kHz chunks as `sendRealtimeInput` audio; audio parts through the
+  player (the amplitude mouth); transcriptions as captions; the hidden `session_started` turn; server
+  `interrupted` → flush; a click or Esc → flush and discard until `turnComplete`; typed questions as
+  realtime text; the ring mutes and unmutes (`audioStreamEnd` on mute); 90 s of silence → a
+  `session_idle` event, goodbye, end; a tab hidden 30 s pauses the microphone; `goAway` or a dropped
+  socket → reconnect with the handle (twice at most), then a fatal error that names `browser` as the
+  fallback, which `useIoVoice` performs once and explains (`voice.fellBack`). `select.js` registers
+  `live` (dev key + `VITE_IO_LIVE_OK=1`). Nine unit tests with a fake connector (86 in all). In
+  headless Chromium with the socket mocked by Playwright (a fake dev key on the dev server): the
+  badge says „live · dev key“, the greeting plays with the amplitude mouth and is captioned in
+  full, microphone chunks reach the server, `goAway` reconnects with the handle and audio keeps
+  flowing on the second socket, a typed question is answered, Esc interrupts and the turn's rest is
+  discarded, the ring mutes, End returns to host mode; no console error. Two dev-server findings
+  fixed: the SDK must be pre-bundled (V28), and a socket's late `close` event must not be mistaken
+  for a drop of its successor (callbacks are bound to their socket).
+- **Not verified in D4 — needs the team's key with Live quota (G1(c)):** the real service's
+  Georgian, barge-in latency (the ≤ 300 ms target), proactive audio's behaviour on the hidden
+  events, whether a manual flush without a server message leaves the model mid-turn (B7), and the
+  reconnect against a real `goAway`. `npm run smoke:voice` and `npm run bakeoff -- --only-live`
+  are the first checks; `?voice=live` on `npm run dev` with the key in `.env.local` is the second.
 - **Deferred:** `build:index` (D5); Track P entirely.
 
 ---
@@ -1206,3 +1233,6 @@ limits, the public index and the Azure region are closed by A4–A7.
 - 2026-09-19 — D3 built (§7.3): the recogniser, the turn pipeline, the persona, the two speakers, the
   browser and turn sessions, the key field's forget path; V25–V26 recorded; the acceptance script
   now runs both sessions against a mocked Gemini API.
+- 2026-09-19 — D4 built (§7.3): `LiveVoiceSession` with the dev key, resumption, idle and hidden
+  handling, the fallback to `browser`; V27–V28 recorded; `scripts/e2e/live.mjs` mocks the Live
+  socket.

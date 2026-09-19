@@ -50,6 +50,8 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
   const gestureN = useRef(0)
   const timers = useRef({ overlay: 0, thinking: 0 })
   const [restartN, setRestartN] = useState(0)
+  // a session that cannot run (Live without quota or connection) names its fallback
+  const [fallbackKind, setFallbackKind] = useState(null)
   // page context is read at start; a new object identity must not restart the session
   const pageRef = useRef(page)
   pageRef.current = page
@@ -87,6 +89,15 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       store.set((s) => ({ ...s, state: 'error', error: key, face: { ...s.face, emotion: FACE.error, listening: false, talking: false } }))
       stopMouth()
     }
+    /* a fatal failure with a named fallback restarts on that kind (once) */
+    const failOrFallback = (key, fallback) => {
+      if (fallback && fallback !== choice.kind && !fallbackKind) {
+        store.set({ error: 'fellBack' })
+        setFallbackKind(fallback)
+        return
+      }
+      fail(key)
+    }
 
     const onState = (state) => {
       if (!alive) return
@@ -122,7 +133,8 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       }
     }
 
-    const choice = selectSession({ requested: kind, lang })
+    const choice = selectSession({ requested: fallbackKind || kind, lang })
+    if (fallbackKind && choice.kind) choice.reason = `fallback from ${kind || 'default'}: ${choice.reason}`
     store.set((s) => ({
       ...s,
       kind: choice.kind,
@@ -130,7 +142,8 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       reason: choice.reason,
       needsKey: choice.needsKey,
       state: choice.kind ? 'connecting' : 'error',
-      error: choice.kind ? null : 'errNoSession',
+      // after a fallback the message that explains it stays until the next turn
+      error: choice.kind ? (fallbackKind ? 'fellBack' : null) : 'errNoSession',
       micOpen: false,
       face: { emotion: choice.kind ? 'thinking' : 'sad', gesture: null, listening: false, talking: false },
       transcript: emptyTranscript(),
@@ -170,7 +183,7 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
           session.on('mic', (e) => store.set({ micOpen: Boolean(e.open) })),
           session.on('error', (e) => {
             if (!alive) return
-            if (e.fatal) fail(e.key)
+            if (e.fatal) failOrFallback(e.key, e.fallback)
             else store.set({ error: e.key })
             // a rejected key brings the key field back (A2)
             if (e.key === 'errKey') store.set({ needsKey: true })
@@ -180,7 +193,7 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
           await session.start({ lang, page: pageRef.current })
         } catch (err) {
           console.error('voice: session failed to start', err)
-          if (alive) fail(err?.key || 'errSocket')
+          if (alive) failOrFallback(err?.key || 'errSocket', err?.fallback)
         }
       })()
     }
@@ -195,7 +208,7 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       c.player?.close()
       ctrl.current = null
     }
-  }, [lang, kind, audioContext, reduced, restartN, store, setFace])
+  }, [lang, kind, fallbackKind, audioContext, reduced, restartN, store, setFace])
 
   const api = useMemo(
     () => ({
@@ -203,7 +216,8 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
       mouthLevel,
       listen: () => ctrl.current?.session?.listen?.(),
       stopListening: () => ctrl.current?.session?.stopListening?.(),
-      /* the ring button: start / stop listening, or cut IO off and listen */
+      /* the ring button: start / stop listening, or cut IO off and listen;
+         on Live (which listens by itself) it mutes / unmutes the microphone */
       toggleListening: () => {
         const session = ctrl.current?.session
         if (!session) return
@@ -250,7 +264,10 @@ export function useIoVoice({ lang, kind, audioContext, page, reduced = false }) 
         store.set({ transcript: emptyTranscript() })
       },
       /* re-run session selection (after a key was pasted or forgotten) */
-      restart: () => setRestartN((n) => n + 1),
+      restart: () => {
+        setFallbackKind(null)
+        setRestartN((n) => n + 1)
+      },
     }),
     [store],
   )

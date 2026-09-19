@@ -23,6 +23,11 @@ export default defineConfig(({ command, mode }) => {
       // is not reliable with an inlined data: URL
       assetsInlineLimit: (file) => (file.endsWith('mic-worklet.js') ? false : undefined),
     },
+    optimizeDeps: {
+      // the Live session imports the SDK on demand; without this the dev
+      // server discovers it mid-session and reloads the page
+      include: ['@google/genai'],
+    },
     define: {
       __IO_DEV_SERVE__: JSON.stringify(serve),
       __IO_DEV_GEMINI_KEY__: JSON.stringify(serve ? env.IO_GEMINI_KEY ?? '' : ''),
