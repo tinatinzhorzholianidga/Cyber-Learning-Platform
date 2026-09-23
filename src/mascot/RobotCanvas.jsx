@@ -3,6 +3,8 @@ import { Canvas } from '@react-three/fiber'
 import HeroModel from './HeroModel.jsx'
 import RobotModel from './RobotModel.jsx'
 
+/* Honour the visitor's reduced-motion setting: the model then paints a
+   still face and the canvas only renders on demand. */
 export function useReducedMotion() {
   const [reduced, setReduced] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -10,8 +12,13 @@ export function useReducedMotion() {
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     const onChange = () => setReduced(mq.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    // Safari < 14: MediaQueryList is not an EventTarget yet
+    if (mq.addEventListener) mq.addEventListener('change', onChange)
+    else mq.addListener(onChange)
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange)
+      else mq.removeListener(onChange)
+    }
   }, [])
   return reduced
 }
@@ -45,6 +52,9 @@ class GLBoundary extends Component {
   }
 }
 
+/* The 3D stage. Everything not listed here (emotion, gesture, talking,
+   follow, idle, skin, variant, holdup, onTap …) is forwarded to the model.
+   With `onTap` the stage is a keyboard-operable button (Enter / Space). */
 export default function RobotCanvas({ size = 300, className = '', label, character = 'robot', ...robotProps }) {
   const reduced = useReducedMotion()
   const [hasWebgl] = useState(webglAvailable)
@@ -63,11 +73,21 @@ export default function RobotCanvas({ size = 300, className = '', label, charact
     return () => window.removeEventListener('mousemove', onMove)
   }, [])
 
+  // keyboard users can "tap" IO too (Enter / Space) when he is clickable
+  const { onTap } = robotProps
+  const onKeyDown = (e) => {
+    if (!onTap || (e.key !== 'Enter' && e.key !== ' ')) return
+    e.preventDefault()
+    onTap()
+  }
+
   return (
     <div
       className={`mascot-canvas ${className}`.trim()}
       style={{ width: size, height: size }}
-      role="img"
+      role={onTap ? 'button' : 'img'}
+      tabIndex={onTap ? 0 : undefined}
+      onKeyDown={onKeyDown}
       aria-label={label}
     >
       {hasWebgl ? (
